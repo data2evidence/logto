@@ -8,3 +8,11 @@ export const getDatabaseName = async (pool: CommonQueryMethods, normalized = fal
 
   return normalized ? currentDatabase.replaceAll('-', '_') : currentDatabase;
 };
+
+export const getDatabaseUser = async (pool: CommonQueryMethods) => {
+  const { currentUser } = await pool.one<{ currentUser: string }>(sql`
+    select current_user;
+  `);
+
+  return currentUser;
+};
