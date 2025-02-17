@@ -1,6 +1,9 @@
 /* This SQL will run before all other queries. */
-create schema logto if not exists;
+-- "logto" 
+create schema if not exists logto;
 set search_path = logto, "$user";
+-- "logto_postgres"
+alter role logto_postgres set search_path = logto, "$user";
 create role logto_tenant_${database} password '${password}' noinherit;
 
 GRANT USAGE ON SCHEMA logto TO logto_tenant_${database};
