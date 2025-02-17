@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - SantanM/custom-schema-for-logto
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   workflow_dispatch:
@@ -65,7 +66,7 @@ jobs:
       - name: Set up variables
         id: setup
         run: |
-          ACR_IMAGE_PUSH=false
+          ACR_IMAGE_PUSH=true
           if [ $GIT_BRANCH_NAME = 'develop' ]; then
             ACR_IMAGE_PUSH=true
           fi
@@ -100,7 +101,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{github.actor}}
-          password: ${{secrets.REGISTRY_PASSWORD}}
+          password: ${{secrets.GITHUB_TOKEN}}
           
       - name: Build and push
         uses: docker/build-push-action@v6
