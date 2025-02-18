@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - develop
-      - SantanM/custom-schema-for-logto
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   workflow_dispatch:
