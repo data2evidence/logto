@@ -53,14 +53,26 @@ export class JwtCustomizerLibrary {
   // Convert errors to WithTyped client response error to share the error handling logic.
   static async runScriptInLocalVm(data: CustomJwtFetcher) {
     try {
+      const mapId = (data as any).context["user"].primaryEmail;
       const payload: CustomJwtScriptPayload = {
         ...(data.tokenType === LogtoJwtTokenKeyType.AccessToken
-          ? pick(data, 'token', 'context', 'environmentVariables')
+          ? {
+              ...pick(data, 'token', 'context', 'environmentVariables'),
+              extra: {
+                // @ts-ignore
+                entraToken: globalThis.tokenMap
+                  ? // @ts-ignore
+                    globalThis.tokenMap[mapId]
+                  : undefined,
+              },
+            }
           : pick(data, 'token', 'environmentVariables')),
         api: apiContext,
       };
-
       const result = await runScriptFunctionInLocalVm(data.script, 'getCustomJwtClaims', payload);
+
+      // @ts-ignore
+      delete globalThis.tokenMap[mapId];
 
       // If the `result` is not a record, we cannot merge it to the existing token payload.
       return z.record(z.unknown()).parse(result);
