@@ -60,9 +60,14 @@ export class JwtCustomizerLibrary {
               ...pick(data, 'token', 'context', 'environmentVariables'),
               extra: {
                 // @ts-ignore
-                entraToken: globalThis.tokenMap
+                thirdPartyToken: globalThis.tokenMap
                   ? // @ts-ignore
                     globalThis.tokenMap[mapId]
+                  : undefined,
+                // @ts-ignore
+                thirdPartyRefreshToken: globalThis.refreshTokenMap
+                  ? // @ts-ignore
+                    globalThis.refreshTokenMap[mapId]
                   : undefined,
               },
             }
