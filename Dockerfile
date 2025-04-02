@@ -14,9 +14,9 @@ RUN apk add --no-cache python3 make g++ rsync py3-setuptools git
 COPY . .
 
 RUN git clone --branch v0.0.1-alpha https://github.com/OHDSI/d2e.git /etc/d2e
-COPY /etc/d2e/to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
-COPY /etc/d2e/to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
-COPY /etc/d2e/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
+RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
+RUN cp /etc/d2e/services/alp-logto/to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
+RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
 
 ### Install dependencies and build ###
 RUN pnpm i
@@ -41,9 +41,7 @@ RUN NODE_ENV=production pnpm i
 
 ### Clean up ###
 RUN rm -rf .scripts pnpm-*.yaml packages/cloud
-
-# TODO: to check whether below command is required
-# RUN npx @logto/cli connector link
+RUN rm -rf /etc/d2e
 
 ###### [STAGE] Seal ######
 FROM node:20-alpine as app
