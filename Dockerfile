@@ -20,12 +20,6 @@ RUN cp /etc/d2e/services/alp-logto/to-replace/core/src/libraries/jwt-customizer.
 ### Install dependencies and build ###
 RUN pnpm i
 
-RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
-WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
-RUN npm i
-RUN npm run build
-WORKDIR /etc/logto/
-
 ### Set if dev features enabled ###
 ARG dev_features_enabled
 ENV DEV_FEATURES_ENABLED=${dev_features_enabled}
@@ -43,6 +37,14 @@ RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 ### Prune dependencies for production ###
 RUN rm -rf node_modules packages/**/node_modules
 RUN NODE_ENV=production pnpm i
+
+# Note: D2E connector build and link
+RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
+WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
+RUN npm i
+RUN npm run build
+WORKDIR /etc/logto/
+RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 
 ### Clean up ###
 RUN rm -rf .scripts pnpm-*.yaml packages/cloud
