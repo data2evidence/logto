@@ -16,10 +16,15 @@ COPY . .
 RUN git clone --branch v0.0.1-alpha https://github.com/OHDSI/d2e.git /etc/d2e
 RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
 RUN cp /etc/d2e/services/alp-logto/to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
-RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
 
 ### Install dependencies and build ###
 RUN pnpm i
+
+RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
+WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
+RUN npm i
+RUN npm run build
+WORKDIR /etc/logto/
 
 ### Set if dev features enabled ###
 ARG dev_features_enabled
