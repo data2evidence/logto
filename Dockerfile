@@ -30,6 +30,13 @@ ENV APPLICATIONINSIGHTS_CONNECTION_STRING=${applicationinsights_connection_strin
 
 RUN pnpm -r build
 
+# Note: D2E connector build and link
+RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
+WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
+RUN npm i
+RUN npm run build
+WORKDIR /etc/logto/
+
 ### Add official connectors ###
 ARG additional_connector_args
 ENV ADDITIONAL_CONNECTOR_ARGS=${additional_connector_args}
@@ -38,14 +45,6 @@ RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 ### Prune dependencies for production ###
 RUN rm -rf node_modules packages/**/node_modules
 RUN NODE_ENV=production pnpm i
-
-# Note: D2E connector build and link
-RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
-WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
-RUN npm i
-RUN npm run build
-WORKDIR /etc/logto/
-RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 
 ### Clean up ###
 RUN rm -rf .scripts pnpm-*.yaml packages/cloud
