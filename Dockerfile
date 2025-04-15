@@ -43,7 +43,7 @@ ENV ADDITIONAL_CONNECTOR_ARGS=${additional_connector_args}
 RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 
 ### Clean up ###
-RUN rm -rf .scripts pnpm-*.yaml packages/cloud
+RUN rm -rf .scripts pnpm-lock.yaml packages/cloud
 RUN rm -rf /etc/d2e
 
 ### Prune dependencies for production ###
