@@ -13,7 +13,7 @@ RUN apk add --no-cache python3 make g++ rsync py3-setuptools git
 
 COPY . .
 
-RUN git clone --branch v0.0.1-alpha https://github.com/OHDSI/d2e.git /etc/d2e
+RUN git clone --branch v0.6.0-beta https://github.com/OHDSI/d2e.git /etc/d2e
 RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
 RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience-legacy/src/pages/SignIn/Main.tsx
 RUN cp /etc/d2e/services/alp-logto/to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
