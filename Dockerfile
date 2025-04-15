@@ -42,13 +42,13 @@ ARG additional_connector_args
 ENV ADDITIONAL_CONNECTOR_ARGS=${additional_connector_args}
 RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 
-### Prune dependencies for production ###
-RUN rm -rf node_modules packages/**/node_modules
-RUN NODE_ENV=production pnpm i
-
 ### Clean up ###
 RUN rm -rf .scripts pnpm-*.yaml packages/cloud
 RUN rm -rf /etc/d2e
+
+### Prune dependencies for production ###
+RUN rm -rf node_modules packages/**/node_modules
+RUN NODE_ENV=production pnpm i
 
 ###### [STAGE] Seal ######
 FROM node:20-alpine as app
