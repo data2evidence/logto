@@ -111,3 +111,5 @@ jobs:
           platforms: ${{ steps.setup.outputs.DOCKER_BUILD_PLATFORMS }}
           push: ${{ steps.setup.outputs.ACR_IMAGE_PUSH }}
           tags: ghcr.io/data2evidence/${{ matrix.name }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          build-args: |
+            VERSION=${{ env.GIT_BRANCH_NAME }}
