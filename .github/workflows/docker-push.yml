@@ -19,6 +19,10 @@ on:
         description: Enter BranchName
         required: true
         type: string
+      D2E_BRANCH_NAME:
+        default: develop
+        description: Enter D2E Branch
+        type: string
 
 concurrency:
   group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build
@@ -112,4 +116,4 @@ jobs:
           push: ${{ steps.setup.outputs.ACR_IMAGE_PUSH }}
           tags: ghcr.io/data2evidence/${{ matrix.name }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
-            VERSION=${{ env.GIT_BRANCH_NAME }}
+            D2E_VERSION=${{ env.D2E_BRANCH_NAME }}

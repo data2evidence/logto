@@ -5,8 +5,8 @@ ENV CI=true
 
 # No need for Docker build
 ENV PUPPETEER_SKIP_DOWNLOAD=true
-ARG VERSION=develop
-ENV VERSION=${VERSION}
+ARG D2E_VERSION=develop
+ENV D2E_VERSION=${D2E_VERSION}
 
 ### Install toolchain ###
 RUN npm add --location=global pnpm@^9.0.0
@@ -15,7 +15,7 @@ RUN apk add --no-cache python3 make g++ rsync py3-setuptools git
 
 COPY . .
 
-RUN git clone --branch ${VERSION} https://github.com/OHDSI/d2e.git /etc/d2e
+RUN git clone --branch ${D2E_VERSION} https://github.com/OHDSI/d2e.git /etc/d2e
 RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
 RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience-legacy/src/pages/SignIn/Main.tsx
 RUN cp /etc/d2e/services/alp-logto/to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
