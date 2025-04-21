@@ -47,6 +47,7 @@ WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
 RUN npm i
 RUN npm run build
 WORKDIR /etc/logto/
+RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 
 ### Clean up ###
 RUN rm -rf .scripts pnpm-*.yaml packages/cloud
