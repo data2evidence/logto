@@ -116,4 +116,4 @@ jobs:
           push: ${{ steps.setup.outputs.ACR_IMAGE_PUSH }}
           tags: ghcr.io/data2evidence/${{ matrix.name }}:${{ env.DOCKER_IMG_TAG_NAME }}
           build-args: |
-            D2E_VERSION=${{ env.D2E_BRANCH_NAME }}
+            D2E_VERSION=${{ env.D2E_BRANCH_NAME || 'develop' }}
