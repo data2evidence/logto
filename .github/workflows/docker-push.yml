@@ -70,14 +70,16 @@ jobs:
         id: setup
         run: |
           ACR_IMAGE_PUSH=true
-          if [ $GIT_BRANCH_NAME = 'develop' ]; then
-            ACR_IMAGE_PUSH=true
-          fi
-
           if [ $GIT_BRANCH_NAME == "develop" ]; then
-            DOCKER_IMG_TAG_NAME=develop 
+            DOCKER_IMG_TAG_NAME=develop
+          elif [ $GITHUB_EVENT_NAME = "workflow_dispatch" ]; then
+            DOCKER_IMG_TAG_NAME=${{ github.event.inputs.GIT_BRANCH_NAME }}
+            if [[ $GIT_BRANCH_NAME = */* ]]; then
+              DOCKER_IMG_TAG_NAME=$(printf "%s" "$GIT_BRANCH_NAME" | awk -F '/' '{print $2}')
+            fi 
           else
-            DOCKER_IMG_TAG_NAME=$(echo $(git rev-parse --short HEAD))
+            ACR_IMAGE_PUSH=false
+            DOCKER_IMG_TAG_NAME=$(echo ${{ github.sha }} | cut -c1-8)
           fi
 
           echo GIT_BRANCH_NAME="${GIT_BRANCH_NAME}" | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
