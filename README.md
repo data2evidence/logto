@@ -20,7 +20,7 @@
 
 Logto[^info] is an open-source Identity and Access Management (IAM) platform designed to streamline Customer Identity and Access Management (CIAM) and Workforce Identity Management. With Single Sign-On (SSO), OIDC-based authentication, and Multi-Tenant SaaS capabilities, Logto offers a scalable, secure, and developer-friendly way to manage authentication for modern web and mobile application
 
-## Getting started
+## Getting  started
 - [Join now](https://discord.gg/vRvwuwgpVX) the 💬 [Logto Discord server](https://discord.gg/vRvwuwgpVX) and connect with developers! Get real-time support, share ideas, and stay updated on all things identity management.
 - Deploy today by [registering now](https://auth.logto.io/register) for a free, full featured development tenant 
 - Follow the [quick start](https://logto.io/quick-starts/?utm_source=github&utm_medium=repo_logto) guide to begin managing authentication efficiently.
