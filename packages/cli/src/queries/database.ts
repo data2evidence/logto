@@ -19,7 +19,7 @@ export const getDatabaseUser = async (pool: CommonQueryMethods) => {
 
 export const getSchemaName = async (pool: CommonQueryMethods, normalized = false) => {
   const { currentSchema } = await pool.one<{ currentSchema: string }>(sql`
-    SELECT current_schema;
+    SELECT current_schema();
   `);
 
   return normalized ? currentSchema.replaceAll('-', '_') : currentSchema;
