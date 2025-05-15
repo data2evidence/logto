@@ -35,7 +35,7 @@ import type { DatabaseTransactionConnection } from '@silverhand/slonik';
 import { sql } from '@silverhand/slonik';
 
 import { insertInto } from '../../../database.js';
-import { getDatabaseName, getDatabaseUser } from '../../../queries/database.js';
+import { getDatabaseName, getDatabaseUser, getSchemaName } from '../../../queries/database.js';
 import { updateDatabaseTimestamp } from '../../../queries/system.js';
 import { convertToIdentifiers } from '../../../sql.js';
 import { consoleLog, getPathInModule } from '../../../utils.js';
@@ -101,7 +101,13 @@ export const createTables = async (
 
   const runLifecycleQuery = async (
     lifecycle: Lifecycle,
-    parameters: { name?: string; database?: string; databaseUser?: string; password?: string } = {}
+    parameters: {
+      name?: string;
+      database?: string;
+      databaseUser?: string;
+      password?: string;
+      schema?: string;
+    } = {}
   ) => {
     const query = queries.find(([file]) => file.slice(1, -4) === lifecycle)?.[1];
 
@@ -114,6 +120,7 @@ export const createTables = async (
             .replaceAll('${database}', parameters.database ?? '')
             .replaceAll('${password}', parameters.password ?? '')
             .replaceAll('${databaseUser}', parameters.databaseUser ?? '')
+            .replaceAll('${schema}', parameters.schema ?? '')
           /* eslint-enable no-template-curly-in-string */
         )}`
       );
@@ -128,8 +135,9 @@ export const createTables = async (
   const database = await getDatabaseName(connection, true);
   const password = encryptBaseRole ? generateStandardId(32) : '';
   const databaseUser = await getDatabaseUser(connection);
+  const schema = await getSchemaName(connection, true);
 
-  await runLifecycleQuery('before_all', { database, password, databaseUser });
+  await runLifecycleQuery('before_all', { database, password, databaseUser, schema });
 
   /* eslint-disable no-await-in-loop */
   for (const [file, query] of sorted) {

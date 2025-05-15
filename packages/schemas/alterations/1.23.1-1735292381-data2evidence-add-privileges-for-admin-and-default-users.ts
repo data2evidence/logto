@@ -10,47 +10,54 @@ const getDatabaseName = async (pool: CommonQueryMethods) => {
 
   return currentDatabase.replaceAll('-', '_');
 };
+
+const getSchemaName = async (pool: CommonQueryMethods) => {
+  const { currentSchema } = await pool.one<{ currentSchema: string }>(sql`
+    SELECT current_schema;
+  `);
+
+  return currentSchema.replaceAll('-', '_');
+};
+
 const getId = (value: string) => sql.identifier([value]);
 
 const alteration: AlterationScript = {
   up: async (pool) => {
     const database = await getDatabaseName(pool);
+    const schema = getId(`${await getSchemaName(pool)}`);
     const adminId = getId(`logto_tenant_${database}_admin`);
     const defaultId = getId(`logto_tenant_${database}_default`);
     await pool.query(sql`
-      GRANT USAGE ON SCHEMA logto TO ${defaultId};
-      GRANT USAGE ON SCHEMA logto TO ${adminId};
+      GRANT USAGE ON SCHEMA ${schema} TO ${defaultId};
+      GRANT USAGE ON SCHEMA ${schema} TO ${adminId};
       grant select, insert, update, delete
         on all tables
-        in schema logto
+        in schema ${schema}
         to ${adminId};
       grant select, insert, update, delete
         on all tables
-        in schema logto
+        in schema ${schema}
         to ${defaultId};
-      ALTER ROLE ${adminId} SET search_path = logto;
-      ALTER ROLE ${defaultId} SET search_path = logto;
     `);
   },
   down: async (pool) => {
     const database = await getDatabaseName(pool);
+    const schema = getId(`${await getSchemaName(pool)}`);
     const adminId = getId(`logto_tenant_${database}_admin`);
     const defaultId = getId(`logto_tenant_${database}_default`);
 
     await pool.query(sql`
-      revoke usage on schema logto from ${adminId};
-      ALTER ROLE ${adminId} SET search_path = "$user", public;
+      revoke usage on schema ${schema} from ${adminId};
       revoke all privileges
         on all tables
-        in schema logto
+        in schema ${schema}
         from ${adminId};
     `);
     await pool.query(sql`
-      revoke usage on schema logto from ${defaultId};
-      ALTER ROLE ${defaultId} SET search_path = "$user", public;
+      revoke usage on schema ${schema} from ${defaultId};
       revoke all privileges
         on all tables
-        in schema logto
+        in schema ${schema}
         from ${defaultId};
     `);
   },
