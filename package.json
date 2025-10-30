@@ -3,6 +3,42 @@
   "private": true,
   "license": "MPL-2.0",
   "type": "module",
+  "trex": {
+    "functions": {
+      "init": [],
+      "api": [
+        {
+          "source": "/logto",
+          "function": "/packages/core/src",
+          "imports": "/deno.json",
+          "env": "d2e-logto"
+        }
+      ],
+      "env": {
+        "d2e-logto": {
+          "NODE_ENV": "${NODE_ENV:-production}",
+          "DB_URL": "${LOGTO_DB_URL}",
+          "ENDPOINT": "${LOGTO_ENDPOINT}"
+        }
+      },
+      "roles": {
+        "ALP_SYSTEM_ADMIN": [
+          "portal.logto.read",
+          "portal.logto.write"
+        ]
+      },
+      "scopes": [
+        {
+          "path": "^/logto-f(.*)",
+          "scopes": [
+            "portal.logto.read",
+            "portal.logto.write"
+          ],
+          "httpMethods": ["GET", "POST", "DELETE", "PUT", "PATCH"]
+        }
+      ]
+    }
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "pnpm:devPreinstall": "cd packages/connectors && node templates/sync-preset.js",
