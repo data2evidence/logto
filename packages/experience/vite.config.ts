@@ -7,6 +7,7 @@ import svgr from 'vite-plugin-svgr';
 import { defaultConfig, manualChunks } from '../../vite.shared.config';
 
 const buildConfig = (mode: string): UserConfig => ({
+  base: '/d2e/logto/',
   server: {
     port: 5001,
     hmr: {
