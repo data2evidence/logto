@@ -31,6 +31,7 @@ concurrency:
 env: # workflow_dispatch || pull_request || push
   GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}
   GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }}
+  D2E_BRANCH_NAME: ${{ github.event.inputs.D2E_BRANCH_NAME }}
 
 jobs:
 
