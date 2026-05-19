@@ -44,7 +44,7 @@ RUN NODE_ENV=production pnpm i
 # Note: D2E connectors build and link
 RUN set -eux; \
   for c in connector-alp-azuread connector-alp-entra-external-id; do \
-  mv "/etc/logto/$c" "/etc/logto/packages/connectors/$c"; \
+  cp -r "/etc/d2e/services/alp-logto/$c" "/etc/logto/packages/connectors/$c"; \
   cd "/etc/logto/packages/connectors/$c"; \
   npm ci && npm run build; \
   done
