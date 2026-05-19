@@ -41,11 +41,13 @@ RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 RUN rm -rf node_modules packages/**/node_modules
 RUN NODE_ENV=production pnpm i
 
-# Note: D2E connector build and link
-RUN cp -r /etc/d2e/services/alp-logto/connector-alp-azuread /etc/logto/packages/connectors/connector-alp-azuread
-WORKDIR /etc/logto/packages/connectors/connector-alp-azuread
-RUN npm i
-RUN npm run build
+# Note: D2E connectors build and link
+RUN set -eux; \
+  for c in connector-alp-azuread connector-alp-entra-external-id; do \
+  cp -r "/etc/d2e/services/alp-logto/$c" "/etc/logto/packages/connectors/$c"; \
+  cd "/etc/logto/packages/connectors/$c"; \
+  npm i && npm run build; \
+  done
 WORKDIR /etc/logto/
 RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
 
