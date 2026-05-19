@@ -46,7 +46,7 @@ RUN set -eux; \
   for c in connector-alp-azuread connector-alp-entra-external-id; do \
   cp -r "/etc/d2e/services/alp-logto/$c" "/etc/logto/packages/connectors/$c"; \
   cd "/etc/logto/packages/connectors/$c"; \
-  npm ci && npm run build; \
+  npm i && npm run build; \
   done
 WORKDIR /etc/logto/
 RUN pnpm cli connector link $ADDITIONAL_CONNECTOR_ARGS -p .
