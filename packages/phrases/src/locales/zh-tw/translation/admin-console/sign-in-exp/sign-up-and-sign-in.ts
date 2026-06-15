@@ -9,36 +9,65 @@ const sign_up_and_sign_in = {
   sign_up: {
     title: '註冊',
     sign_up_identifier: '註冊標誌',
-    identifier_description: '在建立帳戶時，您需要設定註冊標誌。在使用者登錄時，這些資訊是必填的。',
+    identifier_description: '創建新帳戶時，所有選擇的註冊標誌都是必需的。',
     sign_up_authentication: '註冊身分驗證設置',
-    authentication_description: '在註冊時，您的使用者將必須完成所有勾選的任務。',
+    verification_tip: '用戶必須在註冊時通過輸入驗證碼來驗證你配置的電子郵件或手機號碼。',
+    authentication_description: '在註冊時，你的使用者將必須完成所有勾選的任務。',
     set_a_password_option: '建立密碼',
     verify_at_sign_up_option: '驗證身分',
     social_only_creation_description: '（僅適用於社交註冊使用者）',
+    collect_user_profile: '收集用戶資料',
+    add_profile_fields: '新增個人資料欄位',
+    profile_fields_hint: {
+      not_in_list: '沒有你想要的欄位？',
+      set_up: '立即設定',
+      go_to: '其他個人資料欄位。',
+    },
   },
   sign_in: {
     title: '登入',
     sign_in_identifier_and_auth: '登入標誌和身分驗證設置',
-    description: '使用者可以使用任何可用的選項進行登入。拖曳選項即可調整頁面佈局。',
+    description: '使用者可以使用任何可用的選項進行登入。',
     add_sign_in_method: '新增登入方式',
+    add_sign_up_method: '新增註冊方式',
     password_auth: '密碼',
     verification_code_auth: '驗證碼',
     auth_swap_tip: '交換以下選項的位置即可設定它們在使用者登入流程中出現的先後順序。',
     require_auth_factor: '請至少選擇一種驗證方式。',
+    forgot_password: '忘記密碼',
+    forgot_password_description: '使用者可以使用任何可用的驗證方法重置密碼。',
+    add_verification_method: '新增驗證方法',
+    email_verification_code: '郵件驗證碼',
+    phone_verification_code: '手機驗證碼',
   },
   social_sign_in: {
     title: '社交登入',
     social_sign_in: '社交登入',
-    description: '您已設定特定的標誌。使用者在通過社交連結器註冊時可能會被要求提供一個對應的標誌。',
+    description: '你已設定特定的標誌。使用者在通過社交連結器註冊時可能會被要求提供一個對應的標誌。',
     add_social_connector: '新增社交連結器',
     set_up_hint: {
       not_in_list: '沒有你想要的連結器？',
       set_up_more: '立即設定',
       go_to: '參考其他的社交連結器。',
     },
-    automatic_account_linking: '自動帳號連結',
-    automatic_account_linking_label:
-      '當啟用時，如果使用者以新社交身份登入系統，且系統中有且僅有一個現有帳戶具有相同的標識符（如電子郵件），Logto 將自動連結該帳戶與社交身份，而不是提示使用者進行帳戶連結。',
+    settings_title: '社交登入體驗',
+    automatic_account_linking: '自動連結具有相同標識符的賬戶',
+    automatic_account_linking_tip:
+      '啟用後，如果使用者使用新的社交身份登入，且有唯一一個賬戶的標識符（例如，郵件地址）與其相同，Logto 將自動連結這個社交身份到該賬戶。用戶不會被要求選擇是否連結賬戶。',
+    required_sign_up_identifiers: '要求用戶提供缺失的註冊標識符',
+    required_sign_up_identifiers_tip:
+      '啟用後，通過社交提供者登入的用戶必須在完成登入前填寫任何缺失的註冊標識符（例如郵件）。\n\n如果禁用，用戶可以在不提供缺失標識符的情況下繼續，即使社交帳戶未同步它們。',
+  },
+  passkey_sign_in: {
+    title: '通行密鑰登入',
+    passkey_sign_in: '通行密鑰登入',
+    enable_passkey_sign_in_description:
+      '啟用使用者透過通行密鑰（WebAuthn）快速安全地存取應用程式，使用生物辨識或安全金鑰等。',
+    prompts: '通行密鑰提示',
+    show_passkey_button: '在登入頁面顯示「使用通行密鑰繼續」按鈕',
+    show_passkey_button_tip:
+      '停用「使用通行密鑰繼續」按鈕後，登入流程將優先使用識別碼，在下一步顯示密碼和通行密鑰選項。',
+    allow_autofill: '允許在識別碼欄位中提示和自動填入已註冊的通行密鑰',
   },
   tip: {
     set_a_password: '啟用使用者名稱註冊，必須設定密碼。',
@@ -47,7 +76,13 @@ const sign_up_and_sign_in = {
     password_auth: '因註冊設置啟用了使用者名稱密碼標誌。在使用者登入時，這個資訊是必填的。',
     verification_code_auth:
       '因註冊設置啟用了驗證碼標誌，驗證碼屬於使用者必選項，啟用密碼註冊後，你可以選擇關閉驗證碼登入。',
+    email_mfa_enabled:
+      '郵件驗證碼已啟用作為多因素驗證 (MFA)，因此不能重用作為主要登入方式以確保安全。',
+    phone_mfa_enabled:
+      '手機驗證碼已啟用作為多因素驗證 (MFA)，因此不能重用作為主要登入方式以確保安全。',
     delete_sign_in_method: '因註冊設置啟用了{{identifier}}標誌。在使用者登入時，這些資訊是必填的。',
+    password_disabled_notification:
+      '用於使用者名稱註冊的"設置密碼"選項已被禁用，可能會阻止使用者登入。確認後繼續保存。',
   },
   advanced_options: {
     title: '進階選項',
@@ -61,11 +96,9 @@ const sign_up_and_sign_in = {
     enable_user_registration: '啟用使用者註冊',
     enable_user_registration_description:
       '啟用或禁止使用者註冊。禁用後，管理員仍然可以新增使用者，但無法透過登入界面建立帳戶。',
-    /** UNTRANSLATED */
-    unknown_session_redirect_url: 'Unknown session redirect URL',
-    /** UNTRANSLATED */
+    unknown_session_redirect_url: '未知會話重定向 URL',
     unknown_session_redirect_url_tip:
-      'Sometimes, Logto may not recognize a user’s session on the sign-in page, like when a session expires or the user bookmarks or shares the sign-in link. By default, an “unknown session” 404 error appears. To enhance user experience, set a fallback URL to redirect users back to your app and restart authentication.',
+      '有時，Logto 可能無法識別使用者在登入頁面的會話，例如當會話過期或使用者收藏或分享登入連結時。預設情況下，會出現 "unknown session" 404 錯誤。為了增強使用者體驗，請設置一個回退 URL，將使用者重定向回你的應用程式並重新開始身分驗證。',
   },
 };
 

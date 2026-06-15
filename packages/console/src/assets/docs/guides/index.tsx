@@ -9,6 +9,7 @@ import apiSpringBoot from './api-spring-boot/index';
 import m2mGeneral from './m2m-general/index';
 import nativeAndroid from './native-android/index';
 import nativeCapacitor from './native-capacitor/index';
+import nativeDeviceFlow from './native-device-flow/index';
 import nativeExpo from './native-expo/index';
 import nativeFlutter from './native-flutter/index';
 import nativeIosSwift from './native-ios-swift/index';
@@ -21,6 +22,8 @@ import spaVanilla from './spa-vanilla/index';
 import spaVue from './spa-vue/index';
 import spaWebflow from './spa-webflow/index';
 import thirdPartyOidc from './third-party-oidc/index';
+import thirdPartyOidcNative from './third-party-oidc-native/index';
+import thirdPartyOidcSpa from './third-party-oidc-spa/index';
 import { type Guide } from './types';
 import webDotnetCore from './web-dotnet-core/index';
 import webDotnetCoreBlazorServer from './web-dotnet-core-blazor-server/index';
@@ -38,9 +41,12 @@ import webOutline from './web-outline/index';
 import webPassport from './web-passport/index';
 import webPhp from './web-php/index';
 import webPython from './web-python/index';
+import webReactRouter from './web-react-router/index';
+import webRemix from './web-remix';
 import webRuby from './web-ruby/index';
 import webSveltekit from './web-sveltekit/index';
 import webWordpress from './web-wordpress/index';
+import webWordpressPlugin from './web-wordpress-plugin';
 
 export const guides: Readonly<Guide[]> = Object.freeze([
   {
@@ -106,6 +112,22 @@ export const guides: Readonly<Guide[]> = Object.freeze([
     DarkLogo: undefined,
     Component: safeLazy(async () => import('./web-sveltekit/README.mdx')),
     metadata: webSveltekit,
+  },
+  {
+    order: 1.2,
+    id: 'web-react-router',
+    Logo: safeLazy(async () => import('./web-react-router/logo.svg?react')),
+    DarkLogo: safeLazy(async () => import('./web-react-router/logo-dark.svg?react')),
+    Component: safeLazy(async () => import('./web-react-router/README.mdx')),
+    metadata: webReactRouter,
+  },
+  {
+    order: 1.2,
+    id: 'web-remix',
+    Logo: safeLazy(async () => import('./web-remix/logo.svg?react')),
+    DarkLogo: safeLazy(async () => import('./web-remix/logo-dark.svg?react')),
+    Component: safeLazy(async () => import('./web-remix/README.mdx')),
+    metadata: webRemix,
   },
   {
     order: 1.3,
@@ -218,6 +240,14 @@ export const guides: Readonly<Guide[]> = Object.freeze([
     DarkLogo: undefined,
     Component: safeLazy(async () => import('./web-wordpress/README.mdx')),
     metadata: webWordpress,
+  },
+  {
+    order: 2.3,
+    id: 'web-wordpress-plugin',
+    Logo: safeLazy(async () => import('./web-wordpress-plugin/logo.svg?react')),
+    DarkLogo: undefined,
+    Component: safeLazy(async () => import('./web-wordpress-plugin/README.mdx')),
+    metadata: webWordpressPlugin,
   },
   {
     order: 3,
@@ -334,10 +364,34 @@ export const guides: Readonly<Guide[]> = Object.freeze([
   {
     order: Number.POSITIVE_INFINITY,
     id: 'third-party-oidc',
-    Logo: safeLazy(async () => import('./third-party-oidc/logo.svg?react')),
-    DarkLogo: undefined,
+    Logo: safeLazy(async () => import('@/assets/icons/traditional-web-app.svg?react')),
+    DarkLogo: safeLazy(async () => import('@/assets/icons/traditional-web-app-dark.svg?react')),
     Component: safeLazy(async () => import('./third-party-oidc/README.mdx')),
     metadata: thirdPartyOidc,
+  },
+  {
+    order: Number.POSITIVE_INFINITY,
+    id: 'third-party-oidc-spa',
+    Logo: safeLazy(async () => import('@/assets/icons/single-page-app.svg?react')),
+    DarkLogo: safeLazy(async () => import('@/assets/icons/single-page-app-dark.svg?react')),
+    Component: safeLazy(async () => import('./third-party-oidc-spa/README.mdx')),
+    metadata: thirdPartyOidcSpa,
+  },
+  {
+    order: Number.POSITIVE_INFINITY,
+    id: 'third-party-oidc-native',
+    Logo: safeLazy(async () => import('@/assets/icons/native-app.svg?react')),
+    DarkLogo: safeLazy(async () => import('@/assets/icons/native-app-dark.svg?react')),
+    Component: safeLazy(async () => import('./third-party-oidc-native/README.mdx')),
+    metadata: thirdPartyOidcNative,
+  },
+  {
+    order: 6,
+    id: 'native-device-flow',
+    Logo: safeLazy(async () => import('@/assets/icons/device-flow-app.svg?react')),
+    DarkLogo: safeLazy(async () => import('@/assets/icons/device-flow-app-dark.svg?react')),
+    Component: safeLazy(async () => import('./native-device-flow/README.mdx')),
+    metadata: nativeDeviceFlow,
   },
 ]);
 /* eslint-enable max-lines */

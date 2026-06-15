@@ -1,7 +1,7 @@
 import { languages, languageTagGuard } from '@logto/language-kit';
-import { jsonObjectGuard, translationGuard } from '@logto/schemas';
+import { jsonGuard, jsonObjectGuard, translationGuard } from '@logto/schemas';
 import type { ValuesOf } from '@silverhand/essentials';
-import { conditional } from '@silverhand/essentials';
+import { conditional, deduplicate } from '@silverhand/essentials';
 import type { OpenAPIV3 } from 'openapi-types';
 import {
   ZodDiscriminatedUnion,
@@ -152,6 +152,44 @@ export const zodTypeToSwagger = (
     return {
       type: 'object',
       description: 'arbitrary',
+      additionalProperties: true,
+    };
+  }
+
+  if (config === jsonGuard) {
+    return {
+      type: 'object',
+      oneOf: [
+        {
+          type: 'object',
+          description: 'arbitrary JSON object',
+          additionalProperties: true,
+        },
+        {
+          type: 'array',
+          items: {
+            oneOf: [
+              { type: 'string' },
+              { type: 'number' },
+              { type: 'boolean' },
+              {
+                type: 'string',
+                nullable: true,
+                description: 'null value',
+              },
+              {
+                type: 'object',
+                description: 'arbitrary JSON object',
+                additionalProperties: true,
+              },
+            ],
+          },
+        },
+        { type: 'string' },
+        { type: 'number' },
+        { type: 'boolean' },
+      ],
+      nullable: true,
     };
   }
 
@@ -173,10 +211,39 @@ export const zodTypeToSwagger = (
   }
 
   if (config instanceof ZodNullable) {
-    return {
+    const schema = zodTypeToSwagger(config._def.innerType);
+
+    if ('$ref' in schema) {
+      return {
+        allOf: [schema],
+        nullable: true,
+      };
+    }
+
+    const nullableSchema: OpenAPIV3.SchemaObject = {
+      ...schema,
       nullable: true,
-      ...zodTypeToSwagger(config._def.innerType),
     };
+
+    if (!nullableSchema.type && Array.isArray(nullableSchema.oneOf)) {
+      const types = nullableSchema.oneOf
+        .map((option) =>
+          typeof option === 'object' && !('$ref' in option) ? option.type : undefined
+        )
+        .filter(
+          (type): type is OpenAPIV3.NonArraySchemaObjectType =>
+            typeof type === 'string' && type !== 'array'
+        );
+
+      const uniqueTypes = deduplicate(types);
+
+      if (uniqueTypes.length === 1) {
+        // eslint-disable-next-line @silverhand/fp/no-mutation
+        nullableSchema.type = uniqueTypes[0];
+      }
+    }
+
+    return nullableSchema;
   }
 
   if (config instanceof ZodNativeEnum || config instanceof ZodEnum) {
@@ -257,17 +324,16 @@ export const zodTypeToSwagger = (
   }
 
   if (config instanceof ZodEffects) {
-    if (config._def.effect.type === 'transform') {
+    if (config._def.effect.type === 'preprocess' || config._def.effect.type === 'transform') {
       return zodTypeToSwagger(config._def.schema);
     }
 
     // TO-DO: Improve swagger output for zod schema with refinement (validate through JS functions)
-    if (config._def.effect.type === 'refinement') {
-      return {
-        type: 'object',
-        description: 'Validator function',
-      };
-    }
+    return {
+      type: 'object',
+      description: 'Validator function',
+      additionalProperties: true,
+    };
   }
 
   if (config instanceof ZodDefault) {

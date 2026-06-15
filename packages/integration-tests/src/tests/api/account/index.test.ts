@@ -1,16 +1,12 @@
 import { UserScope } from '@logto/core-kit';
-import { hookEvents, SignInIdentifier } from '@logto/schemas';
+import { hookEvents } from '@logto/schemas';
 
 import { enableAllAccountCenterFields } from '#src/api/account-center.js';
-import {
-  getUserInfo,
-  updateOtherProfile,
-  updatePassword,
-  updateUser,
-} from '#src/api/my-account.js';
-import { updateSignInExperience } from '#src/api/sign-in-experience.js';
+import { authedAdminApi } from '#src/api/api.js';
+import { getUserInfo, updateOtherProfile, updateUser } from '#src/api/my-account.js';
 import { createVerificationRecordByPassword } from '#src/api/verification-record.js';
-import { WebHookApiTest } from '#src/helpers/hook.js';
+import { setEmailConnector } from '#src/helpers/connector.js';
+import { getSupportedHookEvents, WebHookApiTest } from '#src/helpers/hook.js';
 import { expectRejects } from '#src/helpers/index.js';
 import {
   createDefaultTenantUserWithPassword,
@@ -19,7 +15,7 @@ import {
   signInAndGetUserApi,
 } from '#src/helpers/profile.js';
 import { enableAllPasswordSignInMethods } from '#src/helpers/sign-in-experience.js';
-import { generatePassword, generateUsername } from '#src/utils.js';
+import { generateEmail, generateUsername } from '#src/utils.js';
 
 import WebhookMockServer from '../hook/WebhookMockServer.js';
 import { assertHookLogResult } from '../hook/utils.js';
@@ -33,6 +29,7 @@ describe('account', () => {
     await webHookMockServer.listen();
     await enableAllPasswordSignInMethods();
     await enableAllAccountCenterFields();
+    await setEmailConnector(authedAdminApi);
   });
 
   afterAll(async () => {
@@ -42,7 +39,7 @@ describe('account', () => {
   beforeEach(async () => {
     await webHookApi.create({
       name: hookName,
-      events: [...hookEvents],
+      events: getSupportedHookEvents([...hookEvents]),
       config: { url: webHookMockServer.endpoint },
     });
   });
@@ -168,8 +165,9 @@ describe('account', () => {
       const { user, username, password } = await createDefaultTenantUserWithPassword();
       const api = await signInAndGetUserApi(username, password);
       const newUsername = generateUsername();
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
 
-      const response = await updateUser(api, { username: newUsername });
+      const response = await updateUser(api, { username: newUsername }, verificationRecordId);
       expect(response).toMatchObject({ username: newUsername });
 
       // Sign in with new username
@@ -178,23 +176,44 @@ describe('account', () => {
       await deleteDefaultTenantUser(user.id);
     });
 
-    it('should be able to update username to null', async () => {
+    it('should fail to update username without identity verification', async () => {
       const { user, username, password } = await createDefaultTenantUserWithPassword();
       const api = await signInAndGetUserApi(username, password);
 
-      await updateSignInExperience({
-        signUp: {
-          identifiers: [SignInIdentifier.Email],
-          password: true,
-          verify: true,
-        },
+      await expectRejects(updateUser(api, { username: generateUsername() }), {
+        code: 'verification_record.permission_denied',
+        status: 401,
       });
-      const response = await updateUser(api, { username: null });
+
+      await deleteDefaultTenantUser(user.id);
+    });
+
+    it('should be able to update username to null when another identifier remains', async () => {
+      const primaryEmail = generateEmail();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryEmail,
+      });
+      const api = await signInAndGetUserApi(username, password);
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+
+      const response = await updateUser(api, { username: null }, verificationRecordId);
       expect(response).toMatchObject({ username: null });
-      await enableAllPasswordSignInMethods();
 
       const userInfo = await getUserInfo(api);
       expect(userInfo).toHaveProperty('username', null);
+
+      await deleteDefaultTenantUser(user.id);
+    });
+
+    it('should reject deleting the last identifier', async () => {
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+      const api = await signInAndGetUserApi(username, password);
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+
+      await expectRejects(updateUser(api, { username: null }, verificationRecordId), {
+        code: 'user.last_sign_in_method_required',
+        status: 400,
+      });
 
       await deleteDefaultTenantUser(user.id);
     });
@@ -203,14 +222,78 @@ describe('account', () => {
       const { user, username, password } = await createDefaultTenantUserWithPassword();
       const { user: user2, username: username2 } = await createDefaultTenantUserWithPassword();
       const api = await signInAndGetUserApi(username, password);
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
 
-      await expectRejects(updateUser(api, { username: username2 }), {
+      await expectRejects(updateUser(api, { username: username2 }, verificationRecordId), {
         code: 'user.username_already_in_use',
         status: 422,
       });
 
       await deleteDefaultTenantUser(user.id);
       await deleteDefaultTenantUser(user2.id);
+    });
+
+    it('should be able to update customData', async () => {
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.CustomData],
+      });
+      const customData = { level: 'premium', preferences: { theme: 'dark' } };
+
+      const response = await updateUser(api, { customData });
+      expect(response).toMatchObject({ customData });
+
+      const userInfo = await getUserInfo(api);
+      expect(userInfo).toHaveProperty('customData', customData);
+
+      // Check if the hook is triggered
+      const hook = webHookApi.hooks.get(hookName)!;
+      await assertHookLogResult(hook, 'User.Data.Updated', {
+        hookPayload: {
+          event: 'User.Data.Updated',
+          data: expect.objectContaining({
+            customData,
+          }),
+        },
+      });
+
+      await deleteDefaultTenantUser(user.id);
+    });
+
+    it('should fail to update customData without CustomData scope', async () => {
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+      const api = await signInAndGetUserApi(username, password);
+      const customData = { level: 'premium' };
+
+      await expectRejects(updateUser(api, { customData }), {
+        code: 'auth.unauthorized',
+        status: 400,
+      });
+
+      await deleteDefaultTenantUser(user.id);
+    });
+
+    it('should be able to update customData multiple times', async () => {
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.CustomData],
+      });
+
+      // First set some custom data
+      const firstData = { test: 'value' };
+      await updateUser(api, { customData: firstData });
+
+      // Then update with different data (replaces existing, consistent with admin API)
+      const secondData = { newField: 'newValue', number: 42 };
+      const response = await updateUser(api, { customData: secondData });
+
+      // Expect replaced data since customData updates replace rather than merge (consistent with admin API)
+      expect(response).toMatchObject({ customData: secondData });
+
+      const userInfo = await getUserInfo(api);
+      expect(userInfo).toHaveProperty('customData', secondData);
+
+      await deleteDefaultTenantUser(user.id);
     });
   });
 
@@ -256,57 +339,6 @@ describe('account', () => {
         code: 'auth.unauthorized',
         status: 400,
       });
-
-      await deleteDefaultTenantUser(user.id);
-    });
-  });
-
-  describe('POST /my-account/password', () => {
-    it('should fail if verification record is invalid', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
-      const api = await signInAndGetUserApi(username, password);
-      const newPassword = generatePassword();
-
-      await expectRejects(updatePassword(api, 'invalid-varification-record-id', newPassword), {
-        code: 'verification_record.permission_denied',
-        status: 401,
-      });
-
-      await deleteDefaultTenantUser(user.id);
-    });
-
-    it('should fail if password does not meet the password policy', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
-      const api = await signInAndGetUserApi(username, password);
-      const newPassword = '123456';
-      const verificationRecordId = await createVerificationRecordByPassword(api, password);
-
-      await expectRejects(updatePassword(api, verificationRecordId, newPassword), {
-        code: 'password.rejected',
-        status: 422,
-      });
-
-      await deleteDefaultTenantUser(user.id);
-    });
-
-    it('should be able to update password', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
-      const api = await signInAndGetUserApi(username, password);
-      const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      const newPassword = generatePassword();
-
-      await updatePassword(api, verificationRecordId, newPassword);
-
-      // Check if the hook is triggered
-      const hook = webHookApi.hooks.get(hookName)!;
-      await assertHookLogResult(hook, 'User.Data.Updated', {
-        hookPayload: {
-          event: 'User.Data.Updated',
-        },
-      });
-
-      // Sign in with new password
-      await initClientAndSignInForDefaultTenant(username, newPassword);
 
       await deleteDefaultTenantUser(user.id);
     });

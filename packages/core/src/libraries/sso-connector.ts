@@ -1,3 +1,4 @@
+import { appInsights } from '@logto/app-insights/node';
 import { type DirectSignInOptions, Prompt, QueryKey, ReservedScope, UserScope } from '@logto/js';
 import {
   ApplicationType,
@@ -5,17 +6,28 @@ import {
   type CreateSsoConnectorIdpInitiatedAuthConfig,
   type SupportedSsoConnector,
   type SsoConnectorIdpInitiatedAuthConfig,
+  type EncryptedTokenSet,
+  type SecretEnterpriseSsoConnectorRelationPayload,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
 import { assert, deduplicate, trySafe } from '@silverhand/essentials';
 
 import { defaultIdPInitiatedSamlSsoSessionTtl } from '#src/constants/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
+import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import { ssoConnectorFactories } from '#src/sso/index.js';
 import { isSupportedSsoConnector } from '#src/sso/utils.js';
 import type Queries from '#src/tenants/Queries.js';
 import assertThat from '#src/utils/assert-that.js';
+import { buildAppInsightsTelemetry } from '#src/utils/request.js';
 import { type OmitAutoSetFields } from '#src/utils/sql.js';
+
+import OidcConnector from '../sso/OidcConnector/index.js';
+import {
+  deserializeEncryptedSecret,
+  encryptTokenResponse,
+  isValidAccessTokenResponse,
+} from '../utils/secret-encryption.js';
 
 export type SsoConnectorLibrary = ReturnType<typeof createSsoConnectorLibrary>;
 
@@ -165,6 +177,7 @@ export const createSsoConnectorLibrary = (queries: Queries) => {
    *
    * @param issuer The oidc issuer endpoint of the current tenant.
    * @param authConfig The IdP-initiated SAML SSO authentication configuration.
+   * @param ctx The Koa context. For logging purpose only.
    *
    * @throw {RequestError} Throws a 400 error if the redirect URI is not provided and the default application does not have a registered redirect URI.
    */
@@ -213,6 +226,93 @@ export const createSsoConnectorLibrary = (queries: Queries) => {
     return new URL(`${issuer}/auth?${queryParameters.toString()}`);
   };
 
+  const upsertEnterpriseSsoTokenSetSecret = async (
+    userId: string,
+    {
+      encryptedTokenSet,
+      enterpriseSsoConnectorRelationPayload,
+    }: {
+      encryptedTokenSet: EncryptedTokenSet;
+      enterpriseSsoConnectorRelationPayload: SecretEnterpriseSsoConnectorRelationPayload;
+    },
+    ctx?: WithLogContext
+  ) => {
+    const { encryptedTokenSetBase64, metadata } = encryptedTokenSet;
+
+    try {
+      await queries.secrets.upsertEnterpriseSsoTokenSetSecret(
+        {
+          id: generateStandardId(),
+          userId,
+          ...deserializeEncryptedSecret(encryptedTokenSetBase64),
+          metadata,
+        },
+        enterpriseSsoConnectorRelationPayload
+      );
+    } catch (error: unknown) {
+      // Upsert token set secret should not break the normal social authentication and link flow
+      void appInsights.trackException(error, ctx ? buildAppInsightsTelemetry(ctx) : undefined);
+    }
+  };
+
+  /**
+   * Refreshes the token set secret by using the provided refresh token.
+   *
+   * - Fetches the latest token response using the refresh token.
+   * - Updates the secret using the latest encrypted token response.
+   * - Returns the access token and metadata from the updated secret.
+   */
+  const refreshTokenSetSecret = async (
+    ssoConnectorId: string,
+    secretId: string,
+    refreshToken: string
+  ) => {
+    const connector = await getSsoConnectorById(ssoConnectorId);
+    const connectorInstance = new ssoConnectorFactories[connector.providerName].constructor(
+      connector,
+      // Placeholder, not used in OIDC SSO connectors
+      // Avoid importing unnecessary envSet to this method
+      new URL('http://auth.logto.io')
+    );
+
+    assertThat(
+      connectorInstance instanceof OidcConnector && connector.enableTokenStorage,
+      new RequestError({
+        code: 'connector.token_storage_not_supported',
+        status: 422,
+      })
+    );
+
+    const tokenResponse = await connectorInstance.getTokenByRefreshToken(refreshToken);
+
+    assertThat(
+      isValidAccessTokenResponse(tokenResponse),
+      new RequestError('connector.invalid_response')
+    );
+
+    // This is to ensure that the refresh token is included in the updated token response.
+    // For some providers like Google, the refresh token is issued only once during the initial authorization.
+    // We need keep the original refresh token in the updated token response.
+    // If new refresh token is returned, it will replace the original one.
+    const updatedTokenResponse: typeof tokenResponse = {
+      refresh_token: refreshToken,
+      ...tokenResponse,
+    };
+
+    const { tokenSecret, metadata } = encryptTokenResponse(updatedTokenResponse);
+    const { access_token } = updatedTokenResponse;
+
+    await queries.secrets.updateById(secretId, {
+      ...tokenSecret,
+      metadata,
+    });
+
+    return {
+      access_token,
+      metadata,
+    };
+  };
+
   return {
     getSsoConnectors,
     getAvailableSsoConnectors,
@@ -220,5 +320,7 @@ export const createSsoConnectorLibrary = (queries: Queries) => {
     createSsoConnectorIdpInitiatedAuthConfig,
     createIdpInitiatedSamlSsoSession,
     getIdpInitiatedSamlSsoSignInUrl,
+    upsertEnterpriseSsoTokenSetSecret,
+    refreshTokenSetSecret,
   };
 };

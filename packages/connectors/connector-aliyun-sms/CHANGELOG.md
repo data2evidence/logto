@@ -1,5 +1,80 @@
 # @logto/connector-aliyun-sms
 
+## 1.5.3
+
+### Patch Changes
+
+- Updated dependencies [41a56f79e3]
+  - @logto/connector-kit@5.0.1
+
+## 1.5.2
+
+### Patch Changes
+
+- Updated dependencies [4e25126228]
+- Updated dependencies [4e25126228]
+  - @logto/connector-kit@5.0.0
+
+## 1.5.1
+
+### Patch Changes
+
+- 462e430445: fall back to `TemplateType.Generic` if a usage-specific template is not found
+- Updated dependencies [462e430445]
+- Updated dependencies [7c87ebc068]
+  - @logto/connector-kit@4.7.0
+
+## 1.5.0
+
+### Minor Changes
+
+- 1fb8593659: add full usage types to templates default value
+
+### Patch Changes
+
+- Updated dependencies [ad4f9d6abf]
+- Updated dependencies [5da6792d40]
+  - @logto/connector-kit@4.6.0
+
+## 1.4.1
+
+### Patch Changes
+
+- Updated dependencies [34964af46]
+  - @logto/connector-kit@4.4.0
+
+## 1.4.0
+
+### Minor Changes
+
+- 2961d355d: bump node version to ^22.14.0
+
+### Patch Changes
+
+- Updated dependencies [2961d355d]
+  - @logto/connector-kit@4.3.0
+
+## 1.3.0
+
+### Minor Changes
+
+- bca4177c6: add `strictPhoneRegionNumberCheck` to config with default value `false`
+
+  When this configuration is enabled, the connector will assume by default that all phone numbers include a valid region code and rely on this to determine whether the phone number belongs to mainland China. If your users' phone numbers do not include a region code due to historical reasons, their sign-in processes may be affected. Please enable this setting with caution.
+
+### Patch Changes
+
+- Updated dependencies [b0135bcd3]
+  - @logto/connector-kit@4.2.0
+
+## 1.2.1
+
+### Patch Changes
+
+- e11e57de8: bump dependencies for security update
+- Updated dependencies [e11e57de8]
+  - @logto/connector-kit@4.1.1
+
 ## 1.2.0
 
 ### Minor Changes

@@ -2,7 +2,7 @@
  * @fileoverview This file contains the successful interaction flow helper functions that use the experience APIs.
  */
 
-import { type SocialUserInfo } from '@logto/connector-kit';
+import { type TokenResponse, type SocialUserInfo } from '@logto/connector-kit';
 import {
   InteractionEvent,
   SignInIdentifier,
@@ -17,8 +17,8 @@ import { initExperienceClient, logoutClient, processSession } from '../client.js
 import { expectRejects } from '../index.js';
 
 import {
-  successFullyCreateSocialVerification,
-  successFullyVerifySocialAuthorization,
+  successfullyCreateSocialVerification,
+  successfullyVerifySocialAuthorization,
 } from './social-verification.js';
 import {
   successfullySendVerificationCode,
@@ -28,11 +28,15 @@ import {
 export const signInWithPassword = async ({
   identifier,
   password,
+  captchaToken,
 }: {
   identifier: InteractionIdentifier;
   password: string;
+  captchaToken?: string;
 }) => {
-  const client = await initExperienceClient();
+  const client = await initExperienceClient({
+    captchaToken,
+  });
 
   const { verificationId } = await client.verifyPassword({
     identifier,
@@ -72,7 +76,6 @@ export const signInWithVerificationCode = async (identifier: VerificationCodeIde
   await processSession(client, redirectTo);
   await logoutClient(client);
 };
-
 /**
  * This helper function will create a password verification record and identify the user using the verification record.
  *
@@ -102,7 +105,9 @@ export const registerNewUserWithVerificationCode = async (
   identifier: VerificationCodeIdentifier,
   options?: { fulfillPassword?: boolean }
 ) => {
-  const client = await initExperienceClient(InteractionEvent.Register);
+  const client = await initExperienceClient({
+    interactionEvent: InteractionEvent.Register,
+  });
 
   const { verificationId, code } = await successfullySendVerificationCode(client, {
     identifier,
@@ -137,7 +142,6 @@ export const registerNewUserWithVerificationCode = async (
 
   return userId;
 };
-
 export const identifyUserWithEmailVerificationCode = async (
   client: ExperienceClient,
   email: string
@@ -156,12 +160,14 @@ export const identifyUserWithEmailVerificationCode = async (
 
 /**
  *
- * @param socialUserInfo The social user info that will be returned by the social connector.
+ * @param socialUserInfo The social user info and token response that will be returned by the social connector.
  * @param registerNewUser Optional. If true, the user will be registered if the user does not exist, otherwise a error will be thrown if the user does not exist.
  */
 export const signInWithSocial = async (
   connectorId: string,
-  socialUserInfo: SocialUserInfo,
+  socialUserInfo: SocialUserInfo & {
+    tokenResponse?: TokenResponse;
+  },
   options?: {
     registerNewUser?: boolean;
     linkSocial?: boolean;
@@ -172,14 +178,14 @@ export const signInWithSocial = async (
 
   const client = await initExperienceClient();
 
-  const { verificationId } = await successFullyCreateSocialVerification(client, connectorId, {
+  const { verificationId } = await successfullyCreateSocialVerification(client, connectorId, {
     redirectUri,
     state,
   });
 
   const { id, ...rest } = socialUserInfo;
 
-  await successFullyVerifySocialAuthorization(client, connectorId, {
+  await successfullyVerifySocialAuthorization(client, connectorId, {
     verificationId,
     connectorData: {
       state,
@@ -240,7 +246,7 @@ export const signInWithEnterpriseSso = async (
 
   if (registerNewUser) {
     await expectRejects(client.identifyUser({ verificationId }), {
-      code: 'user.identity_not_exist',
+      code: 'user.sso_identity_not_exist',
       status: 404,
     });
 
@@ -259,8 +265,15 @@ export const signInWithEnterpriseSso = async (
   return userId;
 };
 
-export const registerNewUserUsernamePassword = async (username: string, password: string) => {
-  const client = await initExperienceClient(InteractionEvent.Register);
+export const registerNewUserUsernamePassword = async (
+  username: string,
+  password: string,
+  captchaToken?: string
+) => {
+  const client = await initExperienceClient({
+    interactionEvent: InteractionEvent.Register,
+    captchaToken,
+  });
 
   const { verificationId } = await client.createNewPasswordIdentityVerification({
     identifier: {

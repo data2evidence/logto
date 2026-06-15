@@ -35,6 +35,11 @@ const connector = {
     '同じターゲットとプラットフォームを持つ複数のソーシャルコネクタを持つことはできません。',
   cannot_overwrite_metadata_for_non_standard_connector:
     'このコネクタの「メタデータ」は上書きできません。',
+  email_connector: {
+    bulk_deletion_no_filter:
+      'プロパティによる一括削除を実行するには、少なくとも 1 つのフィルター条件を指定する必要があります。サポートされているプロパティは次のとおりです：{{properties, list(type:conjunction)}}。',
+  },
+  token_storage_not_supported: 'このコネクタはトークン ストレージをサポートしていません。',
 };
 
 export default Object.freeze(connector);

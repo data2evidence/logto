@@ -1,6 +1,7 @@
 import {
   InteractionEvent,
   MfaFactor,
+  type RequestVerificationCodePayload,
   requestVerificationCodePayloadGuard,
   webAuthnAuthenticationOptionsGuard,
   webAuthnRegistrationOptionsGuard,
@@ -12,12 +13,21 @@ import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
 import { z } from 'zod';
 
-import type { WithInteractionDetailsContext } from '#src//middleware/koa-interaction-details.js';
 import RequestError from '#src/errors/RequestError/index.js';
+import { type PasscodeLibrary } from '#src/libraries/passcode.js';
+import { createSocialAuthorizationUrl } from '#src/libraries/verification-helpers/social-verification.js';
+import { generateTotpSecret } from '#src/libraries/verification-helpers/totp-validation.js';
+import {
+  generateWebAuthnAuthenticationOptions,
+  generateWebAuthnRegistrationOptions,
+} from '#src/libraries/verification-helpers/webauthn.js';
 import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import koaGuard from '#src/middleware/koa-guard.js';
+import { type WithI18nContext } from '#src/middleware/koa-i18next.js';
+import type { WithInteractionDetailsContext } from '#src/middleware/koa-interaction-details.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
+import { getLogtoCookie } from '#src/utils/cookie.js';
 
 import { parseUserProfile } from './actions/helpers.js';
 import { interactionPrefix, verificationPath } from './const.js';
@@ -28,18 +38,34 @@ import {
   isSignInInteractionResult,
   storeInteractionResult,
 } from './utils/interaction.js';
-import { createSocialAuthorizationUrl } from './utils/social-verification.js';
-import { generateTotpSecret } from './utils/totp-validation.js';
 import { sendVerificationCodeToIdentifier } from './utils/verification-code-validation.js';
-import {
-  generateWebAuthnAuthenticationOptions,
-  generateWebAuthnRegistrationOptions,
-} from './utils/webauthn.js';
 import { verifyIdentifier } from './verifications/index.js';
 import verifyProfile from './verifications/profile-verification.js';
 
+const buildVerificationCodeTemplateContext = async (
+  passcodeLibrary: PasscodeLibrary,
+  ctx: WithLogContext,
+  body: RequestVerificationCodePayload
+) => {
+  // Build extra context for email verification only
+  if (!('email' in body)) {
+    return {};
+  }
+
+  // Safely get the orgId and appId context from cookie
+  const { appId: applicationId, organizationId } = getLogtoCookie(ctx);
+
+  return passcodeLibrary.buildVerificationCodeContext(
+    {
+      applicationId,
+      organizationId,
+    },
+    ctx
+  );
+};
+
 export default function additionalRoutes<T extends IRouterParamContext>(
-  router: Router<unknown, WithInteractionDetailsContext<WithLogContext<T>>>,
+  router: Router<unknown, WithInteractionDetailsContext<WithI18nContext<WithLogContext<T>>>>,
   tenant: TenantContext
 ) {
   const {
@@ -98,8 +124,18 @@ export default function additionalRoutes<T extends IRouterParamContext>(
       // Check interaction exists
       const { event } = getInteractionStorage(interactionDetails.result);
 
+      const messageContext = await buildVerificationCodeTemplateContext(passcodes, ctx, guard.body);
+      const { uiLocales } = getLogtoCookie(ctx);
+
       await sendVerificationCodeToIdentifier(
-        { event, ...guard.body },
+        {
+          event,
+          ...guard.body,
+          locale: ctx.locale,
+          ...(uiLocales && { uiLocales }),
+          messageContext,
+          ip: ctx.request.ip,
+        },
         interactionDetails.jti,
         createLog,
         passcodes
@@ -207,6 +243,7 @@ export default function additionalRoutes<T extends IRouterParamContext>(
           user: {
             id: newAccountId,
             username: newUserProfile.username ?? newAccountId,
+            name: newUserProfile.name ?? null,
             primaryEmail: newUserProfile.primaryEmail ?? null,
             primaryPhone: newUserProfile.primaryPhone ?? null,
             mfaVerifications: [],
@@ -230,13 +267,13 @@ export default function additionalRoutes<T extends IRouterParamContext>(
 
       if (isSignInInteractionResult(profileVerifiedInteraction)) {
         const { accountId } = profileVerifiedInteraction;
-        const { id, username, primaryEmail, primaryPhone, mfaVerifications } = await findUserById(
-          accountId
-        );
+        const { id, name, username, primaryEmail, primaryPhone, mfaVerifications } =
+          await findUserById(accountId);
         const options = await generateWebAuthnRegistrationOptions({
           rpId: ctx.URL.hostname,
           user: {
             id,
+            name,
             username,
             primaryEmail,
             primaryPhone,

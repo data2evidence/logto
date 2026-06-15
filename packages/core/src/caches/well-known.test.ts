@@ -1,7 +1,9 @@
+import { TemplateType } from '@logto/schemas';
 import { TtlCache } from '@logto/shared';
 import { pick } from '@silverhand/essentials';
 
 import { mockConnector0 } from '#src/__mocks__/connector-base-data.js';
+import { mockResource } from '#src/__mocks__/index.js';
 import { mockSignInExperience } from '#src/__mocks__/sign-in-experience.js';
 
 import { WellKnownCache } from './well-known.js';
@@ -30,6 +32,9 @@ describe('Well-known cache basics', () => {
 
     await cache.set('tenant-cache-expires-at', WellKnownCache.defaultKey, 123);
     expect(await cache.get('tenant-cache-expires-at', WellKnownCache.defaultKey)).toBe(123);
+
+    await cache.set('resource-by-indicator', 'resource', mockResource);
+    expect(await cache.get('resource-by-indicator', 'resource')).toStrictEqual(mockResource);
 
     await cache.delete('sie', WellKnownCache.defaultKey);
     expect(await cache.get('sie', WellKnownCache.defaultKey)).toBe(undefined);
@@ -67,6 +72,16 @@ describe('Well-known cache basics', () => {
       // @ts-expect-error
       await cache.get('custom-phrases-tags-', WellKnownCache.defaultKey)
     ).toBe(undefined);
+  });
+
+  it('should be able to get, set, and delete null value', async () => {
+    const cache = new WellKnownCache(tenantId, cacheStore);
+
+    await cache.set('email-templates', 'en:SignIn', null);
+    expect(await cache.get('email-templates', 'en:SignIn')).toBe(null);
+
+    await cache.delete('email-templates', 'en:SignIn');
+    expect(await cache.get('email-templates', 'en:SignIn')).toBe(undefined);
   });
 });
 
@@ -127,6 +142,29 @@ describe('Well-known cache function wrappers', () => {
       { foo: '1', bar: 1 },
       { foo: '2', bar: 2 },
     ]);
+  });
+
+  it('can memoize function with null value', async () => {
+    const run = jest.fn(
+      async (languageTag: string, templateType: TemplateType) =>
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        new Promise<null>((resolve) => {
+          setTimeout(() => {
+            resolve(null);
+          }, 0);
+        })
+    );
+    const cache = new WellKnownCache(tenantId, cacheStore);
+    const memoized = cache.memoize(run, [
+      'email-templates',
+      (languageTag, templateType) => `${languageTag}:${templateType}`,
+    ]);
+
+    expect(await memoized('en', TemplateType.SignIn)).toBe(null);
+
+    run.mockClear();
+    expect(await cache.get('email-templates', 'en:SignIn')).toBe(null);
+    expect(run).not.toBeCalled();
   });
 
   it('can memoize function with expire time', async () => {

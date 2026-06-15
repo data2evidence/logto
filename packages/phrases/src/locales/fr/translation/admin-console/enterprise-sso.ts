@@ -2,7 +2,7 @@ const enterprise_sso = {
   page_title: "SSO d'entreprise",
   title: "SSO d'entreprise",
   subtitle:
-    "Connectez le fournisseur d'identité de l'entreprise et activez la connexion unique initiée par le fournisseur de services.",
+    "Connectez le fournisseur d'identité d'entreprise et activez l'authentification unique.",
   create: "Ajouter un connecteur d'entreprise",
   col_connector_name: 'Nom du connecteur',
   col_type: 'Type',
@@ -27,11 +27,19 @@ const enterprise_sso = {
       "Créez une nouvelle intégration d'application par SAML 2.0 dans votre fournisseur d'identité {{name}}. Ensuite, collez la valeur suivante.",
     saml: {
       acs_url_field_name: "URL de service de consommation d'assertions (URL de réponse)",
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: "URI de l'audience (ID d'entité du fournisseur de services)",
+      entity_id_field_name: "ID d'entité du fournisseur de services (SP)",
+      entity_id_field_tooltip:
+        "L'ID d'entité SP peut être dans n'importe quel format de chaîne, généralement en utilisant une forme URI ou une forme URL comme identifiant, mais ce n'est pas obligatoire.",
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'URI de redirection (URL de rappel)',
+      redirect_uri_field_description:
+        "L'URI de redirection est l'endroit où les utilisateurs sont redirigés après l'authentification SSO. Ajoutez cette URI à la configuration de votre IdP.",
+      redirect_uri_field_custom_domain_description:
+        'Si vous utilisez plusieurs <a>domaines personnalisés</a> dans Logto, veillez à ajouter toutes les URI de rappel correspondantes à votre IdP afin que le SSO fonctionne sur chaque domaine.\n\nLe domaine Logto par défaut (*.logto.app) est toujours valide ; incluez-le uniquement si vous souhaitez aussi prendre en charge le SSO sous ce domaine.',
     },
   },
   attribute_mapping: {
@@ -67,6 +75,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Secret client',
       issuer_field_name: 'Émetteur',
       scope_field_name: 'Portée',
+      scope_field_placeholder: 'Entrez les portées (séparées par un espace)',
     },
   },
 };

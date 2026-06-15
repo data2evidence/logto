@@ -4,9 +4,11 @@ const applications = {
   subtitle:
     '인증에 Logto를 사용할 모바일, 단일 페이지, Machine-to-Machine 또는 기존 어플리케이션을 설정할 수 있어요.',
   subtitle_with_app_type: '내 {{name}} 어플리케이션에 대한 Logto 인증 설정',
+  create_device_flow_description:
+    'OAuth 2.0 디바이스 인증 부여를 사용하는 네이티브 애플리케이션을 생성합니다. 입력이 제한된 디바이스 또는 헤드리스 앱용입니다.',
   create: '어플리케이션 생성',
-  create_subtitle_third_party:
-    'Logto를 사용하여 쉽게 서드파티 앱과 통합할 수 있는 식별 공급자(IdP)로 사용하세요',
+  create_third_party: '서드파티 어플리케이션 생성',
+  create_thrid_party_modal_title: '서드파티 앱 생성 ({{type}})',
   application_name: '어플리케이션 이름',
   application_name_placeholder: '나의 앱',
   application_description: '어플리케이션 설명',
@@ -23,7 +25,7 @@ const applications = {
     native: {
       title: '네이티브 앱',
       subtitle: '네이티브 환경에서 작동하는 어플리케이션',
-      description: '예) iOS, Android 앱',
+      description: '예) iOS, Android, 데스크톱 앱, TV, CLI',
     },
     spa: {
       title: '싱글 페이지 앱',
@@ -46,12 +48,9 @@ const applications = {
       description: 'N/A',
     },
     saml: {
-      /** UNTRANSLATED */
-      title: 'SAML App',
-      /** UNTRANSLATED */
-      subtitle: 'An app that is used as an SAML IdP connector',
-      /** UNTRANSLATED */
-      description: 'E.g., SAML',
+      title: 'SAML 앱',
+      subtitle: 'SAML IdP 커넥터로 사용되는 앱',
+      description: '예: SAML',
     },
     third_party: {
       title: '서드파티 앱',
@@ -59,9 +58,32 @@ const applications = {
       description: '예: OIDC, SAML',
     },
   },
+  authorization_flow: {
+    title: '인증 플로우',
+    tooltip: '애플리케이션의 인증 플로우를 선택하세요. 한 번 설정하면 변경할 수 없습니다.',
+    authorization_code: {
+      title: 'Authorization code',
+      description:
+        '가장 기본적이고 일반적인 인증 유형입니다. 사용자가 로그인 페이지로 리디렉션되어 직접 액세스를 인증합니다.',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        '입력이 제한된 장치나 헤드리스 앱(예: TV, CLI)을 위한 방식입니다. 사용자는 디바이스 코드를 입력하거나 QR 코드를 스캔하여 별도의 장치에서 로그인을 완료합니다.',
+    },
+  },
   placeholder_title: '어플리케이션 유형을 선택하여 계속하세요',
   placeholder_description:
     'Logto는 OIDC용 앱 엔티티를 사용하여 앱 식별, 로그인 관리 및 감사 로그 생성과 같은 작업을 지원합니다.',
+  third_party_application_placeholder_description:
+    'Logto를 아이덴티티 제공자로 사용하여 서드파티 서비스에 OAuth 권한 부여를 제공합니다. \n 리소스 접근을 위한 사전 제작된 사용자 동의 화면이 포함되어 있습니다. <a>더 알아보기</a>',
+  guide: {
+    third_party: {
+      title: '서드파티 어플리케이션 통합',
+      description:
+        'Logto를 아이덴티티 제공자로 사용하여 서드파티 서비스에 OAuth 권한 부여를 제공합니다. 안전한 리소스 접근을 위한 사전 제작된 사용자 동의 화면이 포함되어 있습니다. <a>자세히 알아보기</a>',
+    },
+  },
 };
 
 export default Object.freeze(applications);

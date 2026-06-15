@@ -10,25 +10,40 @@ const sign_up_and_sign_in = {
     title: 'ANMELDEN',
     sign_up_identifier: 'Anmeldeidentifier',
     identifier_description:
-      'Der Anmeldeidentifier ist erforderlich für die Kontoerstellung und muss in Ihrem Anmeldefenster enthalten sein.',
+      'Alle ausgewählten Anmeldekennungen sind erforderlich, wenn ein neues Konto erstellt wird.',
     sign_up_authentication: 'Authentifizierungseinstellung für die Anmeldung',
+    verification_tip:
+      'Benutzer müssen die von dir konfigurierte E-Mail-Adresse oder Telefonnummer durch Eingabe eines Bestätigungscodes bei der Anmeldung überprüfen.',
     authentication_description:
       'Alle ausgewählten Aktionen sind für Benutzer verpflichtend, um den Vorgang abzuschließen.',
     set_a_password_option: 'Erstellen Sie Ihr Passwort',
     verify_at_sign_up_option: 'Bei Anmeldung überprüfen',
     social_only_creation_description: '(Dies gilt nur für die Erstellung von Social-Accounts)',
+    collect_user_profile: 'Benutzerprofil sammeln',
+    add_profile_fields: 'Profilfelder hinzufügen',
+    profile_fields_hint: {
+      not_in_list: 'Nicht in der Liste?',
+      set_up: 'Einrichten',
+      go_to: 'weitere Profilfelder jetzt.',
+    },
   },
   sign_in: {
     title: 'ANMELDEN',
     sign_in_identifier_and_auth: 'Anmeldeidentifier und Authentifizierungseinstellungen',
-    description:
-      'Benutzer können sich über jede der verfügbaren Optionen anmelden. Passen Sie das Layout an, indem Sie die folgenden Optionen per Drag & Drop anordnen.',
+    description: 'Benutzer können sich über jede der verfügbaren Optionen anmelden.',
     add_sign_in_method: 'Anmeldemethode hinzufügen',
+    add_sign_up_method: 'Anmeldemethode hinzufügen',
     password_auth: 'Passwort',
     verification_code_auth: 'Verifizierungscode',
     auth_swap_tip:
       'Tauschen Sie die untenstehenden Optionen aus, um zu bestimmen, welche zuerst im Vorgang angezeigt wird.',
     require_auth_factor: 'Sie müssen mindestens einen Authentifizierungsfaktor auswählen.',
+    forgot_password: 'Passwort vergessen',
+    forgot_password_description:
+      'Benutzer können ihr Passwort mit jeder verfügbaren Verifizierungsmethode zurücksetzen.',
+    add_verification_method: 'Verifizierungsmethode hinzufügen',
+    email_verification_code: 'E-Mail-Verifizierungscode',
+    phone_verification_code: 'Telefonverifizierungscode',
   },
   social_sign_in: {
     title: 'ANMELDEN MIT SOCIAL MEDIA',
@@ -41,9 +56,25 @@ const sign_up_and_sign_in = {
       set_up_more: 'Einrichten',
       go_to: 'andere Social Connectors jetzt.',
     },
-    automatic_account_linking: 'Automatische Kontoverknüpfung',
-    automatic_account_linking_label:
-      'Wenn diese Option aktiviert ist und sich ein Benutzer mit einer dem System neuen sozialen Identität anmeldet und genau ein vorhandenes Konto mit demselben Identifier (z. B. E-Mail) vorhanden ist, wird Logto das Konto automatisch mit der sozialen Identität verknüpfen, anstatt den Benutzer zur Kontoverknüpfung aufzufordern.',
+    settings_title: 'Social-Sign-in-Erlebnis',
+    automatic_account_linking: 'Konten mit dem gleichen Identifier automatisch verknüpfen',
+    automatic_account_linking_tip:
+      'Wenn diese Option aktiviert ist, wird Logto bei einer neuen sozialen Anmeldung die soziale Identität automatisch mit dem Konto verknüpfen, wenn es genau ein bestehendes Konto mit dem gleichen Identifier gibt (z.B. eine E-Mail-Adresse). Der Benutzer wird nicht gefragt, ob er Konten verknüpfen möchte.',
+    required_sign_up_identifiers: 'Benutzer müssen fehlende Anmeldeidentifier angeben',
+    required_sign_up_identifiers_tip:
+      'Wenn aktiviert, müssen sich Benutzer über soziale Anbieter einloggen und alle fehlenden Anmeldeidentifier (wie E-Mail) ausfüllen, bevor sie sich anmelden können.\n\nWenn deaktiviert, können Benutzer fortfahren, ohne fehlende Identifier anzugeben, auch wenn das soziale Konto sie nicht synchronisiert hat.',
+  },
+  passkey_sign_in: {
+    title: 'PASSKEY-ANMELDUNG',
+    passkey_sign_in: 'Passkey-Anmeldung',
+    enable_passkey_sign_in_description:
+      'Ermöglichen Sie Benutzern, über Passkey (WebAuthn) schnell und sicher auf die Anwendung zuzugreifen, z. B. mit Biometrie oder Sicherheitsschlüssel.',
+    prompts: 'Passkey-Eingabeaufforderungen',
+    show_passkey_button: '"Mit Passkey fortfahren"-Schaltfläche auf der Anmeldeseite anzeigen',
+    show_passkey_button_tip:
+      'Das Deaktivieren der "Mit Passkey fortfahren"-Schaltfläche macht den Anmeldefluss identifikatorbasiert, wobei Passwort- und Passkey-Optionen im nächsten Schritt angezeigt werden.',
+    allow_autofill:
+      'Eingabeaufforderung und automatisches Ausfüllen registrierter Passkeys in Identifikatorfeldern erlauben',
   },
   tip: {
     set_a_password: 'Ein einmaliges Passwort für Ihren Benutzernamen ist ein Muss.',
@@ -53,8 +84,14 @@ const sign_up_and_sign_in = {
       'Dies ist unerlässlich, da Sie die Option zum Setzen eines Passworts während des Anmeldeprozesses aktiviert haben.',
     verification_code_auth:
       'Dies ist unerlässlich, da Sie nur die Möglichkeit aktiviert haben, einen Verifizierungscode bei der Anmeldung bereitzustellen. Sie können das Kontrollkästchen deaktivieren, wenn die Passworteinrichtung im Anmeldeprozess erlaubt ist.',
+    email_mfa_enabled:
+      'E-Mail-Verifizierungscode ist bereits für MFA aktiviert, daher kann er nicht als primäre Anmeldemethode wiederverwendet werden, um die Sicherheit zu gewährleisten.',
+    phone_mfa_enabled:
+      'Telefonverifizierungscode ist bereits für MFA aktiviert, daher kann er nicht als primäre Anmeldemethode wiederverwendet werden, um die Sicherheit zu gewährleisten.',
     delete_sign_in_method:
       'Dies ist unerlässlich, da Sie {{identifier}} als obligatorischen Identifier ausgewählt haben.',
+    password_disabled_notification:
+      'Die Option "Erstellen Sie Ihr Passwort" ist für die Anmeldung mit Benutzername deaktiviert, was Benutzer daran hindern könnte, sich anzumelden. Bestätigen Sie, um mit dem Speichern fortzufahren.',
   },
   advanced_options: {
     title: 'ERWEITERTE OPTIONEN',
@@ -69,11 +106,9 @@ const sign_up_and_sign_in = {
     enable_user_registration: 'Benutzerregistrierung aktivieren',
     enable_user_registration_description:
       'Aktivieren oder deaktivieren Sie die Benutzerregistrierung. Sobald deaktiviert, können Benutzer immer noch über die Admin-Konsole hinzugefügt werden, aber Benutzer können keine Konten mehr über die Anmelde-Benutzeroberfläche einrichten.',
-    /** UNTRANSLATED */
-    unknown_session_redirect_url: 'Unknown session redirect URL',
-    /** UNTRANSLATED */
+    unknown_session_redirect_url: 'Unbekannte Sitzungsumleitungs-URL',
     unknown_session_redirect_url_tip:
-      'Sometimes, Logto may not recognize a user’s session on the sign-in page, like when a session expires or the user bookmarks or shares the sign-in link. By default, an “unknown session” 404 error appears. To enhance user experience, set a fallback URL to redirect users back to your app and restart authentication.',
+      'Manchmal kann Logto eine Benutzersitzung auf der Anmeldeseite nicht erkennen, z. B. wenn eine Sitzung abläuft oder der Benutzer den Anmeldelink zu den Lesezeichen hinzufügt oder teilt. Standardmäßig erscheint ein 404-Fehler "Unbekannte Sitzung". Um die Benutzererfahrung zu verbessern, legen Sie eine Fallback-URL fest, um Benutzer zurück zu Ihrer App zu leiten und die Authentifizierung neu zu starten.',
   },
 };
 

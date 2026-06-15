@@ -1,34 +1,56 @@
 import {
   MfaFactor,
   VerificationType,
+  userMfaDataGuard,
+  userMfaDataKey,
   type Mfa,
-  type MfaVerification,
   type User,
 } from '@logto/schemas';
+import { type Optional } from '@silverhand/essentials';
 
+import { isNoSkipMfaPolicy } from '#src/libraries/sign-in-experience/mfa-policy.js';
+
+import { getAllUserEnabledMfaVerifications } from '../helpers.js';
 import { type BackupCodeVerification } from '../verifications/backup-code-verification.js';
+import {
+  type MfaEmailCodeVerification,
+  type MfaPhoneCodeVerification,
+} from '../verifications/code-verification.js';
 import { type VerificationRecord } from '../verifications/index.js';
 import { type TotpVerification } from '../verifications/totp-verification.js';
 import { type WebAuthnVerification } from '../verifications/web-authn-verification.js';
+
+import type { AdaptiveMfaResult } from './adaptive-mfa-validator/types.js';
 
 const mfaVerificationTypes = Object.freeze([
   VerificationType.TOTP,
   VerificationType.BackupCode,
   VerificationType.WebAuthn,
+  VerificationType.MfaEmailVerificationCode,
+  VerificationType.MfaPhoneVerificationCode,
 ]);
 
 type MfaVerificationType =
   | VerificationType.TOTP
   | VerificationType.BackupCode
-  | VerificationType.WebAuthn;
+  | VerificationType.WebAuthn
+  | VerificationType.MfaEmailVerificationCode
+  | VerificationType.MfaPhoneVerificationCode;
 
 const mfaVerificationTypeToMfaFactorMap = Object.freeze({
   [VerificationType.TOTP]: MfaFactor.TOTP,
   [VerificationType.BackupCode]: MfaFactor.BackupCode,
   [VerificationType.WebAuthn]: MfaFactor.WebAuthn,
+  [VerificationType.MfaEmailVerificationCode]: MfaFactor.EmailVerificationCode,
+  [VerificationType.MfaPhoneVerificationCode]: MfaFactor.PhoneVerificationCode,
 }) satisfies Record<MfaVerificationType, MfaFactor>;
 
-type MfaVerificationRecord = TotpVerification | WebAuthnVerification | BackupCodeVerification;
+type MfaVerificationRecord =
+  | TotpVerification
+  | WebAuthnVerification
+  | BackupCodeVerification
+  | MfaEmailCodeVerification
+  | MfaPhoneCodeVerification;
 
 const isMfaVerificationRecord = (
   verification: VerificationRecord
@@ -39,20 +61,18 @@ const isMfaVerificationRecord = (
 export class MfaValidator {
   constructor(
     private readonly mfaSettings: Mfa,
-    private readonly user: User
+    private readonly user: User,
+    private readonly adaptiveMfaResult?: Optional<AdaptiveMfaResult>
   ) {}
 
   /**
    * Get the enabled MFA factors for the user
    *
    * - Filter out MFA factors that are not configured in the sign-in experience
+   * - Include implicit Email and Phone MFA factors if user has them and they're enabled in SIE
    */
   get userEnabledMfaVerifications() {
-    const { mfaVerifications } = this.user;
-
-    return mfaVerifications.filter((verification) =>
-      this.mfaSettings.factors.includes(verification.type)
-    );
+    return getAllUserEnabledMfaVerifications(this.mfaSettings, this.user);
   }
 
   /**
@@ -66,54 +86,56 @@ export class MfaValidator {
   get availableUserMfaVerificationTypes() {
     return (
       this.userEnabledMfaVerifications
-        // Filter out backup codes if all the codes are used
-        .filter((verification) => {
-          if (verification.type !== MfaFactor.BackupCode) {
-            return true;
-          }
-          return verification.codes.some((code) => !code.usedAt);
-        })
         // Filter out duplicated verifications with the same type
-        .reduce<MfaVerification[]>((verifications, verification) => {
-          if (verifications.some(({ type }) => type === verification.type)) {
+        .reduce<MfaFactor[]>((verifications, verification) => {
+          if (verifications.includes(verification)) {
             return verifications;
           }
 
           return [...verifications, verification];
         }, [])
-        .slice()
-        // Sort by last used time, the latest used factor is the first one, backup code is always the last one
-        .sort((verificationA, verificationB) => {
-          if (verificationA.type === MfaFactor.BackupCode) {
-            return 1;
-          }
-
-          if (verificationB.type === MfaFactor.BackupCode) {
-            return -1;
-          }
-
-          return (
-            new Date(verificationB.lastUsedAt ?? 0).getTime() -
-            new Date(verificationA.lastUsedAt ?? 0).getTime()
-          );
-        })
-        .map(({ type }) => type)
     );
   }
 
   /**
-   * Check if the user has enabled MFA verifications, if true, MFA verification records are required.
+   * Whether MFA verification is required for the current sign-in interaction.
+   *
+   * Decision order:
+   * 1. If adaptive MFA is enabled (result defined):
+   *    - triggered + user has factors → required
+   *    - otherwise → not required
+   * 2. If adaptive MFA is disabled (result undefined), fall back to SIE policy:
+   *    - skipMfaOnSignIn + non-Mandatory policy → not required
+   *    - user has factors → required
+   *    - otherwise → not required
    */
-  get isMfaEnabled() {
-    return this.userEnabledMfaVerifications.length > 0;
+  get isMfaRequired(): boolean {
+    const hasUserFactors = this.userEnabledMfaVerifications.length > 0;
+
+    if (this.adaptiveMfaResult !== undefined) {
+      // Verification guard only applies when the user already has MFA factors
+      // enabled in the current sign-in experience.
+      return this.adaptiveMfaResult.requiresMfa && hasUserFactors;
+    }
+
+    const mfaData = userMfaDataGuard.safeParse(this.user.logtoConfig[userMfaDataKey]);
+    const skipMfaOnSignIn = mfaData.success ? mfaData.data.skipMfaOnSignIn : undefined;
+    const isMfaEnabled = mfaData.success ? mfaData.data.enabled : undefined;
+
+    // If `isMfaEnabled` is undefined, it means the user exists before the `enabled` flag is introduced,
+    // we should still enforce MFA for them if they have MFA factors. Only skip the check if mfa is explicitly
+    // disabled, or skipped on sign-in.
+    if (
+      (isMfaEnabled === false || skipMfaOnSignIn) &&
+      !isNoSkipMfaPolicy(this.mfaSettings.policy)
+    ) {
+      return false;
+    }
+
+    return hasUserFactors;
   }
 
   isMfaVerified(verificationRecords: VerificationRecord[]) {
-    // MFA validation is not enabled
-    if (!this.isMfaEnabled) {
-      return true;
-    }
-
     const verifiedMfaVerificationRecords = verificationRecords.filter(
       (verification) =>
         isMfaVerificationRecord(verification) &&
@@ -121,8 +143,8 @@ export class MfaValidator {
         // New bind MFA verification can not be used for verification
         !verification.isNewBindMfaVerification &&
         // Check if the verification type is enabled in the user's MFA settings
-        this.userEnabledMfaVerifications.some(
-          (factor) => factor.type === mfaVerificationTypeToMfaFactorMap[verification.type]
+        this.userEnabledMfaVerifications.includes(
+          mfaVerificationTypeToMfaFactorMap[verification.type]
         )
     );
 

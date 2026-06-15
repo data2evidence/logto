@@ -1,0 +1,264 @@
+const account_center = {
+  home: {
+    title: 'Página não encontrada',
+    description: 'Esta página não está disponível.',
+  },
+  page: {
+    title: 'Conta',
+    security_title: 'Segurança',
+    security_description:
+      'Altere as configurações da sua conta aqui para garantir a segurança dela.',
+    /** UNTRANSLATED */
+    profile_title: 'Personal info',
+    /** UNTRANSLATED */
+    profile_description: 'Change your personal information here.',
+    /** UNTRANSLATED */
+    sidebar_personal_info: 'Personal info',
+    /** UNTRANSLATED */
+    sidebar_security: 'Security',
+    support: 'Suporte',
+  },
+  verification: {
+    title: 'Verificação de segurança',
+    description:
+      'Confirme que é você para proteger a segurança da sua conta. Selecione o método para verificar sua identidade.',
+    error_send_failed: 'Falha ao enviar o código de verificação. Tente novamente mais tarde.',
+    error_invalid_code: 'O código de verificação é inválido ou expirou.',
+    error_verify_failed: 'Falha na verificação. Digite o código novamente.',
+    verification_required: 'A verificação expirou. Confirme sua identidade novamente.',
+    try_another_method: 'Tente outro método para verificar',
+    no_available_methods_title: 'Nenhum método de verificação disponível',
+    no_available_methods_description:
+      'Você não tem nenhum método de verificação configurado. Adicione uma senha, e-mail ou número de telefone à sua conta primeiro.',
+  },
+  password_verification: {
+    title: 'Verificar senha',
+    description: 'Para proteger sua conta, insira sua senha para confirmar sua identidade.',
+    error_failed: 'Senha incorreta. Verifique sua entrada.',
+  },
+  verification_method: {
+    password: {
+      name: 'Senha',
+      description: 'Verifique sua senha',
+    },
+    email: {
+      name: 'Código de verificação por e-mail',
+      description: 'Enviar código de verificação para seu e-mail',
+    },
+    phone: {
+      name: 'Código de verificação por telefone',
+      description: 'Enviar código de verificação para seu número de telefone',
+    },
+  },
+  email: {
+    title: 'Vincular e-mail',
+    description: 'Vincule seu e-mail para entrar ou ajudar na recuperação da conta.',
+    verification_title: 'Digite o código de verificação de e-mail',
+    verification_description:
+      'O código de verificação foi enviado para seu e-mail {{email_address}}.',
+    success: 'E-mail principal vinculado com sucesso.',
+    verification_required: 'A verificação expirou. Confirme sua identidade novamente.',
+  },
+  phone: {
+    title: 'Vincular número de telefone',
+    description: 'Vincule seu número de telefone para entrar ou ajudar na recuperação da conta.',
+    verification_title: 'Digite o código de verificação SMS',
+    verification_description:
+      'O código de verificação foi enviado para o seu telefone {{phone_number}}.',
+    success: 'Telefone principal vinculado com sucesso.',
+    verification_required: 'A verificação expirou. Confirme sua identidade novamente.',
+  },
+  username: {
+    title: 'Definir nome de usuário',
+    description: 'O nome de usuário deve conter apenas letras, números e sublinhados.',
+    success: 'Nome de usuário atualizado com sucesso.',
+  },
+  security: {
+    add: 'Adicionar',
+    change: 'Alterar',
+    remove: 'Remover',
+    not_set: 'Não definido',
+    social_sign_in: 'Login social',
+    social_not_linked: 'Não vinculado',
+    email_phone: 'E-mail / Telefone',
+    email: 'E-mail',
+    phone: 'Telefone',
+    password: 'Senha',
+    configured: 'Configurado',
+    not_configured: 'Não configurado',
+    two_step_verification: 'Verificação em duas etapas',
+    authenticator_app: 'Aplicativo autenticador',
+    passkeys: 'Passkeys',
+    backup_codes: 'Códigos de backup',
+    email_verification_code: 'Código de verificação por e-mail',
+    phone_verification_code: 'Código de verificação por telefone',
+    passkeys_count_one: '{{count}} passkey',
+    passkeys_count_other: '{{count}} passkeys',
+    backup_codes_count_one: '{{count}} código restante',
+    backup_codes_count_other: '{{count}} códigos restantes',
+    view: 'Visualizar',
+    manage: 'Gerenciar',
+    turn_on_2_step_verification_description:
+      'Adicione uma camada extra de segurança. Você será solicitado a realizar uma segunda etapa de verificação ao fazer login.',
+    turn_off_2_step_verification: 'Desativar verificação em duas etapas',
+    turn_off_2_step_verification_description:
+      'Desativar a verificação em duas etapas removerá a camada extra de proteção da sua conta ao fazer login. Tem certeza de que deseja continuar?',
+    disable_2_step_verification: 'Desativar',
+    no_verification_method_warning:
+      'Você não adicionou um segundo método de verificação. Adicione pelo menos um para ativar a verificação em duas etapas ao fazer login.',
+    account_removal: 'Exclusão da conta',
+    delete_your_account: 'Excluir sua conta',
+    delete_account: 'Excluir conta',
+    remove_username_confirmation_title: 'Remover nome de usuário',
+    remove_username_confirmation_description:
+      'Após a remoção, você não poderá mais fazer login com este nome de usuário. Tem certeza de que deseja continuar?',
+    remove_email_confirmation_title: 'Remover endereço de e-mail',
+    remove_email_confirmation_description:
+      'Após a remoção, você não poderá mais fazer login com este endereço de e-mail. Tem certeza de que deseja continuar?',
+    remove_phone_confirmation_title: 'Remover número de telefone',
+    remove_phone_confirmation_description:
+      'Após a remoção, você não poderá mais fazer login com este número de telefone. Tem certeza de que deseja continuar?',
+    email_removed: 'Endereço de e-mail removido com sucesso.',
+    phone_removed: 'Número de telefone removido com sucesso.',
+    username_removed: 'Nome de usuário removido com sucesso.',
+  },
+  social: {
+    linked: '{{connector}} vinculado com sucesso.',
+    not_enabled:
+      'Este método de login social não está habilitado. Entre em contato com seu administrador para obter ajuda.',
+    removed: '{{connector}} removido com sucesso.',
+    remove_confirmation_title: 'Remover conta social',
+    remove_confirmation_description:
+      'Se você remover {{connector}}, talvez não consiga entrar com essa conta até adicioná-la novamente.',
+  },
+  password: {
+    title: 'Definir senha',
+    description: 'Crie uma nova senha para proteger sua conta.',
+    success: 'Senha atualizada com sucesso.',
+  },
+  code_verification: {
+    send: 'Enviar código de verificação',
+    resend: 'Ainda não recebeu? <a>Reenviar código de verificação</a>',
+    resend_countdown: 'Ainda não recebeu? Reenvie após {{seconds}} s.',
+  },
+  email_verification: {
+    title: 'Verifique seu e-mail',
+    prepare_description:
+      'Confirme que é você para proteger a segurança da sua conta. Envie o código de verificação para seu e-mail.',
+    email_label: 'Endereço de e-mail',
+    send: 'Enviar código de verificação',
+    description:
+      'O código de verificação foi enviado para o e-mail {{email}}. Digite o código para continuar.',
+    resend: 'Ainda não recebeu? <a>Reenviar código de verificação</a>',
+    not_received: 'Ainda não recebeu?',
+    resend_action: 'Reenviar código de verificação',
+    resend_countdown: 'Ainda não recebeu? Reenvie após {{seconds}} s.',
+    error_send_failed: 'Falha ao enviar o código de verificação. Tente novamente mais tarde.',
+    error_verify_failed: 'Falha na verificação. Digite o código novamente.',
+    error_invalid_code: 'O código de verificação é inválido ou expirou.',
+  },
+  phone_verification: {
+    title: 'Verifique seu telefone',
+    prepare_description:
+      'Confirme que é você para proteger a segurança da sua conta. Envie o código de verificação para seu telefone.',
+    phone_label: 'Número de telefone',
+    send: 'Enviar código de verificação',
+    description:
+      'O código de verificação foi enviado para o seu telefone {{phone}}. Digite o código para continuar.',
+    resend: 'Ainda não recebeu? <a>Reenviar código de verificação</a>',
+    resend_countdown: 'Ainda não recebeu? Reenvie após {{seconds}} s.',
+    error_send_failed: 'Falha ao enviar o código de verificação. Tente novamente mais tarde.',
+    error_verify_failed: 'Falha na verificação. Digite o código novamente.',
+    error_invalid_code: 'O código de verificação é inválido ou expirou.',
+  },
+  mfa: {
+    totp_already_added:
+      'Você já adicionou um aplicativo autenticador. Remova o existente primeiro.',
+    totp_not_enabled:
+      'O aplicativo autenticador OTP não está ativado. Entre em contato com seu administrador para obter ajuda.',
+    backup_code_already_added:
+      'Você já possui códigos de backup ativos. Use-os ou remova-os antes de gerar novos.',
+    backup_code_not_enabled:
+      'O código de backup não está ativado. Entre em contato com seu administrador para obter ajuda.',
+    backup_code_requires_other_mfa:
+      'Os códigos de backup exigem que outro método MFA seja configurado primeiro.',
+    passkey_not_enabled:
+      'Passkey não está ativado. Entre em contato com seu administrador para obter ajuda.',
+    passkey_already_registered:
+      'Esta passkey já está registrada na sua conta. Por favor, use um autenticador diferente.',
+  },
+  update_success: {
+    default: {
+      title: 'Atualizado!',
+      description: 'Suas informações foram atualizadas.',
+    },
+    email: {
+      title: 'E-mail atualizado!',
+      description: 'Seu endereço de e-mail foi atualizado com sucesso.',
+    },
+    phone: {
+      title: 'Número de telefone atualizado!',
+      description: 'Seu número de telefone foi atualizado com sucesso.',
+    },
+    username: {
+      title: 'Nome de usuário alterado!',
+      description: 'Seu nome de usuário foi atualizado com sucesso.',
+    },
+    password: {
+      title: 'Senha alterada!',
+      description: 'Sua senha foi atualizada com sucesso.',
+    },
+    totp: {
+      title: 'Aplicativo autenticador adicionado!',
+      description: 'Seu aplicativo autenticador foi vinculado com sucesso à sua conta.',
+    },
+    totp_replaced: {
+      title: 'Aplicativo autenticador substituído!',
+      description: 'Seu aplicativo autenticador foi substituído com sucesso.',
+    },
+    backup_code: {
+      title: 'Códigos de backup gerados!',
+      description: 'Seus códigos de backup foram salvos. Mantenha-os em um local seguro.',
+    },
+    passkey: {
+      title: 'Passkey adicionado!',
+      description: 'Seu passkey foi vinculado com sucesso à sua conta.',
+    },
+    social: {
+      title: 'Conta social vinculada!',
+      description: 'Sua conta social foi vinculada com sucesso.',
+    },
+  },
+  backup_code: {
+    title: 'Códigos de backup',
+    description:
+      'Você pode usar um destes códigos de backup para acessar sua conta se tiver problemas durante a verificação em duas etapas de outra forma. Cada código só pode ser usado uma vez.',
+    copy_hint: 'Certifique-se de copiá-los e salvá-los em um lugar seguro.',
+    generate_new_title: 'Gerar novos códigos de backup',
+    generate_new: 'Gerar novos códigos de backup',
+  },
+  passkey: {
+    title: 'Passkeys',
+    added: 'Adicionado: {{date}}',
+    last_used: 'Último uso: {{date}}',
+    never_used: 'Nunca',
+    unnamed: 'Passkey sem nome',
+    renamed: 'Passkey renomeado com sucesso.',
+    deleted: 'Passkey removido com sucesso.',
+    add_another_title: 'Adicionar outro passkey',
+    add_another_description:
+      'Registre seu passkey usando biometria do dispositivo, chaves de segurança (ex: YubiKey) ou outros métodos disponíveis.',
+    add_passkey: 'Adicionar um passkey',
+    delete_confirmation_title: 'Remover sua passkey',
+    delete_confirmation_description:
+      'Se você remover esta passkey, não poderá mais usá-la para verificação.',
+    rename_passkey: 'Renomear passkey',
+    rename_description: 'Digite um novo nome para esta passkey.',
+    name_this_passkey: 'Nomear esta passkey do dispositivo',
+    name_passkey_description:
+      'Você verificou este dispositivo com sucesso para autenticação em duas etapas. Personalize o nome para reconhecê-lo se tiver várias chaves.',
+    name_input_label: 'Nome',
+  },
+};
+
+export default Object.freeze(account_center);

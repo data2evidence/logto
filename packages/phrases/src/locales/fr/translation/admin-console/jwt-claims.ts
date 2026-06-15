@@ -1,20 +1,31 @@
 const jwt_claims = {
   title: 'JWT personnalisé',
   description:
-    "Configurer des revendications JWT personnalisées à inclure dans le jeton d'accès. Ces revendications peuvent être utilisées pour transmettre des informations supplémentaires à votre application.",
+    "Personnalisez le jeton d'accès ou le jeton d'identité, fournissant des informations supplémentaires à votre application.",
+  access_token: {
+    card_title: "Jeton d'accès",
+    card_description:
+      "Le jeton d'accès est l'identifiant utilisé par les API pour autoriser les demandes, contenant uniquement les revendications nécessaires aux décisions d'accès.",
+  },
   user_jwt: {
-    card_title: "Pour l'utilisateur",
     card_field: "Jeton d'accès utilisateur",
     card_description:
       "Ajouter des données spécifiques à l'utilisateur lors de l'émission du jeton d'accès.",
     for: "pour l'utilisateur",
   },
   machine_to_machine_jwt: {
-    card_title: 'Pour M2M',
-    card_field: 'Jeton machine-à-machine',
+    card_field: "Jeton d'accès machine-à-machine",
     card_description:
       "Ajouter des données supplémentaires lors de l'émission du jeton machine-à-machine.",
     for: 'pour M2M',
+  },
+  id_token: {
+    card_title: "Jeton d'identité",
+    card_description:
+      "Le jeton d'identité est une assertion d'identité reçue après la connexion, contenant des revendications d'identité utilisateur pour que le client les utilise pour l'affichage ou la création de session.",
+    card_field: "Jeton d'identité utilisateur",
+    card_field_description:
+      "Les revendications 'sub', 'email', 'phone', 'profile' et 'address' sont toujours disponibles. Les autres revendications doivent d'abord être activées ici. Dans tous les cas, votre application doit demander les scopes correspondants lors de l'intégration pour les recevoir.",
   },
   code_editor_title: 'Personnalisez les revendications {{token}}',
   custom_jwt_create_button: 'Ajouter des revendications personnalisées',
@@ -26,6 +37,7 @@ const jwt_claims = {
   restore: 'Restaurer les paramètres par défaut',
   restored: 'Restauré',
   data_source_tab: 'Source de données',
+  error_handling_tab: 'Gestion des erreurs',
   test_tab: 'Contexte de test',
   jwt_claims_description:
     'Les revendications par défaut sont automatiquement incluses dans le JWT et ne peuvent pas être remplacées.',
@@ -39,6 +51,16 @@ const jwt_claims = {
     subtitle:
       'Utilisez le paramètre d’entrée `context.grant` pour fournir des informations cruciales sur les subventions, uniquement disponibles pour l’échange de jetons.',
   },
+  interaction_data: {
+    title: "Contexte d'interaction utilisateur",
+    subtitle:
+      "Utilisez le paramètre `context.interaction` pour accéder aux détails de l'interaction de l'utilisateur pour la session d'authentification en cours.",
+  },
+  application_data: {
+    title: "Contexte de l'application",
+    subtitle:
+      "Utilisez le paramètre d'entrée `context.application` pour fournir les informations d'application associées au jeton.",
+  },
   token_data: {
     title: 'Données du jeton',
     subtitle: "Utilisez le paramètre d'entrée `token` pour le payload du jeton d'accès actuel. ",
@@ -46,6 +68,18 @@ const jwt_claims = {
   api_context: {
     title: "Contexte API : contrôle d'accès",
     subtitle: 'Utilisez la méthode `api.denyAccess` pour rejeter la demande de jeton.',
+  },
+  error_handling: {
+    title: 'Gestion des erreurs',
+    subtitle: "Définissez si l'émission du jeton doit être bloquée lorsque le script échoue.",
+    input_field_title: "Comportement d'émission du jeton en cas d'erreur du script",
+    block_issuance_switch: "Bloquer l'émission du jeton lorsque le script génère une erreur",
+    default_hint_create:
+      "Les nouveaux scripts de claims personnalisés bloquent par défaut l'émission du jeton lorsque le script échoue. Si l'API fournit déjà une valeur, la valeur enregistrée est utilisée à la place.",
+    default_hint_edit:
+      "Les scripts de claims personnalisés existants sans ce paramètre conservent le comportement historique avec cette option désactivée tant que vous n'enregistrez pas explicitement une valeur.",
+    warning:
+      "Lorsqu'elle est activée, les erreurs d'exécution du script rejettent la demande de jeton avec `invalid_request` (400) et un `error_description` localisé. Les appels à `api.denyAccess` continuent de renvoyer `access_denied`.",
   },
   fetch_external_data: {
     title: 'Récupérer des données externes',

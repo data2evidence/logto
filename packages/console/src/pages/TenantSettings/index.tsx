@@ -1,7 +1,8 @@
 import { useContext } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import { TenantSettingsTabs } from '@/consts';
+import { logtoCloud, TenantSettingsTabs } from '@/consts';
+import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import { TenantsContext } from '@/contexts/TenantsProvider';
 import CardTitle from '@/ds-components/CardTitle';
 import DynamicT from '@/ds-components/DynamicT';
@@ -14,15 +15,19 @@ import styles from './index.module.scss';
 function TenantSettings() {
   const { isDevTenant } = useContext(TenantsContext);
   const {
+    currentSubscription: { quotaScope },
+  } = useContext(SubscriptionDataContext);
+  const {
     access: { canManageTenant },
   } = useCurrentTenantScopes();
 
   return (
     <div className={styles.container}>
       <CardTitle
+        className={styles.cardTitle}
         title="tenants.title"
         subtitle="tenants.description"
-        className={styles.cardTitle}
+        learnMoreLink={{ href: logtoCloud }}
       />
       {isDevTenant && <DevTenantNotification className={styles.notification} />}
       <TabNav className={styles.tabs}>
@@ -32,6 +37,9 @@ function TenantSettings() {
         <TabNavItem href={`/tenant-settings/${TenantSettingsTabs.Domains}`}>
           <DynamicT forKey="tenants.tabs.domains" />
         </TabNavItem>
+        <TabNavItem href={`/tenant-settings/${TenantSettingsTabs.OidcConfigs}`}>
+          <DynamicT forKey="tenants.tabs.oidc_configs" />
+        </TabNavItem>
         <TabNavItem href={`/tenant-settings/${TenantSettingsTabs.Members}`}>
           <DynamicT forKey="tenants.tabs.members" />
         </TabNavItem>
@@ -40,9 +48,12 @@ function TenantSettings() {
             <TabNavItem href={`/tenant-settings/${TenantSettingsTabs.Subscription}`}>
               <DynamicT forKey="tenants.tabs.subscription" />
             </TabNavItem>
-            <TabNavItem href={`/tenant-settings/${TenantSettingsTabs.BillingHistory}`}>
-              <DynamicT forKey="tenants.tabs.billing_history" />
-            </TabNavItem>
+            {/* Hide the billing management and invoice pages if the tenant is associated with a shared enterprise subscription */}
+            {quotaScope !== 'shared' && (
+              <TabNavItem href={`/tenant-settings/${TenantSettingsTabs.BillingHistory}`}>
+                <DynamicT forKey="tenants.tabs.billing_history" />
+              </TabNavItem>
+            )}
           </>
         )}
       </TabNav>

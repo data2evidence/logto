@@ -39,6 +39,11 @@ const connector = {
     'Vous ne pouvez pas avoir plusieurs connecteurs sociaux ayant la même "target" et la même plateforme.',
   cannot_overwrite_metadata_for_non_standard_connector:
     'Les "metadata" de ce connecteur ne peuvent pas être modifiés.',
+  email_connector: {
+    bulk_deletion_no_filter:
+      'Au moins une condition de filtre doit être fournie pour effectuer une suppression en masse par propriétés. Les propriétés prises en charge sont : {{properties, list(type:conjunction)}}.',
+  },
+  token_storage_not_supported: 'Ce connecteur ne prend pas en charge le stockage des jetons.',
 };
 
 export default Object.freeze(connector);

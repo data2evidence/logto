@@ -9,12 +9,13 @@ const general = {
   search: 'Ara',
   search_placeholder: 'Ara',
   clear_result: 'Sonuçları Temizle',
+  today: 'Bugün',
+  clear: 'Temizle',
   save: 'Kaydet',
   save_changes: 'Değişiklikleri Kaydet',
   saved: 'Kaydedildi',
   discard: 'At',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: 'İndir',
   loading: 'Yükleniyor...',
   redirecting: 'Yönlendiriliyor...',
   add: 'Ekle',
@@ -30,10 +31,8 @@ const general = {
   edit: 'Düzenle',
   delete: 'Sil',
   deleted: 'Silindi',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  activate: 'Aktive et',
+  deactivate: 'Devre dışı bırak',
   more_options: 'DAHA FAZLA SEÇENEK',
   close: 'Kapat',
   copy: 'Kopyala',
@@ -53,7 +52,7 @@ const general = {
   continue: 'Devam et',
   page_info: '{{min, number}}-{{max, number}} / {{total, number}}',
   learn_more: 'Daha fazla bilgi edinin',
-  tab_error_one: '{{count, number}} hata',
+  tab_error: '{{count, number}} hata',
   tab_error_other: '{{count, number}} hata',
   skip_for_now: 'Şimdilik atla',
   remove: 'Kaldır',
@@ -79,6 +78,8 @@ const general = {
   or: 'Veya',
   reset: 'Sıfırla',
   generate: 'Oluştur',
+  manage: 'Yönet',
+  live_preview: 'Canlı önizleme',
 };
 
 export default Object.freeze(general);

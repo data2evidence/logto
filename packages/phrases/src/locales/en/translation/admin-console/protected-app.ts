@@ -1,8 +1,6 @@
 const protected_app = {
   name: 'Protected App',
   title: 'Create a Protected App: Add authentication with simplicity and epic speed',
-  description:
-    'Protected App securely maintains user sessions and proxies your app requests. Powered by Cloudflare Workers, enjoy the top-tier performance and 0ms cold start worldwide. <a>Learn more</a>',
   fast_create: 'Fast create',
   modal_title: 'Create Protected App',
   modal_subtitle:
@@ -36,6 +34,18 @@ const protected_app = {
       localhost:
         'Please expose your local server to the internet first. Learn more about <a>local development</a>.',
     },
+  },
+  id_token_claims: {
+    card_title: 'ID token claims',
+    card_description:
+      'Request additional user scopes during Protected App sign-in to include enabled extended claims in the forwarded ID token.',
+    field_title: 'Additional scopes',
+    field_description:
+      'Claims are included only when they are enabled in <a>Custom JWT > ID token</a> and the matching scope is requested here.',
+    table_column_scope: 'Scope',
+    table_column_claims_forwarded: 'Claims forwarded',
+    disabled_claims_hint:
+      'Greyed out claims are not yet forwarded. Enable them in <a>Custom JWT > ID token</a> to include them in the ID token.',
   },
   success_message:
     '🎉 App authentication successfully enabled! Explore the new experience of your website.',

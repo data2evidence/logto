@@ -7,6 +7,7 @@ const user = {
   email_not_exist: 'O endereço de e-mail ainda não foi registrado.',
   phone_not_exist: 'O número de telefone ainda não foi registrado.',
   identity_not_exist: 'A conta social ainda não foi registrada.',
+  sso_identity_not_exist: 'A conta corporate SSO ainda não foi registrada.',
   identity_already_in_use: 'A conta social foi associada a uma conta existente.',
   social_account_exists_in_profile: 'A conta social já está associada ao seu perfil.',
   cannot_delete_self: 'Você não pode excluir a si mesmo.',
@@ -30,25 +31,30 @@ const user = {
   role_exists: 'O id da função {{roleId}} já foi adicionado a este usuário',
   invalid_role_type:
     'Tipo de função inválido, não é possível atribuir uma função máquina a usuário.',
+  suggest_mfa: 'Para maior segurança da conta, recomendamos que você vincule MFA à sua conta.',
   missing_mfa: 'Você precisa vincular MFA adicional antes de fazer login.',
   totp_already_in_use: 'TOTP já está em uso.',
   backup_code_already_in_use: 'O código de backup já está em uso.',
   password_algorithm_required: 'Algoritmo de senha é necessário.',
   password_and_digest: 'Você não pode definir tanto senha de texto simples quanto digest de senha.',
   personal_access_token_name_exists: 'O nome do token de acesso pessoal já existe.',
-  /** UNTRANSLATED */
-  totp_secret_invalid: 'Invalid TOTP secret supplied.',
-  /** UNTRANSLATED */
-  wrong_backup_code_format: 'Backup code format is invalid.',
-  /** UNTRANSLATED */
-  username_required: 'Username is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
+  totp_secret_invalid: 'Segredo TOTP fornecido é inválido.',
+  wrong_backup_code_format: 'Formato do código de backup é inválido.',
+  username_required:
+    'Nome de usuário é um identificador obrigatório, você não pode defini-lo como nulo.',
   email_or_phone_required:
-    'Email address or phone number is a required identifier, at least one is required.',
-  /** UNTRANSLATED */
-  email_required: 'Email address is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  phone_required: 'Phone number is a required identifier, you can not set it to null.',
+    'Endereço de e-mail ou número de telefone é um identificador obrigatório, pelo menos um é necessário.',
+  last_sign_in_method_required:
+    'Você precisa manter pelo menos um método de login disponível na sua conta.',
+  email_required:
+    'Endereço de e-mail é um identificador obrigatório, você não pode defini-lo como nulo.',
+  phone_required:
+    'Número de telefone é um identificador obrigatório, você não pode defini-lo como nulo.',
+  enterprise_sso_identity_not_exists:
+    'O usuário não tem uma identidade empresarial vinculada ao ID do conector SSO especificado: {{ ssoConnectorId }}.',
+  identity_not_exists_in_current_user:
+    'A identidade especificada não existe na conta do usuário atual. Por favor, vincule a identidade antes de prosseguir.',
+  passkey_preferred: 'Crie uma passkey para simplificar seu processo de login.',
 };
 
 export default Object.freeze(user);

@@ -41,6 +41,7 @@ export enum TenantSettingsTabs {
   Settings = 'settings',
   Members = 'members',
   Domains = 'domains',
+  OidcConfigs = 'oidc-configs',
   Subscription = 'subscription',
   BillingHistory = 'billing-history',
 }
@@ -59,4 +60,9 @@ export enum OrganizationTemplateTabs {
 export enum OrganizationRoleDetailsTabs {
   Permissions = 'permissions',
   General = 'general',
+}
+
+export enum EnterpriseSubscriptionTabs {
+  Subscription = 'subscription',
+  BillingHistory = 'billing-history',
 }

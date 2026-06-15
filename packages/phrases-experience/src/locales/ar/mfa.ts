@@ -2,18 +2,35 @@ const mfa = {
   totp: 'رمز OTP لتطبيق المصادقة',
   webauthn: 'مفتاح المرور',
   backup_code: 'رمز النسخ الاحتياطي',
+  email_verification_code: 'رمز التحقق عبر البريد الإلكتروني',
+  phone_verification_code: 'رمز التحقق عبر الرسائل القصيرة',
   link_totp_description: 'مثال: Google Authenticator، إلخ.',
   link_webauthn_description: 'ربط جهازك أو جهاز USB الخاص بك',
   link_backup_code_description: 'إنشاء رمز نسخ احتياطي',
+  link_email_verification_code_description: 'ربط عنوان بريدك الإلكتروني',
+  link_email_2fa_description: 'ربط عنوان بريدك الإلكتروني للتحقق بخطوتين',
+  link_phone_verification_code_description: 'ربط رقم هاتفك',
+  link_phone_2fa_description: 'ربط رقم هاتفك للتحقق بخطوتين',
   verify_totp_description: 'أدخل الرمز المرة الواحدة في التطبيق',
   verify_webauthn_description: 'تحقق من جهازك أو جهاز USB الخاص بك',
   verify_backup_code_description: 'الصق رمز النسخ الاحتياطي الذي حفظته',
+  verify_email_verification_code_description: 'أدخل الرمز المرسل إلى بريدك الإلكتروني',
+  verify_phone_verification_code_description: 'أدخل الرمز المرسل إلى هاتفك',
+  send_to_email: 'إرسال إلى {{identifier}}',
+  send_to_phone: 'إرسال إلى {{identifier}}',
+  onboarding: 'تشغيل التحقق بخطوتين',
+  onboarding_description:
+    'احمِ حسابك بالتحقق بخطوتين. اختر طريقة أو أكثر: مفتاح المرور، تطبيق المصادقة (OTP)، رمز التحقق عبر الرسائل القصيرة، أو رموز النسخ الاحتياطي.',
+  enable_mfa: 'تفعيل التحقق بخطوتين',
   add_mfa_factors: 'إضافة التحقق من خطوتين',
   add_mfa_description: 'تم تمكين التحقق من خطوتين. حدد طريقة التحقق الثانية لتسجيل الدخول الآمن.',
+  add_another_mfa_factor: 'إضافة تحقق آخر من خطوتين',
+  add_another_mfa_description: 'حدد طريقة أخرى للتحقق من هويتك عند تسجيل الدخول.',
   verify_mfa_factors: 'التحقق من خطوتين',
   verify_mfa_description:
     'تم تمكين التحقق من خطوتين لهذا الحساب. يرجى تحديد الطريقة الثانية للتحقق من هويتك.',
   add_authenticator_app: 'إضافة تطبيق المصادقة',
+  replace_authenticator_app: 'استبدال تطبيق المصادقة',
   step: 'الخطوة {{step, number}}: {{content}}',
   scan_qr_code: 'مسح رمز الاستجابة السريعة هذا',
   scan_qr_code_description:
@@ -28,11 +45,19 @@ const mfa = {
     'أدخل رمز التحقق المكون من 6 أرقام الذي تم إنشاؤه بواسطة تطبيق المصادقة.',
   enter_one_time_code_description:
     'تم تمكين التحقق من خطوتين لهذا الحساب. يرجى إدخال الرمز لمرة واحدة المعروض على تطبيق المصادقة المرتبط بك.',
+  enter_email_verification_code: 'أدخل رمز التحقق عبر البريد الإلكتروني',
+  enter_email_verification_code_description:
+    'تم تمكين المصادقة بخطوتين لهذا الحساب. يرجى إدخال رمز التحقق المرسل إلى {{identifier}}.',
+  enter_phone_verification_code: 'أدخل رمز التحقق عبر الرسائل القصيرة',
+  enter_phone_verification_code_description:
+    'تم تمكين المصادقة بخطوتين لهذا الحساب. يرجى إدخال رمز التحقق عبر الرسائل القصيرة المرسل إلى {{identifier}}.',
   link_another_mfa_factor: 'التبديل إلى طريقة أخرى',
   save_backup_code: 'احفظ رمز النسخ الاحتياطي الخاص بك',
   save_backup_code_description:
     'يمكنك استخدام أحد هذه الرموز الاحتياطية للوصول إلى حسابك إذا واجهتك مشكلة أثناء التحقق من خطوتين بطرق أخرى. يمكن استخدام كل رمز مرة واحدة فقط.',
   backup_code_hint: 'تأكد من نسخها وحفظها في مكان آمن.',
+  new_backup_codes_generated:
+    'لقد تم استبدال رموز النسخ الاحتياطي القديمة برموز جديدة. احفظها في مكان آمن في أقرب وقت ممكن.',
   enter_a_backup_code: 'أدخل رمز النسخ الاحتياطي',
   enter_backup_code_description:
     'أدخل رمز النسخ الاحتياطي الذي حفظته عند تمكين التحقق من خطوتين في البداية.',

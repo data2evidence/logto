@@ -45,12 +45,16 @@ export const deleteConnectorById = async (id: string, api: KyInstance = authedAd
 
 export const updateConnectorConfig = async (
   id: string,
-  config: Record<string, unknown>,
-  metadata?: Record<string, unknown>
+  body: {
+    config?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    enableTokenStorage?: boolean;
+    syncProfile?: boolean;
+  }
 ) =>
   authedAdminApi
     .patch(`connectors/${id}`, {
-      json: { config, metadata },
+      json: body,
     })
     .json<ConnectorResponse>();
 
@@ -63,17 +67,19 @@ export const sendSmsTestMessage = async (
 export const sendEmailTestMessage = async (
   connectorFactoryId: string,
   email: string,
-  config: Record<string, unknown>
-) => sendTestMessage(connectorFactoryId, 'email', email, config);
+  config: Record<string, unknown>,
+  locale?: string
+) => sendTestMessage(connectorFactoryId, 'email', email, config, locale);
 
 const sendTestMessage = async (
   connectorFactoryId: string,
   receiverType: 'phone' | 'email',
   receiver: string,
-  config: Record<string, unknown>
+  config: Record<string, unknown>,
+  locale?: string
 ) =>
   authedAdminApi.post(`connectors/${connectorFactoryId}/test`, {
-    json: { [receiverType]: receiver, config },
+    json: { [receiverType]: receiver, config, locale },
   });
 
 export const getConnectorAuthorizationUri = async (

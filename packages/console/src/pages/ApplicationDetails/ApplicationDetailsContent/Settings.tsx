@@ -1,12 +1,18 @@
 import { validateRedirectUrl } from '@logto/core-kit';
 import type { Application } from '@logto/schemas';
 import { ApplicationType } from '@logto/schemas';
+import { useContext } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Trans, useTranslation } from 'react-i18next';
 
+import ExternalLinkIcon from '@/assets/icons/external-link.svg?react';
 import FormCard from '@/components/FormCard';
 import MultiTextInputField from '@/components/MultiTextInputField';
+import { applicationDataStructure, deviceFlow, thirdPartyApp } from '@/consts';
+import { AppDataContext } from '@/contexts/AppDataProvider';
+import Button from '@/ds-components/Button';
 import CodeEditor from '@/ds-components/CodeEditor';
+import FlipOnRtl from '@/ds-components/FlipOnRtl';
 import FormField from '@/ds-components/FormField';
 import InlineNotification from '@/ds-components/InlineNotification';
 import type { MultiTextInputRule } from '@/ds-components/MultiTextInput/types';
@@ -38,11 +44,34 @@ const hasMixedUriProtocols = (applicationType: ApplicationType, uris: string[]):
   }
 };
 
+const hasWildcardUri = (uris?: string[]) => Boolean(uris?.some((uri) => uri.includes('*')));
+
+/**
+ * Validates redirect URIs based on application type.
+ * Wildcards are only allowed for web applications (SPA and Traditional), not for native apps.
+ */
+const createRedirectUriValidator = (applicationType: ApplicationType) => (value: string) => {
+  // Native apps don't support wildcard redirect URIs
+  if (applicationType === ApplicationType.Native && value.includes('*')) {
+    return false;
+  }
+  return validateRedirectUrl(value, 'web') || validateRedirectUrl(value, 'mobile');
+};
+
 function MixedUriWarning() {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
   return (
     <InlineNotification severity="alert" className={styles.mixedUriWarning}>
       {t('application_details.mixed_redirect_uri_warning')}
+    </InlineNotification>
+  );
+}
+
+function WildcardUriWarning() {
+  const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
+  return (
+    <InlineNotification severity="alert" className={styles.mixedUriWarning}>
+      {t('application_details.wildcard_redirect_uri_warning')}
     </InlineNotification>
   );
 }
@@ -53,21 +82,23 @@ type Props = {
 
 function Settings({ data }: Props) {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
-  const { getDocumentationUrl } = useDocumentationUrl();
   const {
     control,
     register,
     watch,
     formState: { errors },
   } = useFormContext<ApplicationForm>();
+  const { tenantEndpoint } = useContext(AppDataContext);
+  const { getDocumentationUrl } = useDocumentationUrl();
 
-  const { type: applicationType } = data;
+  const { type: applicationType, isThirdParty, customClientMetadata } = data;
 
+  const isDeviceFlow = Boolean(customClientMetadata.isDeviceFlow);
   const isProtectedApp = applicationType === ApplicationType.Protected;
+  const redirectUriValidator = createRedirectUriValidator(applicationType);
   const uriPatternRules: MultiTextInputRule = {
     pattern: {
-      verify: (value) =>
-        !value || validateRedirectUrl(value, 'web') || validateRedirectUrl(value, 'mobile'),
+      verify: (value) => !value || redirectUriValidator(value),
       message: t('errors.invalid_uri_format'),
     },
   };
@@ -78,6 +109,8 @@ function Settings({ data }: Props) {
     applicationType,
     postLogoutRedirectUris
   );
+  const showRedirectUriWildcardWarning = hasWildcardUri(redirectUris);
+  const showPostLogoutUriWildcardWarning = hasWildcardUri(postLogoutRedirectUris);
 
   if (isProtectedApp) {
     return <ProtectedAppSettings data={data} />;
@@ -86,12 +119,36 @@ function Settings({ data }: Props) {
   return (
     <FormCard
       title="application_details.settings"
-      description="application_details.settings_description"
-      learnMoreLink={{
-        href: getDocumentationUrl('/docs/references/applications'),
-        targetBlank: 'noopener',
-      }}
+      description={`application_details.${isThirdParty ? 'third_party_' : ''}settings_description`}
+      learnMoreLink={{ href: isThirdParty ? thirdPartyApp : applicationDataStructure }}
     >
+      {isDeviceFlow && (
+        <div className={styles.deviceFlowBanner}>
+          <span className={styles.deviceFlowEmoji}>🎉</span>
+          <span>
+            <Trans
+              components={{
+                a: <TextLink targetBlank="noopener" href={getDocumentationUrl(deviceFlow)} />,
+              }}
+            >
+              {t('application_details.device_flow_notification')}
+            </Trans>
+          </span>
+          <Button
+            className={styles.deviceFlowTryDemoButton}
+            size="small"
+            title="application_details.device_flow_try_demo"
+            trailingIcon={
+              <FlipOnRtl>
+                <ExternalLinkIcon />
+              </FlipOnRtl>
+            }
+            onClick={() => {
+              window.open(new URL('/device-demo-app', tenantEndpoint), '_blank');
+            }}
+          />
+        </div>
+      )}
       <FormField isRequired title="application_details.application_name">
         <TextInput
           {...register('name', { required: true })}
@@ -105,7 +162,7 @@ function Settings({ data }: Props) {
           placeholder={t('application_details.description_placeholder')}
         />
       </FormField>
-      {applicationType !== ApplicationType.MachineToMachine && (
+      {applicationType !== ApplicationType.MachineToMachine && !isDeviceFlow && (
         <Controller
           name="oidcClientMetadata.redirectUris"
           control={control}
@@ -147,8 +204,9 @@ function Settings({ data }: Props) {
           )}
         />
       )}
-      {showRedirectUriMixedWarning && <MixedUriWarning />}
-      {applicationType !== ApplicationType.MachineToMachine && (
+      {showRedirectUriWildcardWarning && !isDeviceFlow && <WildcardUriWarning />}
+      {showRedirectUriMixedWarning && !isDeviceFlow && <MixedUriWarning />}
+      {applicationType !== ApplicationType.MachineToMachine && !isDeviceFlow && (
         <Controller
           name="oidcClientMetadata.postLogoutRedirectUris"
           control={control}
@@ -168,8 +226,9 @@ function Settings({ data }: Props) {
           )}
         />
       )}
-      {showPostLogoutUriMixedWarning && <MixedUriWarning />}
-      {applicationType !== ApplicationType.MachineToMachine && (
+      {showPostLogoutUriWildcardWarning && !isDeviceFlow && <WildcardUriWarning />}
+      {showPostLogoutUriMixedWarning && !isDeviceFlow && <MixedUriWarning />}
+      {applicationType !== ApplicationType.MachineToMachine && !isDeviceFlow && (
         <Controller
           name="customClientMetadata.corsAllowedOrigins"
           control={control}

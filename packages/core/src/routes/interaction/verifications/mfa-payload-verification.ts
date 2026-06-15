@@ -21,13 +21,16 @@ import {
 import { pick } from '@silverhand/essentials';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 
+import { validateTotpToken } from '#src/libraries/verification-helpers/totp-validation.js';
+import {
+  verifyWebAuthnAuthentication,
+  verifyWebAuthnRegistration,
+} from '#src/libraries/verification-helpers/webauthn.js';
 import type { WithLogContext } from '#src/middleware/koa-audit-log.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
 
 import type { AnonymousInteractionResult } from '../types/index.js';
-import { validateTotpToken } from '../utils/totp-validation.js';
-import { verifyWebAuthnAuthentication, verifyWebAuthnRegistration } from '../utils/webauthn.js';
 
 const verifyBindTotp = async (
   interactionStorage: AnonymousInteractionResult,
@@ -92,12 +95,9 @@ const verifyBindWebAuthn = async (
 
   const { type, ...rest } = payload;
   const { challenge } = pendingMfa;
-  const { verified, registrationInfo } = await verifyWebAuthnRegistration(
-    rest,
-    challenge,
-    rpId,
-    origin
-  );
+  const { verified, registrationInfo } = await verifyWebAuthnRegistration(rest, challenge, [
+    origin,
+  ]);
 
   assertThat(verified, 'session.mfa.webauthn_verification_failed');
   assertThat(registrationInfo, 'session.mfa.webauthn_verification_failed');
@@ -106,6 +106,7 @@ const verifyBindWebAuthn = async (
 
   return {
     type,
+    rpId,
     credentialId: credentialID,
     publicKey: isoBase64URL.fromBuffer(credentialPublicKey),
     counter,

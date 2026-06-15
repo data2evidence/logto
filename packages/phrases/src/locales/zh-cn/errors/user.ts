@@ -7,6 +7,7 @@ const user = {
   email_not_exist: '邮箱地址尚未注册。',
   phone_not_exist: '手机号码尚未注册。',
   identity_not_exist: '该社交帐号尚未注册。',
+  sso_identity_not_exist: '企业级 SSO 账户尚未注册。',
   identity_already_in_use: '该社交帐号已被注册。',
   social_account_exists_in_profile: '你已绑定当前社交账号，无需重复操作。',
   cannot_delete_self: '无法删除自己的账户。',
@@ -28,25 +29,24 @@ const user = {
   missing_profile: '请于登录时提供必要的用户补充信息。',
   role_exists: '角色 ID {{roleId}} 已添加到此用户',
   invalid_role_type: '无效的角色类型，无法将机器到机器角色分配给用户。',
-  missing_mfa: '你需要在登录之前绑定额外的MFA。',
-  totp_already_in_use: 'TOTP已在使用中。',
+  suggest_mfa: '为提升账户安全性，我们建议你将 MFA 绑定到你的账户。',
+  missing_mfa: '你需要在登录之前绑定额外的 MFA。',
+  totp_already_in_use: 'TOTP 已在使用中。',
   backup_code_already_in_use: '备用代码已在使用中。',
   password_algorithm_required: '密码算法是必需的。',
   password_and_digest: 'You cannot set both plain text password and password digest.',
   personal_access_token_name_exists: '个人访问令牌名称已存在。',
-  /** UNTRANSLATED */
-  totp_secret_invalid: 'Invalid TOTP secret supplied.',
-  /** UNTRANSLATED */
-  wrong_backup_code_format: 'Backup code format is invalid.',
-  /** UNTRANSLATED */
-  username_required: 'Username is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  email_or_phone_required:
-    'Email address or phone number is a required identifier, at least one is required.',
-  /** UNTRANSLATED */
-  email_required: 'Email address is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  phone_required: 'Phone number is a required identifier, you can not set it to null.',
+  totp_secret_invalid: '无效的 TOTP 密钥。',
+  wrong_backup_code_format: '备用代码格式无效。',
+  username_required: '用户名是必需的标识符，你不能将其设置为 null。',
+  email_or_phone_required: '邮箱地址或手机号码是必需的标识符，至少需要一个。',
+  last_sign_in_method_required: '你的账户至少需要保留一种可用的登录方式。',
+  email_required: '邮箱地址是必需的标识符，你不能将其设置为 null。',
+  phone_required: '手机号码是必需的标识符，你不能将其设置为 null。',
+  enterprise_sso_identity_not_exists:
+    '用户没有与指定的 SSO 连接器 ID {{ ssoConnectorId }} 关联的企业身份。',
+  identity_not_exists_in_current_user: '当前用户账户中不存在指定的身份。请在继续之前链接此身份。',
+  passkey_preferred: '创建通行密钥以简化登录流程。',
 };
 
 export default Object.freeze(user);

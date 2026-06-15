@@ -1,7 +1,8 @@
 import { type TenantModel } from '@logto/schemas';
 
-import { type RegionName } from '@/components/Region';
-
 export type CreateTenantData = Pick<TenantModel, 'name' | 'tag'> & {
-  regionName: RegionName;
+  instanceId: string;
+  regionName: string;
+  /** Custom tenant ID suffix (without prefix). Only for private regions with customTenantIdPrefix. */
+  tenantIdSuffix?: string;
 };

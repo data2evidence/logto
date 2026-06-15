@@ -8,18 +8,42 @@ import {
   ForeignKeyIntegrityConstraintViolationError,
 } from '@silverhand/slonik';
 import type { Middleware } from 'koa';
+import { DatabaseError } from 'pg-protocol';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import { DeletionError, InsertionError, UpdateError } from '#src/errors/SlonikError/index.js';
 
+/**
+ * @remarks
+ * We are now upgrading this error handler to handle both SlonikError and DatabaseError.
+ * This is because DatabaseError and SlonikError, due to their different sources of definition, are not unified.
+ * However, in practice, both are errors triggered by DB query failures.
+ */
 /* eslint-disable complexity */
 export default function koaSlonikErrorHandler<StateT, ContextT>(): Middleware<StateT, ContextT> {
   return async (ctx, next) => {
     try {
       await next();
     } catch (error: unknown) {
-      if (!(error instanceof SlonikError)) {
+      if (!(error instanceof SlonikError) && !(error instanceof DatabaseError)) {
         throw error;
+      }
+
+      if (error instanceof DatabaseError) {
+        // https://www.postgresql.org/docs/14/errcodes-appendix.html
+        // Can better infer SlonikError type.
+        // eslint-disable-next-line unicorn/no-lonely-if
+        if (error.code === '22001') {
+          throw new RequestError(
+            {
+              code: 'entity.value_too_long',
+              status: 422,
+            },
+            {
+              message: error.message,
+            }
+          );
+        }
       }
 
       if (error instanceof InvalidInputError) {
@@ -75,6 +99,13 @@ export default function koaSlonikErrorHandler<StateT, ContextT>(): Middleware<St
         if (error.constraint === 'users__primary_phone') {
           throw new RequestError({
             code: 'user.phone_already_in_use',
+            status: 422,
+          });
+        }
+
+        if (error.constraint === 'custom_profile_fields__name') {
+          throw new RequestError({
+            code: 'custom_profile_fields.name_exists',
             status: 422,
           });
         }

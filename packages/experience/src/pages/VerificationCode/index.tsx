@@ -6,10 +6,10 @@ import { validate } from 'superstruct';
 
 import SecondaryPageLayout from '@/Layout/SecondaryPageLayout';
 import UserInteractionContext from '@/Providers/UserInteractionContextProvider/UserInteractionContext';
-import { type IdentifierInputValue } from '@/components/InputFields/SmartInputField';
 import VerificationCodeContainer from '@/containers/VerificationCode';
 import { useSieMethods } from '@/hooks/use-sie';
 import ErrorPage from '@/pages/ErrorPage';
+import { type IdentifierInputValue } from '@/shared/components/InputFields/SmartInputField';
 import { UserFlow } from '@/types';
 import { userFlowGuard } from '@/types/guard';
 import { formatPhoneNumberWithCountryCallingCode } from '@/utils/country-code';
@@ -50,11 +50,8 @@ const VerificationCode = () => {
 
   const { type, value } = cachedIdentifierInputValue;
 
-  // SignIn Method not enabled
   const methodSettings = signInMethods.find((method) => method.identifier === type);
-  if (!methodSettings && flow !== UserFlow.ForgotPassword) {
-    return <ErrorPage />;
-  }
+  const hasPasswordButton = userFlow === UserFlow.SignIn && methodSettings?.password;
 
   // VerificationId not found
   const verificationId = verificationIdsMap[codeVerificationTypeMap[type]];
@@ -76,7 +73,7 @@ const VerificationCode = () => {
         flow={userFlow}
         identifier={cachedIdentifierInputValue}
         verificationId={verificationId}
-        hasPasswordButton={userFlow === UserFlow.SignIn && methodSettings?.password}
+        hasPasswordButton={hasPasswordButton}
       />
     </SecondaryPageLayout>
   );

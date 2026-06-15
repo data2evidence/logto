@@ -3,7 +3,7 @@ import { ApplicationType, type SsoConnector, type Application } from '@logto/sch
 import { createApplication, deleteApplication } from '#src/api/application.js';
 import { SsoConnectorApi } from '#src/api/sso-connector.js';
 import { expectRejects } from '#src/helpers/index.js';
-import { randomString, devFeatureTest } from '#src/utils.js';
+import { devFeatureTest, randomString } from '#src/utils.js';
 
 devFeatureTest.describe('SAML IdP initiated authentication config', () => {
   const ssoConnectorsApi = new SsoConnectorApi();
@@ -160,9 +160,8 @@ devFeatureTest.describe('SAML IdP initiated authentication config', () => {
           state: 'private_state',
         };
 
-        const existingConfig = await ssoConnectorsApi.getSsoConnectorIdpInitiatedAuthConfig(
-          connectorId
-        );
+        const existingConfig =
+          await ssoConnectorsApi.getSsoConnectorIdpInitiatedAuthConfig(connectorId);
 
         expect(existingConfig).not.toBeNull();
 
@@ -264,9 +263,8 @@ devFeatureTest.describe('SAML IdP initiated authentication config', () => {
       it('should be able to update the existing IdP-initiated authentication configuration for a SAML SSO connector', async () => {
         const connectorId = ssoConnectors.get('saml')!.id;
 
-        const existingConfig = await ssoConnectorsApi.getSsoConnectorIdpInitiatedAuthConfig(
-          connectorId
-        );
+        const existingConfig =
+          await ssoConnectorsApi.getSsoConnectorIdpInitiatedAuthConfig(connectorId);
 
         expect(existingConfig.clientIdpInitiatedAuthCallbackUri).not.toBeNull();
         expect(existingConfig.autoSendAuthorizationRequest).toBe(false);

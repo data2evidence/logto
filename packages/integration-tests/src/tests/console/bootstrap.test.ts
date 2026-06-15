@@ -1,4 +1,4 @@
-import { type User } from '@logto/schemas';
+import { adminConsoleApplicationId, type User } from '@logto/schemas';
 import { appendPath } from '@silverhand/essentials';
 
 import { authedAdminTenantApi } from '#src/api/api.js';
@@ -71,7 +71,9 @@ describe('smoke testing for console admin account creation and sign-in', () => {
     await expect(page).toFill('input[name=identifier]', consoleUsername);
     await expectNavigation(expect(page).toClick('button[name=submit]'));
 
-    expect(page.url()).toBe(appendPathname('/register/password', logtoConsoleUrl).href);
+    expect(page.url()).toBe(
+      appendPathname(`/register/password?app_id=${adminConsoleApplicationId}`, logtoConsoleUrl).href
+    );
 
     await expect(page).toFillForm('form', {
       newPassword: consolePassword,
@@ -80,7 +82,30 @@ describe('smoke testing for console admin account creation and sign-in', () => {
 
     await expectNavigation(expect(page).toClick('button[name=submit]'));
 
-    expect(page.url()).toBe(new URL('console/get-started', logtoConsoleUrl).href);
+    const getStartedUrl = new URL('console/get-started', logtoConsoleUrl).href;
+    const onboardingUrl = new URL('console/onboarding', logtoConsoleUrl).href;
+    const expectedUrls = isDevFeaturesEnabled ? [onboardingUrl, getStartedUrl] : [getStartedUrl];
+    await page.waitForFunction(
+      (expectedUrls) => expectedUrls.includes(window.location.href),
+      {},
+      expectedUrls
+    );
+
+    expect(expectedUrls).toContain(page.url());
+
+    if (page.url() === onboardingUrl) {
+      await expect(page).toFill('input[type=email]', 'oss-admin@example.com');
+      await expect(page).toFill('input[placeholder="Acme.co"]', 'Acme');
+      await expect(page).toClick('div[role=radio]', { text: '50-199' });
+      await expect(page).toClick('button', { text: 'Next' });
+      await page.waitForFunction(
+        (expectedUrl) => window.location.href === expectedUrl,
+        {},
+        getStartedUrl
+      );
+
+      expect(page.url()).toBe(getStartedUrl);
+    }
   });
 
   it('should have html attributes "lang=en" and "dir=ltr" by default', async () => {
@@ -93,13 +118,14 @@ describe('smoke testing for console admin account creation and sign-in', () => {
 
     // Switch back to English
     await switchToLanguage(page, 'English');
+    await expect(page).toMatchElement('html[lang=en][dir=ltr]');
   });
 
   it('can sign out of admin console', async () => {
     await expect(page).toClick('div[class$=topbar] > div[class$=container]');
 
-    // Try awaiting for 500ms before clicking sign-out button
-    await waitFor(500);
+    // Try awaiting for 1000ms before clicking sign-out button
+    await waitFor(1000);
 
     await expectNavigation(
       expect(page).toClick(
@@ -107,7 +133,7 @@ describe('smoke testing for console admin account creation and sign-in', () => {
       )
     );
 
-    expect(page.url()).toBe(new URL('sign-in', logtoConsoleUrl).href);
+    expect(page.url()).toBe(new URL('sign-in?app_id=admin-console', logtoConsoleUrl).href);
   });
 
   it('can sign in to admin console again', async () => {

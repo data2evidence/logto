@@ -1,5 +1,5 @@
 import type { LanguageTag } from '@logto/language-kit';
-import { languages, fallback } from '@logto/language-kit';
+import { languages, findSupportedLanguageTag } from '@logto/language-kit';
 import type { DeepPartial, NormalizeKeyPaths } from '@silverhand/essentials';
 import { z } from 'zod';
 
@@ -15,6 +15,7 @@ import plPL from './locales/pl-pl/index.js';
 import ptBR from './locales/pt-br/index.js';
 import ptPT from './locales/pt-pt/index.js';
 import ru from './locales/ru/index.js';
+import th from './locales/th/index.js';
 import trTR from './locales/tr-tr/index.js';
 import zhCN from './locales/zh-cn/index.js';
 import zhHK from './locales/zh-hk/index.js';
@@ -39,6 +40,7 @@ export const builtInLanguages = [
   'pt-BR',
   'pt-PT',
   'ru',
+  'th',
   'tr-TR',
   'zh-CN',
   'zh-HK',
@@ -60,8 +62,10 @@ export type LogtoErrorI18nKey = `errors:${LogtoErrorCode}`;
 
 export type AdminConsoleKey = NormalizeKeyPaths<typeof en.translation.admin_console>;
 
-export const getDefaultLanguageTag = (languages: string): LanguageTag =>
-  builtInLanguageTagGuard.or(fallback<LanguageTag>('en')).parse(languages);
+export const getDefaultLanguageTag = (language: string): LanguageTag =>
+  builtInLanguageTagGuard.parse(
+    findSupportedLanguageTag(language ? [language] : [], builtInLanguages)
+  );
 
 export const isBuiltInLanguageTag = (language: string): language is BuiltInLanguageTag =>
   builtInLanguageTagGuard.safeParse(language).success;
@@ -86,6 +90,7 @@ const resource: Resource = {
   'pt-BR': ptBR,
   'pt-PT': ptPT,
   ru,
+  th,
   'tr-TR': trTR,
   'zh-CN': zhCN,
   'zh-HK': zhHK,

@@ -1,17 +1,23 @@
 import { Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import DelayedSuspenseFallback from '@/components/DelayedSuspenseFallback';
+import { EnterpriseSubscriptionTabs } from '@/consts';
 import ProtectedRoutes from '@/containers/ProtectedRoutes';
 import { GlobalAnonymousRoute, GlobalRoute } from '@/contexts/TenantsProvider';
 import { OnboardingApp } from '@/onboarding';
 import AcceptInvitation from '@/pages/AcceptInvitation';
 import Callback from '@/pages/Callback';
 import CheckoutSuccessCallback from '@/pages/CheckoutSuccessCallback';
+import ExternalGoogleOneTapLanding from '@/pages/ExternalGoogleOneTapLanding';
+import OneTimeTokenLanding from '@/pages/OneTimeTokenLanding';
 import Profile from '@/pages/Profile';
 import HandleSocialCallback from '@/pages/Profile/containers/HandleSocialCallback';
 
 import styles from './AppRoutes.module.scss';
+import EnterpriseSubscription from './pages/EnterpriseSubscription';
+import BillingHistory from './pages/EnterpriseSubscription/BillingHistory';
+import Subscription from './pages/EnterpriseSubscription/Subscription';
 import Main from './pages/Main';
 import SocialDemoCallback from './pages/SocialDemoCallback';
 
@@ -23,6 +29,14 @@ function AppRoutes() {
         <Routes>
           <Route path={GlobalAnonymousRoute.Callback} element={<Callback />} />
           <Route path={GlobalAnonymousRoute.SocialDemoCallback} element={<SocialDemoCallback />} />
+          <Route
+            path={GlobalAnonymousRoute.OneTimeTokenLanding}
+            element={<OneTimeTokenLanding />}
+          />
+          <Route
+            path={GlobalAnonymousRoute.ExternalGoogleOneTapLanding}
+            element={<ExternalGoogleOneTapLanding />}
+          />
           <Route element={<ProtectedRoutes />}>
             <Route
               path={`${GlobalRoute.AcceptInvitation}/:invitationId`}
@@ -36,6 +50,20 @@ function AppRoutes() {
             />
             <Route path={GlobalRoute.Onboarding + '/*'} element={<OnboardingApp />} />
             <Route index element={<Main />} />
+            <Route
+              path={`${GlobalRoute.EnterpriseSubscription}/:logtoEnterpriseId`}
+              element={<EnterpriseSubscription />}
+            >
+              <Route
+                index
+                element={<Navigate replace to={EnterpriseSubscriptionTabs.Subscription} />}
+              />
+              <Route path={EnterpriseSubscriptionTabs.Subscription} element={<Subscription />} />
+              <Route
+                path={EnterpriseSubscriptionTabs.BillingHistory}
+                element={<BillingHistory />}
+              />
+            </Route>
           </Route>
         </Routes>
       </Suspense>

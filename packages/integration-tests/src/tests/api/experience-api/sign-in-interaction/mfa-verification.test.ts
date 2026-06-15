@@ -2,6 +2,7 @@ import { MfaFactor } from '@logto/schemas';
 import { authenticator } from 'otplib';
 
 import { createUserMfaVerification } from '#src/api/admin-user.js';
+import { updateSignInExperience } from '#src/api/sign-in-experience.js';
 import { initExperienceClient } from '#src/helpers/client.js';
 import { identifyUserWithUsernamePassword } from '#src/helpers/experience/index.js';
 import { successfullyVerifyTotp } from '#src/helpers/experience/totp-verification.js';
@@ -26,6 +27,7 @@ describe('mfa sign-in verification', () => {
   describe('TOTP verification', () => {
     beforeAll(async () => {
       await enableMandatoryMfaWithTotpAndBackupCode();
+      await updateSignInExperience({ adaptiveMfa: { enabled: false } });
     });
 
     it('should throw require_mfa_verification error when signing in without mfa verification', async () => {

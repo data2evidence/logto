@@ -1,7 +1,8 @@
 const users = {
   page_title: '用戶管理',
   title: '用戶管理',
-  subtitle: '管理你的用戶，包括創建新用戶，編輯用戶資料，查看用戶日誌，以及重新設置密碼和刪除用戶',
+  subtitle:
+    '管理你的用戶，包括創建新用戶，編輯用戶資料，查看用戶日誌，以及重新設置密碼和刪除用戶。',
   create: '添加用戶',
   create_subtitle: '請至少提供以下其中一個欄位以繼續操作。',
   error_missing_identifier: '你必須提供至少一個註冊標識來創建用戶。',
@@ -21,6 +22,8 @@ const users = {
   placeholder_title: '用戶管理',
   placeholder_description:
     '每個用戶都有一個包含所有用戶信息的個人資料。它由基本數據、社交身份和自定義數據組成。',
+  dev_tenant_data_retention_notice:
+    '在開發租戶中，超過 90 天的用戶帳戶會被自動刪除。<a>了解更多</a>',
 };
 
 export default Object.freeze(users);

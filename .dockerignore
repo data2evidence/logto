@@ -34,3 +34,10 @@ dump.rdb
 .github
 .husky
 .vscode
+
+# readme assets
+/assets/
+
+# Docker
+Dockerfile*
+docker-compose*.yml

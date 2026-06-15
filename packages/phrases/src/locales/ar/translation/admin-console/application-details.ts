@@ -1,10 +1,12 @@
+import concurrent_device_limit from './concurrent-device-limit.js';
+
 const application_details = {
   page_title: 'تفاصيل التطبيق',
   back_to_applications: 'العودة إلى التطبيقات',
   check_guide: 'تحقق من الدليل',
   settings: 'الإعدادات',
   settings_description:
-    'تعتبر "التطبيق" برنامجًا أو خدمة مسجلة يمكنه الوصول إلى معلومات المستخدم أو التصرف نيابة عن المستخدم. يساعد التطبيقات في التعرف على من يطلب ما من Logto والتعامل مع عملية تسجيل الدخول والإذن. قم بملء الحقول المطلوبة للمصادقة.',
+    '"التطبيق" هو برنامج أو خدمة مسجَّلة يمكنها الوصول إلى معلومات المستخدم أو التصرف نيابةً عنه. تساعد التطبيقات Logto على معرفة من يطلب ماذا، وتتولى إدارة تسجيل الدخول والصلاحيات. املأ الحقول المطلوبة لإتمام المصادقة.',
   integration: 'التكامل',
   integration_description:
     'نشر مع العمال الآمنة لـ Logto ، المدعومة بشبكة Cloudflare للأداء على أعلى مستوى وبدء بارد بدون تأخير في جميع أنحاء العالم.',
@@ -23,6 +25,7 @@ const application_details = {
   description_placeholder: 'أدخل وصف التطبيق الخاص بك',
   config_endpoint: 'نقطة نهاية تكوين موفر الهوية المفتوحة',
   issuer_endpoint: 'نقطة نهاية المصدر',
+  jwks_uri: 'عنوان URI لـ JWKS',
   authorization_endpoint: 'نقطة نهاية الترخيص',
   authorization_endpoint_tip:
     'نقطة النهاية لأداء المصادقة والترخيص. يُستخدم لـ OpenID Connect <a>المصادقة</a>.',
@@ -40,9 +43,10 @@ const application_details = {
   redirect_uri_placeholder_native: 'io.logto://callback',
   redirect_uri_tip:
     'عنوان URI الذي يتم إعادة التوجيه إليه بعد تسجيل المستخدم (سواء نجح أم فشل). انظر OpenID Connect <a>AuthRequest</a> لمزيد من المعلومات.',
-  /** UNTRANSLATED */
   mixed_redirect_uri_warning:
-    'Your application type is not compatible with at least one of the redirect URIs. It does not follow best practices and we strongly recommend keeping the redirect URIs consistent.',
+    'نوع التطبيق الخاص بك غير متوافق مع واحد على الأقل من عناوين URI لإعادة التوجيه. لا يتبع أفضل الممارسات ونوصي بشدة بالحفاظ على الاتساق في عناوين URI لإعادة التوجيه.',
+  wildcard_redirect_uri_warning:
+    'عناوين URI لإعادة التوجيه التي تحتوي على أحرف البدل ليست معيار OIDC وقد تزيد من سطح الهجوم. استخدمها بحذر وفضّل عناوين URI الدقيقة لإعادة التوجيه كلما أمكن ذلك.',
   post_sign_out_redirect_uri: 'عنوان URI لإعادة التوجيه بعد تسجيل الخروج',
   post_sign_out_redirect_uris: 'عناوين URI لإعادة التوجيه بعد تسجيل الخروج',
   post_sign_out_redirect_uri_placeholder: 'https://your.website.com/home',
@@ -66,9 +70,8 @@ const application_details = {
   rotate_refresh_token: 'تدوير رمز التحديث',
   rotate_refresh_token_label:
     'عند التمكين ، سيصدر Logto رمز تحديث جديد لطلبات الرموز عند مرور 70٪ من وقت الحياة الأصلي (TTL) أو تلبية شروط معينة. <a>تعرف على المزيد</a>',
-  /** UNTRANSLATED */
   rotate_refresh_token_label_for_public_clients:
-    'When enabled, Logto will issue a new refresh token for each token request. <a>Learn more</a>',
+    'عند التمكين ، سيصدر Logto رمز تحديث جديد لكل طلب رمز. <a>تعرف على المزيد</a>',
   backchannel_logout: 'تسجيل الخروج الخلفي',
   backchannel_logout_description:
     'قم بتكوين نقطة نهاية تسجيل الخروج الخلفية لـ OpenID Connect وما إذا كانت الجلسة مطلوبة لهذا التطبيق.',
@@ -76,6 +79,17 @@ const application_details = {
   backchannel_logout_uri_session_required: 'هل الجلسة مطلوبة؟',
   backchannel_logout_uri_session_required_description:
     'عند التمكين ، يتطلب RP تضمين مطالبة "sid" (معرف الجلسة) في رمز التسجيل الخروج لتحديد جلسة RP مع OP عند استخدام "backchannel_logout_uri".',
+  token_exchange: 'تبادل الرموز المميّزة',
+  token_exchange_description: 'إدارة إعدادات تبادل الرموز المميّزة لهذا التطبيق.',
+  allow_token_exchange: 'السماح بتبادل الرموز المميّزة',
+  allow_token_exchange_description:
+    'اسمح لهذا التطبيق ببدء طلبات تبادل الرموز المميّزة. هذا مطلوب لـ <impersonationLink>انتحال هوية المستخدم</impersonationLink> و <patLink>رموز الوصول الشخصية</patLink>.',
+  allow_token_exchange_public_client_warning:
+    'لا يُنصح بتمكين تبادل الرموز المميّزة للعملاء العموميين (تطبيق صفحة واحدة / تطبيق أصلي). لا يمكن للعملاء العموميين تخزين بيانات الاعتماد بشكل آمن، مما قد يعرّض تطبيقك لمخاطر انتحال الرموز المميّزة.',
+  device_flow_tag: 'تدفق الجهاز',
+  device_flow_notification:
+    'يُفعّل هذا التطبيق تدفق تفويض الجهاز OAuth 2.0 (Device Authorization Flow) للأجهزة ذات الإدخال المحدود أو التطبيقات بدون واجهة (مثل أجهزة التلفزيون، CLI). يُكمل المستخدمون تسجيل الدخول على جهاز منفصل عن طريق إدخال رمز الجهاز أو مسح رمز QR. <a>معرفة المزيد</a>',
+  device_flow_try_demo: 'تجربة العرض التوضيحي',
   delete_description:
     'لا يمكن التراجع عن هذا الإجراء. سيتم حذف التطبيق بشكل دائم. يرجى إدخال اسم التطبيق <span>{{name}}</span> للتأكيد.',
   enter_your_application_name: 'أدخل اسم التطبيق الخاص بك',
@@ -97,6 +111,8 @@ const application_details = {
   protect_origin_server: 'حماية خادم المصدر الخاص بك',
   protect_origin_server_description:
     'تأكد من حماية خادم المصدر الخاص بك من الوصول المباشر. راجع الدليل للحصول على <a>تعليمات مفصلة</a> أكثر.',
+  third_party_settings_description:
+    'دمج التطبيقات الخارجية مع Logto كموفر الهوية الخاص بك (IdP) باستخدام OIDC / OAuth 2.0، مع شاشة موافقة لترخيص المستخدم.',
   session_duration: 'مدة الجلسة (بالأيام)',
   try_it: 'جربها',
   no_organization_placeholder: 'لم يتم العثور على أي منظمة. <a>انتقل إلى المنظمات</a>',
@@ -154,6 +170,18 @@ const application_details = {
     organization_description:
       'Select the permissions requested by the third-party app for accessing specific organization data.',
     grant_organization_level_permissions: 'Grant permissions of organization data',
+    oidc_title: 'OIDC',
+    oidc_description:
+      'يتم تكوين أذونات OIDC الأساسية تلقائيًا لتطبيقك. هذه النطاقات ضرورية للمصادقة ولا يتم عرضها على شاشة موافقة المستخدم.',
+    default_oidc_permissions: 'أذونات OIDC الافتراضية',
+    permission_column: 'الإذن',
+    guide_column: 'الدليل',
+    openid_permission: 'openid',
+    openid_permission_guide:
+      "اختياري للوصول إلى موارد OAuth.\nمطلوب لمصادقة OIDC. يمنح الوصول إلى رمز مميز للهوية (ID token) ويسمح بالوصول إلى 'userinfo_endpoint'.",
+    offline_access_permission: 'offline_access',
+    offline_access_permission_guide:
+      'اختياري. يسترجع رموز التحديث للوصول طويل الأمد أو للمهام في الخلفية.',
   },
   roles: {
     assign_button: 'Assign roles',
@@ -181,12 +209,9 @@ const application_details = {
     create_new_secret: 'Create new secret',
     delete_confirmation:
       'This action cannot be undone. Are you sure you want to delete this secret?',
-    /** UNTRANSLATED */
-    deleted: 'The secret has been successfully deleted.',
-    /** UNTRANSLATED */
-    activated: 'The secret has been successfully activated.',
-    /** UNTRANSLATED */
-    deactivated: 'The secret has been successfully deactivated.',
+    deleted: 'تم حذف السر بنجاح.',
+    activated: 'تم تفعيل السر بنجاح.',
+    deactivated: 'تم تعطيل السر بنجاح.',
     legacy_secret: 'Legacy secret',
     expired: 'Expired',
     expired_tooltip: 'This secret was expired on {{date}}.',
@@ -198,104 +223,65 @@ const application_details = {
         'The secret will never expire. We recommend setting an expiration date for enhanced security.',
       days: '{{count}} day',
       days_other: '{{count}} days',
-      /** UNTRANSLATED */
-      years: '{{count}} year',
-      /** UNTRANSLATED */
-      years_other: '{{count}} years',
-      created: 'The secret {{name}} has been successfully created.',
+      years: '{{count}} عام',
+      years_other: '{{count}} أعوام',
+      created: 'تم إنشاء السر {{name}} بنجاح.',
     },
     edit_modal: {
       title: 'Edit application secret',
-      edited: 'The secret {{name}} has been successfully edited.',
+      edited: 'تم تعديل السر {{name}} بنجاح.',
     },
   },
   saml_idp_config: {
-    /** UNTRANSLATED */
-    title: 'SAML IdP metadata',
-    /** UNTRANSLATED */
-    description:
-      'Use the following metadata and certificate to configure the SAML IdP in your application.',
-    /** UNTRANSLATED */
-    metadata_url_label: 'IdP metadata URL',
-    /** UNTRANSLATED */
-    single_sign_on_service_url_label: 'Single sign-on service URL',
-    /** UNTRANSLATED */
-    idp_entity_id_label: 'IdP entity ID',
+    title: 'بيانات تعريف SAML IdP',
+    description: 'استخدم البيانات التعريفية والشهادة التالية لتكوين SAML IdP في تطبيقك.',
+    metadata_url_label: 'URL لبيانات تعريف IdP',
+    single_sign_on_service_url_label: 'URL لخدمة تسجيل الدخول الموحدة',
+    idp_entity_id_label: 'معرف كيان IdP',
   },
   saml_idp_certificates: {
-    /** UNTRANSLATED */
-    title: 'SAML signing certificate',
-    /** UNTRANSLATED */
-    expires_at: 'Expires at',
-    /** UNTRANSLATED */
-    finger_print: 'Fingerprint',
-    /** UNTRANSLATED */
-    status: 'Status',
-    /** UNTRANSLATED */
-    active: 'Active',
-    /** UNTRANSLATED */
-    inactive: 'Inactive',
+    title: 'شهادة توقيع SAML',
+    expires_at: 'تنتهي في',
+    finger_print: 'بصمة الأصابع',
+    status: 'الحالة',
+    active: 'نشط',
+    inactive: 'غير نشط',
   },
   saml_idp_name_id_format: {
-    /** UNTRANSLATED */
-    title: 'Name ID format',
-    /** UNTRANSLATED */
-    description: 'Select the name ID format of the SAML IdP.',
-    /** UNTRANSLATED */
-    persistent: 'Persistent',
-    /** UNTRANSLATED */
-    persistent_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    transient: 'Transient',
-    /** UNTRANSLATED */
-    transient_description: 'Use one-time user ID as Name ID',
-    /** UNTRANSLATED */
-    unspecified: 'Unspecified',
-    /** UNTRANSLATED */
-    unspecified_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    email_address: 'Email address',
-    /** UNTRANSLATED */
-    email_address_description: 'Use email address as Name ID',
+    title: 'تنسيق اسم المعرف',
+    description: 'حدد تنسيق اسم المعرف لـ SAML IdP.',
+    persistent: 'مستمر',
+    persistent_description: 'استخدام معرف مستخدم Logto كاسم المعرف',
+    transient: 'مؤقت',
+    transient_description: 'استخدام معرف مستخدم مؤقت كاسم المعرف',
+    unspecified: 'غير محدد',
+    unspecified_description: 'استخدام معرف مستخدم Logto كاسم المعرف',
+    email_address: 'البريد الإلكتروني',
+    email_address_description: 'استخدام البريد الإلكتروني كاسم المعرف',
   },
   saml_encryption_config: {
-    /** UNTRANSLATED */
-    encrypt_assertion: 'Encrypt SAML assertion',
-    /** UNTRANSLATED */
-    encrypt_assertion_description: 'By enabling this option, the SAML assertion will be encrypted.',
-    /** UNTRANSLATED */
-    encrypt_then_sign: 'Encrypt then sign',
-    /** UNTRANSLATED */
+    encrypt_assertion: 'تشفير تأكيد SAML',
+    encrypt_assertion_description: 'بتفعيل هذا الخيار، سيتم تشفير تأكيد SAML.',
+    encrypt_then_sign: 'تشفير ثم توقيع',
     encrypt_then_sign_description:
-      'By enabling this option, the SAML assertion will be encrypted and then signed; otherwise, the SAML assertion will be signed and then encrypted.',
-    /** UNTRANSLATED */
-    certificate: 'Certificate',
-    /** UNTRANSLATED */
-    certificate_tooltip:
-      'Copy and paste the x509 certificate you get from your service provider to encrypt the SAML assertion.',
-    /** UNTRANSLATED */
+      'بتفعيل هذا الخيار، سيتم تشفير تأكيد SAML ثم توقيعه؛ بخلاف ذلك، سيتم توقيع تأكيد SAML ثم تشفيره.',
+    certificate: 'شهادة',
+    certificate_tooltip: 'انسخ والصق شهادة x509 التي تحصل عليها من مزود الخدمة لتشفير تأكيد SAML.',
     certificate_placeholder:
       '-----BEGIN CERTIFICATE-----\nMIICYDCCAcmgAwIBA...\n-----END CERTIFICATE-----\n',
-    /** UNTRANSLATED */
-    certificate_missing_error: 'Certificate is required.',
-    /** UNTRANSLATED */
+    certificate_missing_error: 'الشهادة مطلوبة.',
     certificate_invalid_format_error:
-      'Invalid certificate format detected. Please check the certificate format and try again.',
+      'تم اكتشاف تنسيق غير صالح للشهادة. يرجى التحقق من تنسيق الشهادة والمحاولة مرة أخرى.',
   },
   saml_app_attribute_mapping: {
-    /** UNTRANSLATED */
-    name: 'Attribute mappings',
-    /** UNTRANSLATED */
-    title: 'Base attribute mappings',
-    /** UNTRANSLATED */
-    description: 'Add attribute mappings to sync user profile from Logto to your application.',
-    /** UNTRANSLATED */
-    col_logto_claims: 'Value of Logto',
-    /** UNTRANSLATED */
-    col_sp_claims: 'Value name of your application',
-    /** UNTRANSLATED */
-    add_button: 'Add another',
+    name: 'تعيينات السمات',
+    title: 'تعيينات السمات الأساسية',
+    description: 'أضف تعيينات السمات لمزامنة ملف تعريف المستخدم من Logto إلى تطبيقك.',
+    col_logto_claims: 'قيمة Logto',
+    col_sp_claims: 'اسم القيمة في تطبيقك',
+    add_button: 'أضف آخر.',
   },
+  concurrent_device_limit,
 };
 
 export default Object.freeze(application_details);

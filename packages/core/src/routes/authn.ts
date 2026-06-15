@@ -3,7 +3,10 @@ import { ConnectorError, ConnectorErrorCodes, ConnectorType } from '@logto/conne
 import { jsonObjectGuard, SsoAuthenticationQueryKey } from '@logto/schemas';
 import { z } from 'zod';
 
+import { idpInitiatedSamlSsoSessionCookieName, ssoPath } from '#src/constants/index.js';
+import { EnvSet } from '#src/env-set/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
+import koaAuditLog from '#src/middleware/koa-audit-log.js';
 import { verifyBearerTokenFromRequest } from '#src/middleware/koa-auth/index.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import SamlConnector from '#src/sso/SamlConnector/index.js';
@@ -16,11 +19,6 @@ import {
   assignSamlAssertionResultViaJti,
 } from '#src/utils/saml-assertion-handler.js';
 
-import { idpInitiatedSamlSsoSessionCookieName } from '../constants/index.js';
-import { EnvSet } from '../env-set/index.js';
-import koaAuditLog from '../middleware/koa-audit-log.js';
-
-import { ssoPath } from './interaction/const.js';
 import type { AnonymousRouter, RouterInitArgs } from './types.js';
 
 /**
@@ -198,7 +196,7 @@ export default function authnRoutes<T extends AnonymousRouter>(
       // Will throw ConnectorError if the config is invalid
       const connectorInstance = new ssoConnectorFactories[providerName].constructor(
         connectorData,
-        tenantId
+        envSet.endpoint
       );
 
       assertThat(connectorInstance instanceof SamlConnector, 'connector.unexpected_type');

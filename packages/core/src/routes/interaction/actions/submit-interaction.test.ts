@@ -1,7 +1,9 @@
+/* eslint-disable max-lines */
 import {
   InteractionEvent,
   adminConsoleApplicationId,
   adminTenantId,
+  userMfaDataKey,
   type CreateUser,
   type User,
 } from '@logto/schemas';
@@ -19,7 +21,6 @@ import type {
   VerifiedRegisterInteractionResult,
   VerifiedSignInInteractionResult,
 } from '../types/index.js';
-import { userMfaDataKey } from '../verifications/mfa-verification.js';
 
 const { jest } = import.meta;
 const { mockEsm } = createMockUtils(jest);
@@ -28,7 +29,7 @@ const getLogtoConnectorById = jest
   .fn()
   .mockResolvedValue({ metadata: { target: 'logto' }, dbEntry: { syncProfile: true } });
 
-const { assignInteractionResults } = mockEsm('#src/libraries/session.js', () => ({
+const { assignInteractionResults } = mockEsm('#src/libraries/session/index.js', () => ({
   assignInteractionResults: jest.fn(),
 }));
 
@@ -55,10 +56,11 @@ const userQueries = {
   updateUserById: jest.fn(async (id: string, user: Partial<User>) => user as User),
   hasActiveUsers: jest.fn().mockResolvedValue(true),
   hasUserWithEmail: jest.fn().mockResolvedValue(false),
-  hasUserWithPhone: jest.fn().mockResolvedValue(false),
+  hasUserWithNormalizedPhone: jest.fn().mockResolvedValue(false),
 };
 
-const { hasActiveUsers, updateUserById, hasUserWithEmail, hasUserWithPhone } = userQueries;
+const { hasActiveUsers, updateUserById, hasUserWithEmail, hasUserWithNormalizedPhone } =
+  userQueries;
 
 const userLibraries = {
   generateUserId: jest.fn().mockResolvedValue('uid'),
@@ -83,7 +85,7 @@ describe('submit action', () => {
     ...createMockLogContext(),
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     interactionDetails: { params: {} } as Awaited<ReturnType<Provider['interactionDetails']>>,
-    assignInteractionHookResult: jest.fn(),
+    assignReleaseOnSuccessInteractionHookResult: jest.fn(),
     appendDataHookContext: jest.fn(),
   };
   const profile = {
@@ -147,7 +149,7 @@ describe('submit action', () => {
         id: 'uid',
         ...upsertProfile,
       },
-      ['user']
+      { isInteractive: true, roleNames: ['user'] }
     );
     expect(assignInteractionResults).toBeCalledWith(ctx, tenant.provider, {
       login: { accountId: 'uid' },
@@ -181,7 +183,7 @@ describe('submit action', () => {
         id: 'pending-account-id',
         ...upsertProfile,
       },
-      ['user']
+      { isInteractive: true, roleNames: ['user'] }
     );
     expect(assignInteractionResults).toBeCalledWith(ctx, tenant.provider, {
       login: { accountId: 'pending-account-id' },
@@ -214,7 +216,7 @@ describe('submit action', () => {
           },
         },
       },
-      ['user']
+      { isInteractive: true, roleNames: ['user'] }
     );
   });
 
@@ -245,13 +247,13 @@ describe('submit action', () => {
         primaryPhone: userInfo.phone,
         lastSignInAt: now,
       },
-      ['user']
+      { isInteractive: true, roleNames: ['user'] }
     );
   });
 
   it('register new social user should not sync email and phone if already exists', async () => {
     hasUserWithEmail.mockResolvedValueOnce(true);
-    hasUserWithPhone.mockResolvedValueOnce(true);
+    hasUserWithNormalizedPhone.mockResolvedValueOnce(true);
 
     const interaction: VerifiedRegisterInteractionResult = {
       event: InteractionEvent.Register,
@@ -277,7 +279,7 @@ describe('submit action', () => {
         avatar: userInfo.avatar,
         lastSignInAt: now,
       },
-      ['user']
+      { isInteractive: true, roleNames: ['user'] }
     );
   });
 
@@ -312,7 +314,7 @@ describe('submit action', () => {
         id: 'uid',
         ...upsertProfile,
       },
-      ['user', 'default:admin']
+      { isInteractive: true, roleNames: ['user', 'default:admin'] }
     );
     expect(assignInteractionResults).toBeCalledWith(adminConsoleCtx, tenant.provider, {
       login: { accountId: 'uid' },
@@ -462,3 +464,4 @@ describe('submit action', () => {
     });
   });
 });
+/* eslint-enable max-lines */

@@ -1,6 +1,7 @@
 const action = {
   sign_in: 'Войти',
   continue: 'Продолжить',
+  continue_as: 'Продолжить как {{name}}',
   create_account: 'Создать аккаунт',
   create_account_without_linking: 'Создать новый вместо этого',
   create: 'Создать',
@@ -20,6 +21,7 @@ const action = {
   switch_to: 'Изменить на {{method}}',
   sign_in_via_passcode: 'Войти с кодом подтверждения',
   sign_in_via_password: 'Войти с паролем',
+  sign_in_via_passkey: 'Войти с ключом доступа',
   change: 'Изменить {{method}}',
   link_another_email: 'Привязать другую почту',
   link_another_phone: 'Привязать другой номер',
@@ -28,11 +30,14 @@ const action = {
   copy: 'Копировать',
   verify_via_passkey: 'Проверить с помощью ключа доступа',
   download: 'Скачать',
+  remove: 'Удалить',
+  edit: 'Редактировать',
+  save: 'Сохранить',
   single_sign_on: 'Единый вход',
-  /** UNTRANSLATED */
-  authorize: 'Authorize',
-  /** UNTRANSLATED */
-  use_another_account: 'Use another account',
+  authorize: 'Авторизовать',
+  use_another_account: 'Использовать другой аккаунт',
+  back_to_current_account: 'Назад к текущему аккаунту',
+  done: 'Готово',
 };
 
 export default Object.freeze(action);

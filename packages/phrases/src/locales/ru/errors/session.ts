@@ -44,9 +44,32 @@ const session = {
     mfa_policy_not_user_controlled:
       'Политика многофакторной аутентификации не контролируется пользователем.',
     mfa_factor_not_enabled: 'Фактор MFA не включен.',
+    suggest_additional_mfa:
+      'Для лучшей защиты добавьте ещё один метод MFA. Вы можете пропустить этот шаг и продолжить.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Не найдены ожидающие данные для входа с passkey. Пожалуйста, заново запустите процесс входа.',
+    conflict_rp_id:
+      'Идентификатор Relying Party не совпадает. Пожалуйста, используйте корректный клиент для входа.',
+    sso_users_not_allowed: 'Вход с помощью passkey недоступен для пользователей SSO.',
   },
   sso_enabled:
     'Единый вход в систему включен для этого указанного адреса электронной почты. Войдите в систему с помощью SSO.',
+  captcha_required: 'Требуется Capctha.',
+  captcha_failed: 'Проверка Captcha не удалась.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'Проверка адреса электронной почты не удалась.',
+    invalid_email: 'Недействительный адрес электронной почты.',
+    email_subaddressing_not_allowed: 'Субадресация электронной почты не разрешена.',
+    email_not_allowed:
+      'Адрес электронной почты "{{email}}" ограничен. Пожалуйста, выберите другой.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Несоответствие cookie Google One Tap.',
+    invalid_id_token: 'Недействительный токен Google ID.',
+    unverified_email: 'Неподтверждённая электронная почта.',
+  },
 };
 
 export default Object.freeze(session);

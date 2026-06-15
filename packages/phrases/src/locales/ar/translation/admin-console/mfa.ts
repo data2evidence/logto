@@ -4,20 +4,26 @@ const mfa = {
   factors: 'العوامل',
   multi_factors: 'العوامل المتعددة',
   multi_factors_description: 'يحتاج المستخدمون إلى التحقق من إحدى العوامل الممكّنة للتحقق الثنائي.',
-  totp: 'OTP لتطبيق المصادقة',
+  totp: 'تطبيق المصادقة',
   otp_description: 'ربط تطبيق Google Authenticator وما إلى ذلك للتحقق من كلمات المرور لمرة واحدة.',
-  webauthn: 'WebAuthn (مفتاح المرور)',
+  webauthn: 'Passkeys',
   webauthn_description:
     'التحقق عبر طريقة مدعومة من المتصفح: البيومتريات أو مسح الهاتف أو مفتاح الأمان وما إلى ذلك.',
   webauthn_native_tip: 'WebAuthn غير مدعوم للتطبيقات الأصلية.',
   webauthn_domain_tip:
     'يربط WebAuthn المفاتيح العامة بالنطاق المحدد. ستمنع تعديل نطاق الخدمة المستخدمين من المصادقة باستخدام مفاتيح المرور الحالية.',
-  backup_code: 'رمز النسخ الاحتياطي',
+  backup_code: 'رموز النسخ الاحتياطي',
   backup_code_description: 'إنشاء 10 رموز احتياطية لمرة واحدة بعد تعيين المستخدمين لأي طريقة MFA.',
   backup_code_setup_hint:
     'عندما لا يمكن للمستخدمين التحقق من العوامل MFA أعلاه ، استخدم الخيار الاحتياطي.',
   backup_code_error_hint:
     'لاستخدام رمز النسخ الاحتياطي ، تحتاج إلى طريقة MFA واحدة على الأقل للمصادقة الناجحة للمستخدم.',
+  email_verification_code: 'رمز التحقق عبر البريد الإلكتروني',
+  email_verification_code_description:
+    'ربط عنوان البريد الإلكتروني لاستلام رموز التحقق والتحقق منها.',
+  phone_verification_code: 'رمز التحقق عبر الرسائل القصيرة',
+  phone_verification_code_description:
+    'ربط رقم الهاتف لاستلام والتحقق من رموز التحقق عبر الرسائل القصيرة.',
   policy: 'السياسة',
   policy_description: 'تعيين سياسة MFA لعمليات تسجيل الدخول والتسجيل.',
   two_step_sign_in_policy: 'سياسة التحقق الثنائي في تسجيل الدخول',
@@ -27,21 +33,41 @@ const mfa = {
   mandatory: 'يتطلب دائمًا من المستخدمين استخدام MFA عند تسجيل الدخول',
   mandatory_tip:
     'يجب على المستخدمين إعداد MFA في المرة الأولى عند تسجيل الدخول أو التسجيل ، واستخدامه في جميع تسجيلات الدخول المستقبلية.',
-  /** UNTRANSLATED */
-  require_mfa: 'Require MFA',
-  /** UNTRANSLATED */
+  require_mfa: 'طلب MFA',
   require_mfa_label:
-    'Enable this to make 2-step verification mandatory for accessing your applications. If disabled, users can decide whether to enable MFA for themselves.',
-  /** UNTRANSLATED */
-  set_up_prompt: 'MFA set-up prompt',
-  /** UNTRANSLATED */
-  no_prompt: 'Do not ask users to set up MFA',
-  /** UNTRANSLATED */
+    'قم بتمكين هذا لجعل التحقق بخطوتين إلزاميًا للوصول إلى التطبيقات الخاصة بك. إذا تم تعطيله، يمكن للمستخدمين تحديد ما إذا كانوا سيمكّنون MFA لأنفسهم.',
+  require_mfa_optional: 'MFA الاختيارية: اسمح للمستخدمين باختيار تمكين MFA لتعزيز أمان حساباتهم',
+  require_mfa_adaptive:
+    'MFA التكيفية: اطلب MFA فقط عندما تبدو محاولة تسجيل الدخول محفوفة بالمخاطر (مثل بلد جديد / فترة طويلة من عدم النشاط)',
+  require_mfa_mandatory:
+    'MFA الإلزامية: تتطلب من جميع المستخدمين إكمال MFA في كل مرة يسجلون فيها الدخول',
+  set_up_prompt: 'موجه إعداد MFA',
+  no_prompt: 'لا تطلب من المستخدمين إعداد MFA',
   prompt_at_sign_in_and_sign_up:
-    'Ask users to set up MFA during registration (skippable, one-time prompt)',
-  /** UNTRANSLATED */
+    'اطلب من المستخدمين إعداد MFA أثناء التسجيل (يمكن تخطيه ، موجه مرة واحدة)',
   prompt_only_at_sign_in:
-    'Ask users to set up MFA on their next sign-in attempt after registration (skippable, one-time prompt)',
+    'اطلب من المستخدمين إعداد MFA في محاولة تسجيل الدخول التالية بعد التسجيل (يمكن تخطيه، موجه مرة واحدة)',
+  prompt_at_sign_in_and_sign_up_mandatory:
+    'اطلب من المستخدمين إعداد MFA أثناء التسجيل. (لا يمكن تخطيه)',
+  prompt_only_at_sign_in_mandatory:
+    'اطلب من المستخدمين إعداد MFA في محاولة تسجيل الدخول التالية بعد التسجيل. (لا يمكن تخطيه)',
+  set_up_organization_required_mfa_prompt:
+    'موجه إعداد MFA للمستخدمين بعد أن يقوم المؤسسة بتمكين MFA',
+  prompt_at_sign_in_non_skippable:
+    'اطلب من المستخدمين إعداد MFA عند تسجيل الدخول التالي (لا يمكن تخطيه)',
+  email_primary_method_tip:
+    'رمز التحقق عبر البريد الإلكتروني هو بالفعل طريقتك الرئيسية لتسجيل الدخول. للحفاظ على الأمان، لا يمكن إعادة استخدامه لـ MFA.',
+  phone_primary_method_tip:
+    'رمز التحقق عبر الرسائل القصيرة هو بالفعل طريقتك الرئيسية لتسجيل الدخول. للحفاظ على الأمان، لا يمكن إعادة استخدامه لـ MFA.',
+  no_email_connector_warning:
+    'لم يتم إعداد موصل البريد الإلكتروني بعد. قبل إكمال التكوين، لن يتمكن المستخدمون من استخدام رموز التحقق عبر البريد الإلكتروني لـ MFA. <a>{{link}}</a> في "الموصلات".',
+  no_sms_connector_warning:
+    'لم يتم إعداد موصل الرسائل القصيرة بعد. قبل إكمال التكوين، لن يتمكن المستخدمون من استخدام رموز التحقق عبر الرسائل القصيرة لـ MFA. <a>{{link}}</a> في "الموصلات".',
+  no_email_connector_error:
+    'لا يمكن تمكين MFA برموز التحقق عبر البريد الإلكتروني بدون موصل بريد إلكتروني. يرجى تكوين موصل بريد إلكتروني أولاً.',
+  no_sms_connector_error:
+    'لا يمكن تمكين MFA برموز التحقق عبر الرسائل القصيرة بدون موصل رسائل قصيرة. يرجى تكوين موصل رسائل قصيرة أولاً.',
+  setup_link: 'إعداد',
 };
 
 export default Object.freeze(mfa);

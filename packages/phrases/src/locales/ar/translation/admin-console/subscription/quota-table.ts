@@ -9,7 +9,8 @@ const quota_table = {
     title: 'التطبيقات',
     total: 'إجمالي التطبيقات',
     m2m: 'تطبيقات من الجهاز إلى الجهاز',
-    third_party: 'تطبيقات الطرف الثالث',
+    third_party: 'تطبيقات OIDC/OAuth للطرف الثالث',
+    saml_app: 'تطبيقات SAML',
   },
   resource: {
     title: 'موارد واجهة برمجة التطبيقات',
@@ -86,7 +87,7 @@ const quota_table = {
   unlimited: 'غير محدود',
   contact: 'اتصل',
   monthly_price: '${{value, number}}/شهر',
-  days_one: '{{count, number}} يوم',
+  days: '{{count, number}} يوم',
   days_other: '{{count, number}} أيام',
   add_on: 'إضافة',
   tier: 'المستوى {{value, number}}: ',

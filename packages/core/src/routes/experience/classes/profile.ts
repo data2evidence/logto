@@ -1,16 +1,33 @@
-import { InteractionEvent, VerificationType } from '@logto/schemas';
-import { trySafe } from '@silverhand/essentials';
+import {
+  InteractionEvent,
+  MissingProfile,
+  SignInIdentifier,
+  type UpdateProfileApiPayload,
+  VerificationType,
+} from '@logto/schemas';
+import { pick, trySafe } from '@silverhand/essentials';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import { type LogEntry } from '#src/middleware/koa-audit-log.js';
 import type Libraries from '#src/tenants/Libraries.js';
 import type Queries from '#src/tenants/Queries.js';
+import assertThat from '#src/utils/assert-that.js';
 
-import { type InteractionContext, type InteractionProfile } from '../types.js';
+import type {
+  SanitizedInteractionProfile,
+  InteractionContext,
+  InteractionProfile,
+} from '../types.js';
 
 import { PasswordValidator } from './libraries/password-validator.js';
 import { ProfileValidator } from './libraries/profile-validator.js';
 import { SignInExperienceValidator } from './libraries/sign-in-experience-validator.js';
+
+// Supported profile types for setting the profile data through the verification record.
+type SetProfileByVerificationIdType = Exclude<
+  UpdateProfileApiPayload['type'],
+  'password' | SignInIdentifier.Username | 'extraProfile'
+>;
 
 export class Profile {
   readonly profileValidator: ProfileValidator;
@@ -24,63 +41,105 @@ export class Profile {
     private readonly interactionContext: InteractionContext
   ) {
     this.signInExperienceValidator = new SignInExperienceValidator(libraries, queries);
-    this.profileValidator = new ProfileValidator(queries);
+    this.profileValidator = new ProfileValidator(queries, this.signInExperienceValidator);
     this.#data = data;
+  }
+
+  markProfileSubmitted() {
+    this.#data.submitted = true;
+  }
+
+  get profileSubmitted() {
+    return this.#data.submitted;
   }
 
   get data() {
     return this.#data;
   }
 
+  get sanitizedData(): SanitizedInteractionProfile {
+    return pick(
+      this.#data,
+      'avatar',
+      'name',
+      'username',
+      'primaryEmail',
+      'primaryPhone',
+      'profile',
+      'customData',
+      'socialIdentity',
+      'enterpriseSsoIdentity',
+      'jitOrganizationIds',
+      'syncedEnterpriseSsoIdentity'
+    );
+  }
+
   /**
    * Set the identified email or phone to the profile using the verification record.
    *
+   * @throws {RequestError} 404 if the verification record is not found.
    * @throws {RequestError} 422 if the profile data already exists in the current user account.
    * @throws {RequestError} 422 if the unique identifier data already exists in another user account.
    * @throws {RequestError} 422 if the email domain is SSO only.
    */
-  async setProfileByVerificationRecord(
-    type: VerificationType.EmailVerificationCode | VerificationType.PhoneVerificationCode,
+  async setProfileByVerificationId(
+    type: SetProfileByVerificationIdType,
     verificationId: string,
     log?: LogEntry
   ) {
-    const verificationRecord = this.interactionContext.getVerificationRecordByTypeAndId(
-      type,
-      verificationId
-    );
+    const verificationRecord = this.interactionContext.getVerificationRecordById(verificationId);
 
-    log?.append({
-      verification: verificationRecord.toJson(),
-    });
-
-    if (verificationRecord.type === VerificationType.EmailVerificationCode) {
-      await this.signInExperienceValidator.guardSsoOnlyEmailIdentifier(verificationRecord);
+    // Assert the verification record type matches the identifier type
+    switch (type) {
+      case SignInIdentifier.Email: {
+        assertThat(
+          verificationRecord.type === VerificationType.EmailVerificationCode,
+          new RequestError({ code: 'session.verification_session_not_found', status: 404 })
+        );
+        break;
+      }
+      case SignInIdentifier.Phone: {
+        assertThat(
+          verificationRecord.type === VerificationType.PhoneVerificationCode,
+          new RequestError({ code: 'session.verification_session_not_found', status: 404 })
+        );
+        break;
+      }
+      case 'social': {
+        assertThat(
+          verificationRecord.type === VerificationType.Social,
+          new RequestError({ code: 'session.verification_session_not_found', status: 404 })
+        );
+        break;
+      }
     }
 
-    const profile = verificationRecord.toUserProfile();
+    // Guard SSO only email identifier in verification record  (EmailVerificationCode, Social)
+    await this.signInExperienceValidator.guardSsoOnlyEmailIdentifier(verificationRecord);
 
-    await this.setProfileWithValidation(profile);
-  }
-
-  async setProfileBySocialVerificationRecord(verificationId: string, log?: LogEntry) {
-    const verificationRecord = this.interactionContext.getVerificationRecordByTypeAndId(
-      VerificationType.Social,
-      verificationId
-    );
+    await this.signInExperienceValidator.guardEmailBlocklist(verificationRecord);
 
     log?.append({
       verification: verificationRecord.toJson(),
     });
 
     const profile = await verificationRecord.toUserProfile();
+
     await this.setProfileWithValidation(profile);
 
-    const user = await this.safeGetIdentifiedUser();
-    const isNewUserIdentity = !user;
+    // Sync social user info to the user profile
+    if (verificationRecord.type === VerificationType.Social) {
+      const user = await this.safeGetIdentifiedUser();
+      const isNewUserIdentity = !user;
 
-    // Sync the email and phone to the user profile only for new user identity
-    const syncedProfile = await verificationRecord.toSyncedProfile(isNewUserIdentity);
-    this.unsafePrepend(syncedProfile);
+      // Sync the email and phone to the user profile only for new user identity
+      const syncedProfile = await verificationRecord.toSyncedProfile(isNewUserIdentity);
+      this.unsafePrepend(syncedProfile);
+
+      // Sync the social connector token set secret to the user profile
+      const socialConnectorTokenSetSecret = await verificationRecord.getTokenSetSecret();
+      this.unsafePrepend({ socialConnectorTokenSetSecret });
+    }
   }
 
   /**
@@ -97,6 +156,7 @@ export class Profile {
     }
 
     await this.profileValidator.guardProfileUniquenessAcrossUsers(profile);
+
     this.unsafeSet(profile);
   }
 
@@ -140,34 +200,69 @@ export class Profile {
   /**
    * Checks if the user has fulfilled the mandatory profile fields.
    *
-   * - Skip the check if the profile contains an enterprise SSO identity.
+   * @remarks
+   * - Skip the check if the profile contains an enterprise SSO identity or the user is verified via SSO.
+   * - Skip the check if the profile contains a social identity or the user is verified via social identity and `skipRequiredIdentifiers` is true.
+   *
+   * @throws {RequestError} 422 if the mandatory profile fields are not fulfilled.
    */
-  async assertUserMandatoryProfileFulfilled() {
+  async assertUserMandatoryProfileFulfilled({
+    hasVerifiedSocialIdentity,
+    hasVerifiedSsoIdentity,
+  }: {
+    hasVerifiedSocialIdentity: boolean;
+    hasVerifiedSsoIdentity: boolean;
+  }) {
     const user = await this.safeGetIdentifiedUser();
 
-    if (this.#data.enterpriseSsoIdentity) {
+    if (this.#data.enterpriseSsoIdentity ?? hasVerifiedSsoIdentity) {
       return;
+    }
+
+    if (this.#data.socialIdentity ?? hasVerifiedSocialIdentity) {
+      const { skipRequiredIdentifiers } =
+        await this.signInExperienceValidator.getSocialSignInPolicy();
+
+      if (skipRequiredIdentifiers) {
+        return;
+      }
     }
 
     const mandatoryProfileFields =
       await this.signInExperienceValidator.getMandatoryUserProfileBySignUpMethods();
 
-    const missingProfile = this.profileValidator.getMissingUserProfile(
+    const missingMandatoryProfile = this.profileValidator.getMissingUserProfile(
       this.#data,
       mandatoryProfileFields,
       user
     );
 
-    if (missingProfile.size === 0) {
-      return;
-    }
+    assertThat(
+      missingMandatoryProfile.size === 0,
+      new RequestError(
+        { code: 'user.missing_profile', status: 422 },
+        { missingProfile: [...missingMandatoryProfile] }
+      )
+    );
 
-    throw new RequestError(
-      { code: 'user.missing_profile', status: 422 },
-      { missingProfile: [...missingProfile] }
+    assertThat(
+      this.interactionContext.getInteractionEvent() !== InteractionEvent.Register ||
+        !(await this.profileValidator.hasMissingExtraProfileFields(this.#data, user)),
+      new RequestError(
+        {
+          code: 'user.missing_profile',
+          status: 422,
+        },
+        { missingProfile: [MissingProfile.extraProfile] }
+      )
     );
   }
 
+  /**
+   * Set profile without validation.
+   * - skip profile uniqueness check.
+   * - skip profile existence check in the current user account.
+   */
   unsafeSet(profile: InteractionProfile) {
     this.#data = {
       ...this.#data,
@@ -186,8 +281,12 @@ export class Profile {
     };
   }
 
+  /**
+   * Clean up the user related profile data from interaction storage after successfully creating the user,
+   * keeping only the `submitted` flag to indicate whether the user has submitted the profile form.
+   */
   cleanUp() {
-    this.#data = {};
+    this.#data = pick(this.#data, 'submitted');
   }
 
   /**

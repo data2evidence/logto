@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: '맞춤 UI 사용',
     not_eligible: '맞춤 UI 자산을 제거하십시오',
   },
+  collect_user_profile_enabled: {
+    name: '사용자 프로필 수집',
+    limited: '사용자 프로필 수집',
+    unlimited: '사용자 프로필 수집',
+    not_eligible: '사용자 프로필 수집 필드를 제거하십시오',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'IDP 시작 SSO',
+    limited: 'IDP 시작 SSO',
+    unlimited: 'IDP 시작 SSO',
+    not_eligible: 'IDP 시작 SSO 허용되지 않음',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'SAML 애플리케이션',
+    limited: '{{count, number}} SAML 애플리케이션',
+    limited_other: '{{count, number}} SAML 애플리케이션',
+    unlimited: '무제한 SAML 애플리케이션',
+    not_eligible: 'SAML 애플리케이션을 제거하십시오',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'CAPTCHA 를 제거하십시오',
+  },
+  security_features_enabled: {
+    name: '고급 보안',
+    limited: '고급 보안',
+    unlimited: '고급 보안',
+    not_eligible: '고급 보안 설정을 제거하십시오',
+  },
+  custom_domains_limit: {
+    name: '사용자 정의 도메인',
+    limited: '{{count, number}} 사용자 정의 도메인',
+    limited_other: '{{count, number}} 사용자 정의 도메인',
+    unlimited: '제한 없는 사용자 정의 도메인',
+    not_eligible: '사용자 정의 도메인을 제거하십시오',
+  },
+  passkey_sign_in_enabled: {
+    name: '패스키 로그인',
+    limited: '패스키 로그인',
+    unlimited: '패스키 로그인',
+    not_eligible: '패스키 로그인이 지원되지 않습니다',
   },
 };
 

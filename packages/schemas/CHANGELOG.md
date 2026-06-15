@@ -1,5 +1,689 @@
 # Change Log
 
+## 1.40.1
+
+### Patch Changes
+
+- Updated dependencies [e4eaa5aef5]
+  - @logto/core-kit@2.10.0
+  - @logto/phrases-experience@1.13.3
+
+## 1.40.0
+
+### Patch Changes
+
+- fafe81e8f: add secondary index on `organization_role_user_relations (tenant_id, organization_id, user_id)` to speed up per-user role lookups
+
+  The primary key column order is `(tenant_id, organization_id, organization_role_id, user_id)`, which prevents queries that filter by `(organization_id, user_id)` without specifying `organization_role_id` from using the index. This pattern is hit by `getUserScopes` (called on every `GET /organizations/:id/users/:userId/scopes`) and by the per-user role join in `getUsersByOrganizationId`.
+
+- 617275158: add secondary index on `organization_user_relations (tenant_id, user_id)` to speed up reverse lookups
+
+  The primary key column order is `(tenant_id, organization_id, user_id)`, which prevents queries that filter by `user_id` without specifying `organization_id` from using the index. This pattern is hit on every sign-in (via `getOrganizationsByUserId`) and on every request to the `/organizations/:id/users/:userId/roles` family (via the membership-existence middleware).
+
+- 16553c027: expose `isCurrent` on the Account API sessions response
+
+  `GET /api/my-account/sessions` now returns `isCurrent: boolean` on every entry. The session whose OIDC uid backs the calling access token is `true`; the others are `false`. Use this to mark the "This device" entry in session-management UIs and to avoid revoking the caller's own session.
+
+  The admin user-sessions endpoints (`GET /users/:userId/sessions` and `GET /users/:userId/sessions/:sessionId`) are unchanged — they have no caller-session concept and continue to use the original response shape.
+
+  Closes [#8681](https://github.com/logto-io/logto/issues/8681).
+
+- 32c9ea4d81: add `--dapc` (alias `--disable-admin-pwned-password-check`) option to both `install` and `db seed` commands for air-gapped OSS deployments.
+
+  The admin tenant's seeded password policy enables the Have I Been Pwned (HIBP) breach check by default, which sends an outbound request to `api.pwnedpasswords.com` on every admin password submission. This causes the first admin sign-up to hang on deployments where the endpoint is unreachable. Passing the option seeds the policy with the breach check disabled, so admin sign-up no longer depends on outbound network access.
+
+- Updated dependencies [32c40b1ad]
+- Updated dependencies [6b9944d01f]
+- Updated dependencies [41a56f79e3]
+  - @logto/phrases-experience@1.13.2
+  - @logto/connector-kit@5.0.1
+
+## 1.39.0
+
+### Minor Changes
+
+- ab073bb65f: support blocking token issuance when custom JWT scripts fail
+
+  This update adds configurable JWT customizer error handling for access tokens and client credentials flows.
+
+  - core now preserves `api.denyAccess()` as `access_denied` and converts other blocking-mode script failures into localized `invalid_request` responses
+  - console adds a dedicated `Error handling` tab for configuring the behavior, defaults `blockIssuanceOnError` to enabled for newly created scripts, keeps existing scripts without a saved value on the legacy disabled default, and aligns the related guidance copy
+  - schemas, phrases, and integration coverage are updated to match the new blocking behavior and localized error messages
+
+- 3350b13ec8: add grace period support to private signing key rotation
+
+  This update adds support for a grace period during private signing key rotation, through the environment variable `PRIVATE_KEY_ROTATION_GRACE_PERIOD`, or CLI `--gracePeriod` option.
+
+  During the grace period, the new signing key is marked as "Next", and the existing signing key remains active. This allows for a smoother transition when rotating keys, as it provides a window of time for clients to refresh cached JWKS without experiencing downtime or authentication failures.
+
+  After the grace period ends, the new private signing key will transition to "Current" state, and the old signing key will be marked as "Previous".
+
+  Check out the [documentation](https://docs.logto.io/logto-oss/using-cli/rotate-signing-keys) for more details.
+
+### Patch Changes
+
+- Updated dependencies [93523a1ae0]
+- Updated dependencies [ab073bb65f]
+- Updated dependencies [3350b13ec8]
+  - @logto/core-kit@2.9.0
+  - @logto/phrases@1.28.0
+  - @logto/shared@3.4.0
+  - @logto/phrases-experience@1.13.1
+
+## 1.38.0
+
+### Minor Changes
+
+- 7cee48bd97: support OAuth 2.0 Device Authorization Grant (device flow)
+
+  Device flow lets users sign in on input-limited devices such as smart TVs, CLI tools, IoT gadgets, and gaming consoles by completing authentication on a separate device like a phone or laptop.
+
+  How it works:
+
+  1. The device displays a short user code and a verification URL.
+  2. The user opens the URL on another device, enters the code, and signs in.
+  3. Once approved, the original device receives tokens and completes authentication.
+
+  To create a device flow application in Console:
+
+  - Select "Input-limited app / CLI" under the Native framework list, or
+  - Create an app without framework, then choose "Device flow" as the authorization flow, or
+  - Create a third-party Native app, then choose "Device flow" as the authorization flow.
+
+  The application settings page shows a device-flow-specific guide and a built-in demo you can try immediately.
+
+- 56cec74a00: support sentinel protection for MFA verification routes
+
+  TOTP, WebAuthn, and backup code MFA verifications now report activity to Sentinel so repeated failures can be detected and blocked consistently during multi-factor authentication.
+
+  The new MFA-specific Sentinel actions keep MFA attempts isolated from the shared primary sign-in pool, which avoids lockouts leaking across unrelated verification stages or factors.
+
+- 5b7f1cb794: introduce optional `oidc.session.ttl` config in logto-config for oidc session ttl
+
+  - Added a new optional `oidc.session.ttl` field in `logto-config`.
+  - This config allows developers to customize the OIDC provider session TTL in seconds.
+  - If `oidc.session.ttl` is not provided, the default session TTL remains `14 days`.
+  - For OSS deployments, restart the service instance after config changes so the server can pick up the latest OIDC config updates. To apply all OIDC configuration updates automatically without rebooting the service, [enable central redis cache](https://docs.logto.io/logto-oss/central-cache).
+
+- d2afe7351f: add app-level `maxAllowedGrants` config and enforce concurrent grant limits on authorization success
+
+  1. Extended application `customClientMetadata` with a new optional field `maxAllowedGrants`.
+     - Use this field to configure the max concurrent grants limit for the current app.
+     - Default is `undefined`; when not provided, no concurrent grant limit is applied.
+  2. Added a new OIDC `authorization.success` event listener.
+     - Triggered after each successful user authorization.
+     - Validates concurrent grants against the current authorization client and user.
+     - If `customClientMetadata.maxAllowedGrants` is configured, revokes the oldest grants when the active grant count exceeds the limit.
+
+### Patch Changes
+
+- Updated dependencies [7cee48bd97]
+- Updated dependencies [74c993a91e]
+- Updated dependencies [343410f2b0]
+- Updated dependencies [4e25126228]
+- Updated dependencies [a816cf77cb]
+- Updated dependencies [5ab931e7ac]
+- Updated dependencies [4e25126228]
+  - @logto/phrases@1.27.0
+  - @logto/phrases-experience@1.13.0
+  - @logto/core-kit@2.8.0
+  - @logto/connector-kit@5.0.0
+  - @logto/language-kit@1.3.0
+
+## 1.37.1
+
+### Patch Changes
+
+- Updated dependencies [57b0008ee8]
+  - @logto/core-kit@2.7.1
+  - @logto/phrases-experience@1.12.2
+
+## 1.37.0
+
+### Minor Changes
+
+- 32d1562699: add out-of-the-box account center app
+
+  Summary
+
+  - Release the Account Center single-page app as a built-in Logto application for end users.
+  - Support profile updates for primary email, phone, username, and password with verification flows.
+  - Provide MFA management for TOTP, backup codes (download/regenerate), and passkeys (WebAuthn), including rename and delete actions.
+  - Gate sensitive operations behind password/email/phone verification and surface dedicated success screens.
+
+  To learn more about this feature, please refer to the documentation: https://docs.logto.io/end-user-flows/account-settings/by-account-api
+
+- eced1f02d4: add application context to JWT customizer
+
+  The application context is now available in the JWT customizer script for both access token and client credentials token types. This allows you to access application details (e.g., name, description, custom data) when customizing JWT claims.
+
+### Patch Changes
+
+- Updated dependencies [eced1f02d4]
+- Updated dependencies [b8ca1a40c7]
+  - @logto/phrases@1.26.0
+
+## 1.36.0
+
+### Minor Changes
+
+- 7cbe315dde: support token exchange grant type with app-level control
+
+  - Add `allowTokenExchange` field to `customClientMetadata` to control whether an application can initiate token exchange requests
+  - Machine-to-machine applications now support token exchange
+  - All new applications will have token exchange disabled by default, you can enable it in the application settings
+  - For backward compatibility, existing first-party Traditional, Native, and SPA applications will have this enabled
+  - Third-party applications are not allowed to use token exchange
+  - Add UI toggle in Console with risk warning for public clients (single-page application / native application)
+
+- ce65b07964: support wildcard patterns in redirect URIs
+
+  Added support for wildcard patterns (`*`) in redirect URIs to better support dynamic environments like preview deployments.
+
+  Rules (web only):
+
+  - Wildcards are allowed for http/https redirect URIs in the hostname and/or pathname.
+  - Wildcards are rejected in scheme, port, query, and hash.
+  - Hostname wildcard patterns must contain at least one dot to avoid overly broad patterns.
+
+### Patch Changes
+
+- 10a9e68f1d: allow skipping mandatory sign-up identifier collection for social sign-in and sign-up
+
+  ## Background
+
+  Previously, Logto enforced mandatory user identifier collection during both sign-in and sign-up flows. Users were required to provide all identifiers configured as mandatory in the sign-up settings. This behavior applies to all sign-in methods except for enterprise SSO.
+
+  For example:
+
+  1. A new user signs up via a GitHub social connector
+  2. The IdP does not provide a verified email address
+  3. Email is configured as a mandatory sign-up identifier in Logto
+  4. In this case, the user would be prompted to provide and verify an email address before the account could be successfully created.
+
+  ## Problem
+
+  For iOS mobile app users, Apple App Store guidelines mandate social sign-in options like "Sign in with Apple" should not require additional information collection beyond what is provided by the social IdP. Enforcing additional identifier collection during social sign-in can result in app review rejection.
+
+  ## Solution
+
+  We have updated the sign-in-experience settings with a new option `skipRequiredIdentifiers` for social sign-in and sign-up flows. When enabled, this option allows users to bypass the mandatory identifier collection step during social sign-in and sign-up.
+
+  By default, this option is set to `false` to maintain existing behavior. Administrators can enable this option in the sign-in experience settings if they wish to allow users to skip mandatory identifier collection during social sign-in and sign-up.
+
+  On Logto console, this option is represented as a checkbox labeled "Require users to provide missing sign-up identifier" on the sign-in experience configuration page under the "Social sign-in" section. Checked by default.
+
+- Updated dependencies [7cbe315dde]
+- Updated dependencies [c8b2caec5c]
+- Updated dependencies [317f9744d1]
+- Updated dependencies [ce65b07964]
+  - @logto/phrases@1.25.0
+  - @logto/shared@3.3.1
+  - @logto/core-kit@2.7.0
+  - @logto/phrases-experience@1.12.1
+
+## 1.35.0
+
+### Minor Changes
+
+- 116dcf5e7d: support reCaptcha domain customization
+
+  You can now customize the domain for reCaptcha, for example, using reCaptcha with `recaptcha.net` domain.
+
+- 116dcf5e7d: support reCAPTCHA Enterprise checkbox mode
+
+  You can now choose between two verification modes for reCAPTCHA Enterprise:
+
+  - **Invisible**: Score-based verification that runs automatically in the background (default)
+  - **Checkbox**: Displays the "I'm not a robot" widget for user interaction
+
+  Note: The verification mode must match your reCAPTCHA key type configured in Google Cloud Console.
+
+### Patch Changes
+
+- a6858e76cf: update SAML relay state length and improve error handling
+
+  The data type of the `relay_state` column in the `saml_application_sessions` table has been changed from varchar(256) to varchar(512) to accommodate longer Relay State values. For example, when Firebase acts as a Service Provider and initiates a SAML request, the relay state length is approximately 300-400 characters, which previously prevented Firebase from integrating with Logto as an SP before this fix.
+
+  Additionally, we have updated the error handling logic in the APIs related to the SAML authentication flow to make error messages more straightforward.
+
+- Updated dependencies [a6858e76cf]
+- Updated dependencies [116dcf5e7d]
+- Updated dependencies [462e430445]
+- Updated dependencies [d551f5ccc3]
+- Updated dependencies [7c87ebc068]
+- Updated dependencies [116dcf5e7d]
+  - @logto/phrases@1.24.0
+  - @logto/connector-kit@4.7.0
+
+## 1.34.0
+
+### Minor Changes
+
+- c3266a917a: add a new webhook event "Identifier.Lockout", which is triggered when a user is locked out due to repeated failed sign-in attempts
+
+### Patch Changes
+
+- 900201a48c: align refresh token grant lifetime with 180-day TTL
+
+  Refresh tokens were expiring after 14 days because the provider grant TTL was still capped at the default two weeks, regardless of the configured refresh token TTL.
+
+  Now set the OIDC grant TTL to 180 days so refresh tokens can live for their configured duration, also expand the refresh token TTL up to 180 days.
+
+- Updated dependencies [c3266a917a]
+  - @logto/phrases@1.23.0
+
+## 1.33.0
+
+### Patch Changes
+
+- Updated dependencies [47dbdd8332]
+  - @logto/phrases@1.22.0
+
+## 1.32.0
+
+### Minor Changes
+
+- ad4f9d6abf: add support to the OIDC standard authentication parameter `ui_locales`
+
+  We are now supporting the standard OIDC `ui_locales` auth parameter to customize the language of the authentication pages. You can pass the `ui_locales` parameter in the `signIn` method via the `extraParams` option in all Logto SDKs.
+
+  ### What it does
+
+  - Determines the UI language of the Logto-hosted sign-in experience at runtime. Logto picks the first language tag in `ui_locales` that is supported in your tenant's language library.
+  - Affects email localization for messages triggered by the interaction (e.g., verification code emails).
+  - Exposes the original value to email templates as a variable `uiLocales`, allowing you to include it in the email subject/content if needed.
+
+  ### Example
+
+  If you want to display the sign-in page in French (Canada), you can do it like this:
+
+  ```ts
+  await logtoClient.signIn({
+    redirectUri: "https://your.app/callback",
+    extraParams: {
+      ui_locales: "fr-CA fr en",
+    },
+  });
+  ```
+
+  Refer to the [documentation](https://docs.logto.io/end-user-flows/authentication-parameters/ui-locales) for more details.
+
+- 1fb8593659: add email/phone MFA via verification codes
+
+  Summary
+
+  - Add two new MFA factors: Email verification code and SMS (phone) verification code.
+  - Support binding these factors during registration or first sign-in when MFA is required.
+  - Support verifying these factors on subsequent sign-ins with dedicated MFA verification pages.
+  - Update Console to configure these factors and surface guidance/conflict warnings.
+  - Support customizing forgot password methods in Sign-in Experience (related).
+
+  To learn more about this feature, please refer to the documentation: https://docs.logto.io/end-user-flows/mfa
+
+- 0ef4260e34: unify branding customization options between applications and organizations
+
+  We are now offering a more unified experience for branding customization options between applications and organizations, including:
+
+  - Branding colors (light and dark mode)
+  - Branding logos and favicons (both light and dark mode)
+  - Custom CSS
+
+  When all branding customization options are set, the precedence of the options are as follows:
+  Organization > Application > Omni sign-in experience settings
+
+### Patch Changes
+
+- Updated dependencies [ad4f9d6abf]
+- Updated dependencies [5da6792d40]
+- Updated dependencies [147f257503]
+- Updated dependencies [1fb8593659]
+- Updated dependencies [0ef4260e34]
+  - @logto/connector-kit@4.6.0
+  - @logto/phrases-experience@1.12.0
+  - @logto/phrases@1.21.0
+
+## 1.31.0
+
+### Minor Changes
+
+- bb385eb15d: add a new feature for collecting user profile on new user registration
+
+  You can now collect user profile information on the last step of your registration flow.
+
+  ### Getting started
+
+  1. In Console: `Sign-in Experience > Collect user profile`. Add your profile fields:
+
+     - Use built-in basics (Name, Gender, Birthdate, Address, …); or
+     - Create custom fields (choose type, label, validation rules, required, etc.).
+
+  2. Drag & drop to reorder fields in the list; the order reflects in the form.
+  3. Test by signing up a new user in the demo app; a "Tell us about yourself" step will appear with your fields.
+  4. Registration completes only after all required fields are filled.
+
+  Check out our [docs](https://docs.logto.io/end-user-flows/collect-user-profile) for more details.
+
+### Patch Changes
+
+- Updated dependencies [8ae82d585e]
+  - @logto/phrases-experience@1.11.0
+  - @logto/phrases@1.20.0
+
+## 1.30.1
+
+### Patch Changes
+
+- Updated dependencies [4cc321dbb]
+  - @logto/core-kit@2.6.1
+  - @logto/phrases-experience@1.10.1
+
+## 1.30.0
+
+### Minor Changes
+
+- 34964af46: feat: support custom scope in the social verification API
+
+  This change allows developers to specify a custom `scope` parameter in the user account social verification API. If a scope is provided, it will be used to generate the authorization URI; otherwise, the default scope configured in the connector will be used.
+
+  - Affected endpoints:
+    - `POST /api/verifications/social`
+
+- 0343699d7: feat: introduce Logto Secret Vault and federated token set storage
+
+  This update introduces the new [Secret vault](https://docs.logto.io/secret-vault/) feature in Logto.
+
+  The Secret Vault is designed to securely store sensitive user data — such as access tokens, API keys, passcodes, and other confidential information. These secrets are typically used to access third-party services on behalf of users, making secure storage essential.
+
+  With this release, federated token set storage support is added to both social and enterprise SSO connectors. When enabled, Logto will securely store the token set issued by the provider after a successful user authentication. Applications can then retrieve the access token later to access third-party APIs without requiring the user to reauthenticate.
+
+  Supported connectors include:
+
+  - **Social connectors**: GitHub, Google, Facebook, Standard OAuth 2.0, and Standard OIDC.
+  - **Enterprise SSO connectors**: All OIDC-based SSO connectors.
+
+  1. Enable the token storage as needed for social and enterprise SSO connectors in the Logto Console or via the Logto Management API.
+  2. Once enabled, Logto will automatically store the token set issued by the provider after a successful user authentication.
+  3. After the token set is stored, you can retrieve the access token via the Logto Account API for the user. This allows your application to access third-party APIs without requiring the user to reauthenticate.
+
+  For more details, please check the [Federated token set storage](https://docs.logto.io/secret-vault/federated-token-set) documentation.
+
+  Note:
+  For OSS users, to enable the Secret Vault feature, you must set the `SECRET_VAULT_KEK` environment variable to a valid base64 enabled secret key. This key is used to encrypt and decrypt the secrets stored in the vault. For more information, please refer to the [configuration variables](https://docs.logto.io/concepts/core-service/configuration#variables) documentation.
+
+### Patch Changes
+
+- 9a4e11cf8: fix: add tenant-aware foreign key constraint to organization_user_relations table
+
+  ### Problem
+
+  Developers could mistakenly assign a `user_id` from other tenants to an organization, causing 500 errors on organization users API endpoints. The original `organization_user_relations` table only had a foreign key constraint on `users (id)`, allowing any existing user ID to be assigned regardless of tenant isolation.
+
+  ### Root cause
+
+  Logto applies Row Level Security (RLS) on all tables to isolate tenant data access. When joining the `users` table with `organization_user_relations`, the actual user data becomes inaccessible to the current tenant due to RLS restrictions, causing user data to return `null` and triggering 500 server errors.
+
+  ### Solution
+
+  Added a composite foreign key constraint `(tenant_id, user_id)` referencing `users (tenant_id, id)` to ensure the organization-user relation's tenant ID matches the user's tenant ID. This enforces proper tenant isolation at the database level.
+
+- 3f5533080: refactor: set the default value of account center `enabled` to true.
+
+  As a result, the account API will be enabled by default, allowing users to access and manage their accounts. To control the visibility and accessibility of individual fields, use the `fields` property. By default, all fields are inaccessible; you can selectively enable them as needed.
+
+- Updated dependencies [34964af46]
+  - @logto/connector-kit@4.4.0
+
+## 1.29.0
+
+### Minor Changes
+
+- f2c0a05ac: added an `updated_at` field to the `user_sso_identities` table to track the last update time for each record.
+
+  On each successfull SSO sign-in, the `updated_at` field will be set to the current timestamp. This allows for better tracking of when a user's SSO identity was authenticated and updated.
+
+- db77aad7a: feat: introduced new `oidc_session_extensions` table
+
+  This change introduces a new table named `oidc_session_extensions` to the Logto database schema. This table is designed to store additional user session-related data for OpenID Connect (OIDC) sessions, allowing for more flexible and extensible session management.
+
+- a9324332a: change user password_encrypted length to 256
+
+  For some hash algorithms, the hash length is longer than 128 characters.
+
+- 50d50f73b: manage WebAuthn passkeys in Account API
+
+  You can now manage WebAuthn passkeys in Account API, including:
+
+  1. Bind a WebAuthn passkey to the user's account through your website.
+  2. Manage the passkeys in the user's account.
+
+  We implemented [Related Origin Requests](https://passkeys.dev/docs/advanced/related-origins/) so that you can manage the WebAuthn passkeys in your website which has a different domain from the Logto's sign-in page.
+
+  To learn more, checkout the [documentation](https://docs.logto.io/end-user-flows/account-settings/by-account-api).
+
+## 1.28.0
+
+### Patch Changes
+
+- Updated dependencies [35bbc4399]
+  - @logto/shared@3.3.0
+
+## 1.27.0
+
+### Minor Changes
+
+- e69ea0373: feat: add new `sentinelPolicy` field to the `signInExperience` settings
+
+  We have introduced a new field, `sentinelPolicy`, in the `signInExperience` settings. This field allows customization of lockout settings for identifiers in your Logto application. By default, it is set to an empty object, which means the default lockout policy will apply. The properties of the new field are as follows:
+
+  ```ts
+  type SentinelPolicy = {
+    maxAttempts?: number;
+    lockoutDuration?: number;
+  };
+  ```
+
+  1. Maximum failed attempts:
+
+     - This limits the number of consecutive failed authentication attempts per identifier within an hour. If the limit is exceeded, the identifier will be temporarily locked out.
+     - Default Value: 100
+
+  2. Lockout duration (minutes):
+
+     - This specifies the period during which all authentication attempts for the given identifier are blocked after exceeding the maximum failed attempts.
+     - Default Value: 60 minutes
+
+- 2961d355d: bump node version to ^22.14.0
+- 0a76f3389: add captcha bot protection
+
+  You can now enable CAPTCHA bot protection for your sign-in experience with providers like Google reCAPTCHA enterprise and Cloudflare Turnstile.
+
+  To enable CAPTCHA bot protection, you need to:
+
+  1. Go to Console > Security > CAPTCHA > Bot protection.
+  2. Select the CAPTCHA provider you want to use.
+  3. Configure the CAPTCHA provider.
+  4. Save the settings.
+  5. Enable CAPTCHA in the Security page.
+
+  Then take a preview of your sign-in experience to see the CAPTCHA in action.
+
+### Patch Changes
+
+- Updated dependencies [2961d355d]
+- Updated dependencies [0a76f3389]
+- Updated dependencies [e69ea0373]
+  - @logto/connector-kit@4.3.0
+  - @logto/language-kit@1.2.0
+  - @logto/phrases-experience@1.10.0
+  - @logto/core-kit@2.6.0
+  - @logto/phrases@1.19.0
+  - @logto/shared@3.2.0
+
+## 1.26.0
+
+### Minor Changes
+
+- 13d04d776: feat: support multiple sign-up identifiers in sign-in experience
+
+  ## New update
+
+  Introduces a new optional field, `secondaryIdentifiers`, to the sign-in experience sign-up settings. This enhancement allows developers to specify multiple required user identifiers during the user sign-up process. Available options include `email`, `phone`, `username` and `emailOrPhone`.
+
+  ### Explanation of the difference between `signUp.identifiers` and new `signUp.secondaryIdentifiers`
+
+  The existing `signUp.identifiers` field represents the sign-up identifiers enabled for user sign-up and is an array type. In this legacy setup, if multiple identifiers are provided, users can complete the sign-up process using any one of them. The only multi-value case allowed is `[email, phone]`, which signifies that users can provide either an email or a phone number.
+
+  To enhance flexibility and support multiple required sign-up identifiers, the existing `signUp.identifiers` field does not suffice. To maintain backward compatibility with existing data, we have introduced this new `secondaryIdentifiers` field.
+
+  Unlike the `signUp.identifiers` field, the `signUp.secondaryIdentifiers` array follows an `AND` logic, meaning that all elements listed in this field are required during the sign-up process, in addition to the primary identifiers. This new field also accommodates the `emailOrPhone` case by defining an exclusive `emailOrPhone` value type, which indicates that either a phone number or an email address must be provided.
+
+  In summary, while `identifiers` allows for optional selection among email and phone, `secondaryIdentifiers` enforces mandatory inclusion of all specified identifiers.
+
+  ### Examples
+
+  1. `username` as the primary identifier. In addition, user will be required to provide a verified `email` and `phone number` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["username"],
+    "secondaryIdentifiers": [
+      {
+        "type": "email",
+        "verify": true
+      },
+      {
+        "type": "phone",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": true
+  }
+  ```
+
+  2. `username` as the primary identifier. In addition, user will be required to provide either a verified `email` or `phone number` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["username"],
+    "secondaryIdentifiers": [
+      {
+        "type": "emailOrPhone",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": true
+  }
+  ```
+
+  3. `email` or `phone number` as the primary identifier. In addition, user will be required to provide a `username` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["email", "phone"],
+    "secondaryIdentifiers": [
+      {
+        "type": "username",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": false
+  }
+  ```
+
+  ### Sign-in experience settings
+
+  - `@logto/core`: Update the `/api/sign-in-experience` endpoint to support the new `secondaryIdentifiers` field in the sign-up settings.
+  - `@logto/console`: Replace the sign-up identifier single selector with a multi-selector to support multiple sign-up identifiers. The order of the identifiers can be rearranged by dragging and dropping the items in the list. The first item in the list will be considered the primary identifier and stored in the `signUp.identifiers` field, while the rest will be stored in the `signUp.secondaryIdentifiers` field.
+
+  ### End-user experience
+
+  The sign-up flow is now split into two stages:
+
+  - Primary identifiers (`signUp.identifiers`) are collected in the first-screen registration screen.
+  - Secondary identifiers (`signUp.secondaryIdentifiers`) are requested in subsequent steps after the primary registration has been submitted.
+
+  ## Other refactors
+
+  We have fully decoupled the sign-up identifier settings from the sign-in methods. Developers can now require as many user identifiers as needed during the sign-up process without impacting the sign-in process.
+
+  The following restrictions on sign-in and sign-up settings have been removed:
+
+  1. Password requirement is now optional when `username` is configured as a sign-up identifier. However, users without passwords cannot sign in using username authentication.
+  2. Removed the constraint requiring sign-up identifiers to be enabled as sign-in methods.
+  3. Removed the requirement for password verification across all sign-in methods when password is enabled for sign-up.
+
+### Patch Changes
+
+- Updated dependencies [5da01bc47]
+  - @logto/language-kit@1.1.3
+
+## 1.25.0
+
+### Minor Changes
+
+- 1c7bdf9ba: add legacy password type supporting custom hasing function, credits @fre2d0m
+
+  You can now set the type of `password_encryption_method` to `legacy`, and store info with a JSON string format (containing a hash algorithm, arguments, and an encrypted password) in the `password_encrypted` field. By doing this, you can use any hash algorithm supported by Node.js, this is useful when migrating from other password hash algorithms, especially for the ones that include salt.
+
+  The format of the JSON string is as follows:
+
+  ```json
+  ["hash_algorithm", ["argument1", "argument2", ...], "expected_hashed_value"]
+  ```
+
+  And you can use `@` as the input password in the arguments.
+
+  For example, if you are using SHA256 with a salt, you can store the password in the following format:
+
+  ```json
+  [
+    "sha256",
+    ["salt123", "@"],
+    "c465f66c6ac481a7a17e9ed5b4e2e7e7288d892f12bf1c95c140901e9a70436e"
+  ]
+  ```
+
+  Then when the user uses the password (`password123`), the `legacyVerify` function will use the `sha256` algorithm with the `salt123` and the input password to verify the password.
+
+  In this case, `salt123` is the first argument, `@` is the input password, then the following code will be executed:
+
+  ```ts
+  const hash = crypto.createHash("sha256");
+  hash.update("salt123" + "password123");
+  const expectedHashedValue = hash.digest("hex");
+  ```
+
+### Patch Changes
+
+- Updated dependencies [b0135bcd3]
+  - @logto/connector-kit@4.2.0
+
+## 1.24.1
+
+### Patch Changes
+
+- e11e57de8: bump dependencies for security update
+- Updated dependencies [0b785ee0d]
+- Updated dependencies [5086f4bd2]
+- Updated dependencies [e11e57de8]
+  - @logto/phrases@1.18.0
+  - @logto/connector-kit@4.1.1
+  - @logto/language-kit@1.1.1
+  - @logto/core-kit@2.5.4
+  - @logto/shared@3.1.4
+  - @logto/phrases-experience@1.9.1
+
+## 1.24.0
+
+### Patch Changes
+
+- Updated dependencies [1337669e1]
+  - @logto/phrases@1.17.0
+
 ## 1.23.1
 
 ## 1.23.0

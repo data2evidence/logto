@@ -32,12 +32,12 @@ import {
 export class SamlSsoConnector extends SamlConnector implements SingleSignOn {
   constructor(
     readonly data: SingleSignOnConnectorData,
-    tenantId: string
+    endpoint: URL
   ) {
     const parseConfigResult = samlConnectorConfigGuard.safeParse(data.config);
 
     // Fallback to undefined if config is invalid
-    super(tenantId, data.id, conditional(parseConfigResult.success && parseConfigResult.data));
+    super(endpoint, data.id, conditional(parseConfigResult.success && parseConfigResult.data));
   }
 
   async getIssuer() {
@@ -99,7 +99,7 @@ export class SamlSsoConnector extends SamlConnector implements SingleSignOn {
   async getUserInfo({ userInfo }: SingleSignOnConnectorSession) {
     assertThat(userInfo, new RequestError('session.connector_session_not_found'));
 
-    return userInfo;
+    return { userInfo };
   }
 }
 

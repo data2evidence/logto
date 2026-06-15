@@ -19,6 +19,25 @@ const sign_in_experiences = {
   at_least_one_authentication_factor: 'Musisz wybrać co najmniej jeden czynnik uwierzytelniający.',
   backup_code_cannot_be_enabled_alone: 'Kod zapasowy nie może być włączony samodzielnie.',
   duplicated_mfa_factors: 'Powielone czynniki MFA.',
+  email_verification_code_cannot_be_used_for_mfa:
+    'Kod weryfikacyjny e-mail nie może być używany do MFA, gdy weryfikacja e-mail jest włączona podczas logowania.',
+  phone_verification_code_cannot_be_used_for_mfa:
+    'Kod weryfikacyjny SMS nie może być używany do MFA, gdy weryfikacja SMS jest włączona podczas logowania.',
+  email_verification_code_cannot_be_used_for_sign_in:
+    'Kod weryfikacyjny e-mail nie może być używany do logowania, gdy jest włączony dla MFA.',
+  phone_verification_code_cannot_be_used_for_sign_in:
+    'Kod weryfikacyjny SMS nie może być używany do logowania, gdy jest włączony dla MFA.',
+  adaptive_mfa_requires_mfa: 'Przed włączeniem Adaptive MFA należy włączyć MFA.',
+  adaptive_mfa_requires_non_skippable_policy:
+    'Adaptive MFA wymaga polityki pytań MFA, której nie można pominąć. Użyj PromptOnlyAtSignInMandatory lub PromptAtSignInAndSignUpMandatory.',
+  non_adaptive_mfa_requires_skippable_policy:
+    'Gdy adaptive MFA jest wyłączone, polityka pytań MFA musi być możliwa do pominięcia. Nie używaj PromptOnlyAtSignInMandatory lub PromptAtSignInAndSignUpMandatory.',
+  duplicated_sign_up_identifiers: 'Wykryto zduplikowane identyfikatory rejestracji.',
+  missing_sign_up_identifiers: 'Podstawowy identyfikator rejestracji nie może być pusty.',
+  invalid_custom_email_blocklist_format:
+    'Nieprawidłowe elementy niestandardowej listy blokowanych adresów e-mail: {{items, list(type:conjunction)}}. Każdy element musi być prawidłowym adresem e-mail lub domeną, np. foo@example.com lub @example.com.',
+  forgot_password_method_requires_connector:
+    'Metoda "Zapomniałem hasła" wymaga skonfigurowania odpowiedniego łącznika {{method}}.',
 };
 
 export default Object.freeze(sign_in_experiences);

@@ -1,3 +1,5 @@
+import { extendedIdTokenClaims } from '@logto/core-kit';
+import { type Nullable, type Optional } from '@silverhand/essentials';
 import type { ZodType } from 'zod';
 import { z } from 'zod';
 
@@ -25,6 +27,7 @@ export enum LogtoOidcConfigKeyType {
 export enum LogtoOidcConfigKey {
   PrivateKeys = 'oidc.privateKeys',
   CookieKeys = 'oidc.cookieKeys',
+  Session = 'oidc.session',
 }
 
 /**
@@ -40,19 +43,42 @@ export const oidcConfigKeyGuard = z.object({
   value: z.string(),
   createdAt: z.number(),
 });
-
 export type OidcConfigKey = z.infer<typeof oidcConfigKeyGuard>;
 
+export enum OidcSigningKeyStatus {
+  Next = 'Next',
+  Current = 'Current',
+  Previous = 'Previous',
+}
+
+export const oidcPrivateKeyGuard = oidcConfigKeyGuard.extend({
+  status: z.nativeEnum(OidcSigningKeyStatus).optional(),
+});
+export type OidcPrivateKey = z.infer<typeof oidcPrivateKeyGuard>;
+
+export const oidcSessionConfigGuard = z.object({
+  ttl: z.number().int().min(1).max(31_536_000).optional(),
+});
+
+export type OidcSessionConfig = z.infer<typeof oidcSessionConfigGuard>;
+
 export type LogtoOidcConfigType = {
-  [LogtoOidcConfigKey.PrivateKeys]: OidcConfigKey[];
+  [LogtoOidcConfigKey.PrivateKeys]: OidcPrivateKey[];
   [LogtoOidcConfigKey.CookieKeys]: OidcConfigKey[];
+  [LogtoOidcConfigKey.Session]: OidcSessionConfig;
 };
 
 export const logtoOidcConfigGuard: Readonly<{
-  [key in LogtoOidcConfigKey]: ZodType<LogtoOidcConfigType[key]>;
+  [key in LogtoOidcConfigKey]: ZodType<
+    LogtoOidcConfigType[key],
+    z.ZodTypeDef,
+    Optional<Nullable<LogtoOidcConfigType[key]>>
+  >;
 }> = Object.freeze({
-  [LogtoOidcConfigKey.PrivateKeys]: oidcConfigKeyGuard.array(),
+  [LogtoOidcConfigKey.PrivateKeys]: oidcPrivateKeyGuard.array(),
   [LogtoOidcConfigKey.CookieKeys]: oidcConfigKeyGuard.array(),
+  // Session config is optional, if not set, it will fallback to default value in core.
+  [LogtoOidcConfigKey.Session]: oidcSessionConfigGuard.nullish().transform((data) => data ?? {}),
 });
 
 export enum LogtoJwtTokenKey {
@@ -121,16 +147,37 @@ export const cloudConnectionDataGuard = z.object({
 
 export type CloudConnectionData = z.infer<typeof cloudConnectionDataGuard>;
 
+/* --- ID Token Config --- */
+export const extendedIdTokenClaimsGuard = z.enum(extendedIdTokenClaims);
+export type ExtendedIdTokenClaim = (typeof extendedIdTokenClaims)[number];
+
+export const idTokenConfigGuard = z.object({
+  enabledExtendedClaims: extendedIdTokenClaimsGuard.array().optional(),
+});
+export type IdTokenConfig = z.infer<typeof idTokenConfigGuard>;
+
+export const signingKeyRotationStateGuard = z.object({
+  tenantCacheExpiresAt: z.number().optional(),
+  signingKeyRotationAt: z.number().optional(),
+});
+export type SigningKeyRotationState = z.infer<typeof signingKeyRotationStateGuard>;
+
 export enum LogtoTenantConfigKey {
   AdminConsole = 'adminConsole',
   CloudConnection = 'cloudConnection',
   /** The URL to redirect when session not found in Sign-in Experience. */
   SessionNotFoundRedirectUrl = 'sessionNotFoundRedirectUrl',
+  /** ID token configuration for extended claims. */
+  IdToken = 'idToken',
+  /** Tenant-scoped rotation state for staged private signing key activation. */
+  SigningKeyRotationState = 'signingKeyRotationState',
 }
 export type LogtoTenantConfigType = {
   [LogtoTenantConfigKey.AdminConsole]: AdminConsoleData;
   [LogtoTenantConfigKey.CloudConnection]: CloudConnectionData;
   [LogtoTenantConfigKey.SessionNotFoundRedirectUrl]: { url: string };
+  [LogtoTenantConfigKey.IdToken]: IdTokenConfig;
+  [LogtoTenantConfigKey.SigningKeyRotationState]: SigningKeyRotationState;
 };
 
 export const logtoTenantConfigGuard: Readonly<{
@@ -139,6 +186,8 @@ export const logtoTenantConfigGuard: Readonly<{
   [LogtoTenantConfigKey.AdminConsole]: adminConsoleDataGuard,
   [LogtoTenantConfigKey.CloudConnection]: cloudConnectionDataGuard,
   [LogtoTenantConfigKey.SessionNotFoundRedirectUrl]: z.object({ url: z.string() }),
+  [LogtoTenantConfigKey.IdToken]: idTokenConfigGuard,
+  [LogtoTenantConfigKey.SigningKeyRotationState]: signingKeyRotationStateGuard,
 });
 
 /* --- Summary --- */
@@ -160,8 +209,12 @@ export const logtoConfigGuards: LogtoConfigGuard = Object.freeze({
   ...logtoTenantConfigGuard,
 });
 
-export const oidcConfigKeysResponseGuard = oidcConfigKeyGuard
-  .omit({ value: true })
-  .merge(z.object({ signingKeyAlgorithm: z.nativeEnum(SupportedSigningKeyAlgorithm).optional() }));
+export const oidcConfigKeysResponseGuard = oidcConfigKeyGuard.omit({ value: true }).merge(
+  z.object({
+    signingKeyAlgorithm: z.nativeEnum(SupportedSigningKeyAlgorithm).optional(),
+    status: z.nativeEnum(OidcSigningKeyStatus).optional(),
+    effectiveAt: z.number().optional(),
+  })
+);
 
 export type OidcConfigKeysResponse = z.infer<typeof oidcConfigKeysResponseGuard>;

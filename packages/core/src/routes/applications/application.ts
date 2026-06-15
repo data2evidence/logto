@@ -1,18 +1,22 @@
 // TODO: @darcyYe refactor this file later to remove disable max line comment
 /* eslint-disable max-lines */
-import type { Role } from '@logto/schemas';
+import type { Role, Application } from '@logto/schemas';
 import {
+  adminTenantId,
   Applications,
   ApplicationType,
-  buildDemoAppDataForTenant,
-  demoAppApplicationId,
+  buildBuiltInApplicationDataForTenant,
+  defaultApplicationSecretName,
   hasSecrets,
   InternalRole,
+  ProductEvent,
+  isBuiltInApplicationId,
 } from '@logto/schemas';
 import { generateStandardId, generateStandardSecret } from '@logto/shared';
 import { conditional } from '@silverhand/essentials';
 import { boolean, object, string, z } from 'zod';
 
+import { EnvSet } from '#src/env-set/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import koaPagination from '#src/middleware/koa-pagination.js';
@@ -20,8 +24,11 @@ import { buildOidcClientMetadata } from '#src/oidc/utils.js';
 import assertThat from '#src/utils/assert-that.js';
 import { parseSearchParamsForSearch } from '#src/utils/search.js';
 
+import { captureEvent } from '../../utils/posthog.js';
 import type { ManagementApiRouter, RouterInitArgs } from '../types.js';
 
+import { assertApplicationAccessControlHasRules } from './application-access-control/utils.js';
+import applicationAccessControlRoutes from './application-access-control.js';
 import applicationCustomDataRoutes from './application-custom-data.js';
 import { generateInternalSecret } from './application-secret.js';
 import { applicationCreateGuard, applicationPatchGuard } from './types.js';
@@ -35,6 +42,32 @@ const parseIsThirdPartQueryParam = (isThirdPartyQuery: 'true' | 'false' | undefi
   }
 
   return isThirdPartyQuery === 'true';
+};
+
+/** Third-party applications are not allowed to enable token exchange. */
+const assertThirdPartyApplicationTokenExchangeDisabled = (
+  isThirdParty: boolean,
+  allowTokenExchange?: boolean
+) => {
+  if (isThirdParty && allowTokenExchange === true) {
+    throw new RequestError({
+      code: 'application.third_party_application_cannot_enable_token_exchange',
+      status: 422,
+    });
+  }
+};
+
+const hideOidcClientMetadataForSamlApp = (application: Application) => ({
+  ...application,
+  ...conditional(
+    application.type === ApplicationType.SAML && {
+      oidcClientMetadata: buildOidcClientMetadata(),
+    }
+  ),
+});
+
+const hideOidcClientMetadataForSamlApps = (applications: readonly Application[]) => {
+  return applications.map((application) => hideOidcClientMetadataForSamlApp(application));
 };
 
 const applicationTypeGuard = z.nativeEnum(ApplicationType);
@@ -101,13 +134,14 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
       );
 
       if (paginationDisabled) {
-        ctx.body = await queries.applications.findApplications({
+        const rawApplications = await queries.applications.findApplications({
           search,
           excludeApplicationIds,
           excludeOrganizationId,
           types,
           isThirdParty,
         });
+        ctx.body = hideOidcClientMetadataForSamlApps(rawApplications);
 
         return next();
       }
@@ -134,7 +168,7 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
 
       // Return totalCount to pagination middleware
       ctx.pagination.totalCount = count;
-      ctx.body = applications;
+      ctx.body = hideOidcClientMetadataForSamlApps(applications);
 
       return next();
     }
@@ -145,7 +179,7 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
     koaGuard({
       body: applicationCreateGuard,
       response: Applications.guard,
-      status: [200, 400, 422, 500],
+      status: [200, 400, 422, 403, 500],
     }),
     // eslint-disable-next-line complexity
     async (ctx, next) => {
@@ -162,6 +196,13 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
         quota.guardTenantUsageByKey('applicationsLimit'),
       ]);
 
+      if (rest.type !== ApplicationType.Native && rest.customClientMetadata?.isDeviceFlow) {
+        throw new RequestError({
+          code: 'application.device_flow_native_only',
+          status: 422,
+        });
+      }
+
       assertThat(
         rest.type !== ApplicationType.Protected || protectedAppMetadata,
         'application.protected_app_metadata_is_required'
@@ -169,8 +210,15 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
 
       if (rest.isThirdParty) {
         assertThat(
-          rest.type === ApplicationType.Traditional,
+          [ApplicationType.Traditional, ApplicationType.SPA, ApplicationType.Native].includes(
+            rest.type
+          ),
           'application.invalid_third_party_application_type'
+        );
+
+        assertThirdPartyApplicationTokenExchangeDisabled(
+          true,
+          rest.customClientMetadata?.allowTokenExchange
         );
       }
 
@@ -188,7 +236,7 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
 
       if (hasSecrets(application.type)) {
         await queries.applicationSecrets.insert({
-          name: 'Default secret',
+          name: defaultApplicationSecretName,
           applicationId: application.id,
           value: generateStandardSecret(),
         });
@@ -207,9 +255,17 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
       ctx.body = application;
 
       if (rest.type === ApplicationType.MachineToMachine) {
-        await quota.reportSubscriptionUpdatesUsage('machineToMachineLimit');
+        void quota.reportSubscriptionUpdatesUsage('machineToMachineLimit');
       }
 
+      if (rest.isThirdParty) {
+        void quota.reportSubscriptionUpdatesUsage('thirdPartyApplicationsLimit');
+      }
+
+      captureEvent({ tenantId, request: ctx.req }, ProductEvent.AppCreated, {
+        type: rest.type,
+        isThirdParty: rest.isThirdParty ?? false,
+      });
       return next();
     }
   );
@@ -226,9 +282,11 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
         params: { id },
       } = ctx.guard;
 
-      // Somethings console needs to display demo app info. Build a fixed one for it.
-      if (id === demoAppApplicationId) {
-        ctx.body = { ...buildDemoAppDataForTenant(tenantId), isAdmin: false };
+      const builtInApplication = isBuiltInApplicationId(id)
+        ? buildBuiltInApplicationDataForTenant(tenantId, id)
+        : undefined;
+      if (builtInApplication) {
+        ctx.body = { ...builtInApplication, isAdmin: false };
 
         return next();
       }
@@ -238,7 +296,7 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
         await queries.applicationsRoles.findApplicationsRolesByApplicationId(id);
 
       ctx.body = {
-        ...application,
+        ...hideOidcClientMetadataForSamlApp(application),
         isAdmin: includesInternalAdminRole(applicationsRoles),
       };
 
@@ -258,6 +316,8 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
       response: Applications.guard,
       status: [200, 400, 404, 422, 500],
     }),
+
+    // eslint-disable-next-line complexity
     async (ctx, next) => {
       const {
         params: { id },
@@ -267,15 +327,49 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
       const { isAdmin, protectedAppMetadata, ...rest } = body;
 
       const pendingUpdateApplication = await queries.applications.findApplicationById(id);
+
       if (pendingUpdateApplication.type === ApplicationType.SAML) {
         throw new RequestError('application.saml.use_saml_app_api');
+      }
+
+      if (rest.appLevelAccessControlEnabled === true) {
+        assertApplicationAccessControlHasRules(
+          await queries.applicationAccessControl.findApplicationAccessControl(id)
+        );
+      }
+
+      assertThirdPartyApplicationTokenExchangeDisabled(
+        pendingUpdateApplication.isThirdParty,
+        rest.customClientMetadata?.allowTokenExchange
+      );
+
+      /**
+       * Compare instead of omitting from patch guard — `customClientMetadata` is a JSONB column
+       * that gets replaced wholesale, so omitting the key would lose the existing value.
+       */
+      if (
+        rest.customClientMetadata &&
+        Boolean(rest.customClientMetadata.isDeviceFlow) !==
+          Boolean(pendingUpdateApplication.customClientMetadata.isDeviceFlow)
+      ) {
+        throw new RequestError({
+          code: 'application.device_flow_not_changeable',
+          status: 422,
+        });
       }
 
       // @deprecated
       // User can enable the admin access of Machine-to-Machine apps by switching on a toggle on Admin Console.
       // Since those apps sit in the user tenant, we provide an internal role to apply the necessary scopes.
       // This role is NOT intended for user assignment.
-      if (isAdmin !== undefined) {
+      if (
+        isAdmin !== undefined &&
+        /**
+         * Note: The internal admin role was not created for the admin tenant, and it's no longer needed
+         * since we migrated to RBAC-based access control. Skip this logic for the admin tenant.
+         */
+        tenantId !== adminTenantId
+      ) {
         const [applicationsRoles, internalAdminRole] = await Promise.all([
           queries.applicationsRoles.findApplicationsRolesByApplicationId(id),
           queries.roles.findRoleByRoleName(InternalRole.Admin),
@@ -287,7 +381,7 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
           new RequestError({
             code: 'entity.not_exists',
             status: 500,
-            data: { name: InternalRole.Admin },
+            name: InternalRole.Admin,
           })
         );
 
@@ -300,7 +394,11 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
         }
       }
 
-      if (protectedAppMetadata) {
+      const updatedProtectedApplication = await (async () => {
+        if (!protectedAppMetadata) {
+          return;
+        }
+
         const { type, protectedAppMetadata: originProtectedAppMetadata } = pendingUpdateApplication;
         assertThat(type === ApplicationType.Protected, 'application.protected_application_only');
         assertThat(
@@ -310,7 +408,7 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
             status: 422,
           })
         );
-        await queries.applications.updateApplicationById(id, {
+        const updatedApplication = await queries.applications.updateApplicationById(id, {
           protectedAppMetadata: {
             ...originProtectedAppMetadata,
             ...protectedAppMetadata,
@@ -325,12 +423,15 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
           });
           throw error;
         }
-      }
+        return updatedApplication;
+      })();
 
-      ctx.body =
+      const updatedApplication =
         Object.keys(rest).length > 0
           ? await queries.applications.updateApplicationById(id, rest, 'replace')
-          : pendingUpdateApplication;
+          : (updatedProtectedApplication ?? pendingUpdateApplication);
+
+      ctx.body = updatedApplication;
 
       return next();
     }
@@ -345,7 +446,8 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
     }),
     async (ctx, next) => {
       const { id } = ctx.guard.params;
-      const { type, protectedAppMetadata } = await queries.applications.findApplicationById(id);
+      const { type, protectedAppMetadata, isThirdParty } =
+        await queries.applications.findApplicationById(id);
 
       if (type === ApplicationType.SAML) {
         throw new RequestError('application.saml.use_saml_app_api');
@@ -364,13 +466,26 @@ export default function applicationRoutes<T extends ManagementApiRouter>(
       ctx.status = 204;
 
       if (type === ApplicationType.MachineToMachine) {
-        await quota.reportSubscriptionUpdatesUsage('machineToMachineLimit');
+        void quota.reportSubscriptionUpdatesUsage('machineToMachineLimit');
       }
+
+      if (isThirdParty) {
+        void quota.reportSubscriptionUpdatesUsage('thirdPartyApplicationsLimit');
+      }
+
+      captureEvent({ tenantId, request: ctx.req }, ProductEvent.AppDeleted, {
+        type,
+        isThirdParty,
+      });
 
       return next();
     }
   );
 
   applicationCustomDataRoutes(router, tenant);
+
+  if (EnvSet.values.isDevFeaturesEnabled) {
+    applicationAccessControlRoutes(router, tenant);
+  }
 }
 /* eslint-enable max-lines */

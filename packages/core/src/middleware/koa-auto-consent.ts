@@ -1,10 +1,10 @@
-import { demoAppApplicationId } from '@logto/schemas';
+import { buildBuiltInApplicationDataForTenant, isBuiltInApplicationId } from '@logto/schemas';
 import { type MiddlewareType } from 'koa';
 import { type IRouterParamContext } from 'koa-router';
 import type { Provider } from 'oidc-provider';
 import { errors } from 'oidc-provider';
 
-import { consent, getMissingScopes } from '#src/libraries/session.js';
+import { consent, getMissingScopes } from '#src/libraries/session/index.js';
 import type Queries from '#src/tenants/Queries.js';
 import assertThat from '#src/utils/assert-that.js';
 
@@ -32,11 +32,11 @@ export default function koaAutoConsent<StateT, ContextT extends IRouterParamCont
       new errors.InvalidClient('client must be available')
     );
 
-    // Demo app not in the database
-    const application =
-      clientId === demoAppApplicationId ? undefined : await findApplicationById(clientId);
+    const application = isBuiltInApplicationId(clientId)
+      ? buildBuiltInApplicationDataForTenant('', clientId)
+      : await findApplicationById(clientId);
 
-    const shouldAutoConsent = !application?.isThirdParty;
+    const shouldAutoConsent = !application.isThirdParty;
 
     if (shouldAutoConsent) {
       const { missingOIDCScope: missingOIDCScopes, missingResourceScopes: resourceScopesToGrant } =

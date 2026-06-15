@@ -10,9 +10,11 @@ type Props = {
   readonly id: string;
   readonly sortIndex: number;
   readonly moveItem: (dragIndex: number, hoverIndex: number) => void;
+  readonly dropItem?: (item: DragItemProps) => void;
   readonly children: ReactNode;
   readonly dragType?: string;
   readonly className?: string;
+  readonly isDragDisabled?: boolean;
 };
 
 type DragItemProps = {
@@ -26,8 +28,10 @@ function DraggableItem({
   children,
   sortIndex,
   moveItem,
+  dropItem,
   dragType = 'DraggableItem',
   className,
+  isDragDisabled = false,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { setIsDragging } = useContext(DragDropContext);
@@ -86,6 +90,7 @@ function DraggableItem({
       // eslint-disable-next-line @silverhand/fp/no-mutation
       item.sortIndex = hoverIndex;
     },
+    drop: dropItem,
   });
 
   const [{ isDragging }, drag] = useDrag({
@@ -93,6 +98,7 @@ function DraggableItem({
     item: () => {
       return { id, sortIndex };
     },
+    canDrag: () => !isDragDisabled,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),

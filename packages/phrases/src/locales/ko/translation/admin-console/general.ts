@@ -1,7 +1,7 @@
 const general = {
   placeholder: '플레이스홀더',
   submit: '제출',
-  skip: '건너뛰기',
+  skip: '건너�기',
   next: '다음',
   back: '뒤로',
   retry: '재시도',
@@ -9,12 +9,13 @@ const general = {
   search: '검색',
   search_placeholder: '검색',
   clear_result: '결과 지우기',
+  today: '오늘',
+  clear: '지우기',
   save: '저장',
   save_changes: '변경 내용 저장',
   saved: '저장됨',
   discard: '취소',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: '다운로드',
   loading: '로딩 중...',
   redirecting: '리다이렉트 중...',
   add: '추가',
@@ -30,10 +31,8 @@ const general = {
   edit: '편집',
   delete: '삭제',
   deleted: '삭제됨',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  activate: '활성화',
+  deactivate: '비활성화',
   more_options: '더 많은 설정',
   close: '닫기',
   copy: '복사',
@@ -52,7 +51,7 @@ const general = {
   continue: '계속하기',
   page_info: '{{min, number}}-{{max, number}} / {{total, number}}',
   learn_more: '더 알아보기',
-  tab_error_one: '{{count, number}} 오류',
+  tab_error: '{{count, number}} 오류',
   tab_error_other: '{{count, number}} 오류',
   skip_for_now: '지금은 건너뛰기',
   remove: '삭제',
@@ -78,6 +77,8 @@ const general = {
   or: '또는',
   reset: '재설정',
   generate: '생성',
+  manage: '관리',
+  live_preview: '실시간 미리보기',
 };
 
 export default Object.freeze(general);

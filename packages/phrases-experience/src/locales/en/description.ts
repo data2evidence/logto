@@ -10,18 +10,17 @@ const description = {
   sign_in: 'Sign in',
   privacy_policy: 'Privacy Policy',
   create_account: 'Create account',
+  switch_account: 'Switch account',
   or: 'or',
   and: 'and',
   enter_passcode: 'The verification code has been sent to your {{address}} {{target}}',
   passcode_sent: 'The verification code has been resent',
   resend_after_seconds: 'Not received yet? Resend after <span>{{seconds}}</span> seconds',
   resend_passcode: 'Not received yet? <a>Resend verification code</a>',
-  create_account_id_exists:
-    'The account with {{type}} {{value}} already exists, would you like to sign in?',
+  create_account_id_exists: 'An account with {{value}} already exists. Continue to sign in.',
   link_account_id_exists:
     'The account with {{type}} {{value}} already exists. Would you like to link?',
-  sign_in_id_does_not_exist:
-    'The account with {{type}} {{value}} does not exist, would you like to create a new account?',
+  sign_in_id_does_not_exist: 'No account found for {{value}}. Create a new one?',
   sign_in_id_does_not_exist_alert: 'The account with {{type}} {{value}} does not exist.',
   create_account_id_exists_alert:
     'The account with {{type}} {{value}} is linked to another account. Please try another {{type}}.',
@@ -42,7 +41,7 @@ const description = {
   set_password: 'Set password',
   password_changed: 'Password changed',
   no_account: 'No account yet? ',
-  have_account: 'Already had an account?',
+  have_account: 'Already have an account?',
   enter_password: 'Enter password',
   enter_password_for: 'Sign in with the password to {{method}} {{value}}',
   enter_username: 'Set username',
@@ -58,15 +57,30 @@ const description = {
   continue_with_more_information: 'For added security, please complete below account details.',
   create_your_account: 'Create your account',
   sign_in_to_your_account: 'Sign in to your account',
+  device_activation: 'Device activation',
+  device_activation_description:
+    'Enter the code shown on your device. Make sure it matches, then continue to sign in to this device.',
+  device_activation_error_description: 'Enter the code displayed on your device.',
+  device_activation_success: 'Your device is now connected!',
+  device_activation_success_description: 'Return your device to continue.',
   no_region_code_found: 'No region code found',
   verify_email: 'Verify your email',
   verify_phone: 'Verify your phone number',
   password_requirements: 'Password {{items, list}}.',
   password_requirement: {
     length_one: 'requires a minimum of {{count}} character',
+    length_two: 'requires a minimum of {{count}} characters',
+    length_few: 'requires a minimum of {{count}} characters',
+    length_many: 'requires a minimum of {{count}} characters',
     length_other: 'requires a minimum of {{count}} characters',
     character_types_one:
       'should contain at least {{count}} type of uppercase letters, lowercase letters, digits, and symbols',
+    character_types_two:
+      'should contain at least {{count}} types of uppercase letters, lowercase letters, digits, and symbols',
+    character_types_few:
+      'should contain at least {{count}} types of uppercase letters, lowercase letters, digits, and symbols',
+    character_types_many:
+      'should contain at least {{count}} types of uppercase letters, lowercase letters, digits, and symbols',
     character_types_other:
       'should contain at least {{count}} types of uppercase letters, lowercase letters, digits, and symbols',
   },
@@ -96,6 +110,21 @@ const description = {
   back_to_sign_in: 'Back to sign in',
   support_email: 'Support email: <link></link>',
   support_website: 'Support website: <link></link>',
+  switch_account_title: 'You are currently signed in as {{account}}',
+  switch_account_description:
+    'To continue, you will be signed out of the current account, and switch to the new account automatically.',
+  about_yourself: 'Tell us about yourself',
+  verify_identity: 'Verify your identity',
+  choose_verification_method: 'Choose how you want to sign in',
+  verification_method: {
+    passkey: 'Passkey',
+    passkey_description: 'Verify via your device or USB hardware',
+    password: 'Password',
+    password_description: 'Enter your password',
+    email_verification_code: 'Email verification code',
+    phone_verification_code: 'Phone verification code',
+    verification_code_description: 'Send to {{target}}',
+  },
 };
 
 export default Object.freeze(description);

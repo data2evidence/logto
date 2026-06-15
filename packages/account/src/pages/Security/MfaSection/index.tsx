@@ -1,0 +1,326 @@
+import { InlineNotification } from '@experience/components/Notification';
+import {
+  AccountCenterControlValue,
+  MfaPolicy,
+  type UserMfaVerificationResponse,
+} from '@logto/schemas';
+import classNames from 'classnames';
+import { useCallback, useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+
+import PageContext from '@ac/Providers/PageContextProvider/PageContext';
+import ConfirmModal from '@ac/components/ConfirmModal';
+import ToggleSwitch from '@ac/components/ToggleSwitch';
+import { layoutClassNames } from '@ac/constants/layout';
+import { verifiedActionRoute } from '@ac/constants/routes';
+import { getPendingReturn, setPendingReturn } from '@ac/utils/account-center-route';
+import { hasVisibleMfaSection } from '@ac/utils/security-page';
+import { sessionStorage } from '@ac/utils/session-storage';
+
+import { getMfaSettings, getMfaVerifications, updateMfaSettings } from '../../../apis/mfa';
+import useApi from '../../../hooks/use-api';
+import useErrorHandler from '../../../hooks/use-error-handler';
+
+import MfaSkeleton from './MfaSkeleton';
+import styles from './index.module.scss';
+import useMfaRows from './use-mfa-rows';
+
+/** MFA policies where users cannot skip MFA verification */
+const mandatoryMfaPolicies = new Set<MfaPolicy>([
+  MfaPolicy.Mandatory,
+  MfaPolicy.PromptAtSignInAndSignUpMandatory,
+  MfaPolicy.PromptOnlyAtSignInMandatory,
+]);
+
+type MfaRowsProps = {
+  readonly rows: ReturnType<typeof useMfaRows>;
+};
+
+const MfaRows = ({ rows }: MfaRowsProps) => {
+  const { t } = useTranslation();
+
+  return rows.map(({ key, icon: Icon, label, value, isPlainValue, isConfigured, action }) => (
+    <div key={key} className={classNames(styles.row, layoutClassNames.row)}>
+      <div className={styles.topLine}>
+        <div className={styles.iconWrap}>
+          <Icon className={styles.icon} />
+        </div>
+        {action && (
+          <div className={styles.actions}>
+            <button type="button" className={styles.actionButton} onClick={action.handler}>
+              {action.label}
+            </button>
+          </div>
+        )}
+      </div>
+      <div className={styles.title}>{label}</div>
+      <div className={styles.value}>
+        {isConfigured ? (
+          isPlainValue ? (
+            <span className={styles.plainValue}>{value}</span>
+          ) : (
+            <span className={styles.statusTag}>
+              <span className={styles.statusDot} />
+              {value}
+            </span>
+          )
+        ) : (
+          <span className={styles.notConfigured}>
+            {t('account_center.security.not_configured')}
+          </span>
+        )}
+      </div>
+    </div>
+  ));
+};
+
+type MfaContentProps = {
+  readonly isLoading: boolean;
+  readonly hasToggle: boolean;
+  readonly isTwoStepEnabled: boolean;
+  readonly rows: ReturnType<typeof useMfaRows>;
+  readonly onToggleChange: (checked: boolean) => Promise<void>;
+};
+
+const MfaContent = ({
+  isLoading,
+  hasToggle,
+  isTwoStepEnabled,
+  rows,
+  onToggleChange,
+}: MfaContentProps) => {
+  const { t } = useTranslation();
+
+  if (isLoading) {
+    return (
+      <div
+        className={styles.skeletonContent}
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        aria-label={t('account_center.security.two_step_verification')}
+      >
+        <MfaSkeleton hasToggle={hasToggle} rows={rows} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {hasToggle && (
+        <div className={styles.toggleRow}>
+          <div className={styles.toggleInfo}>
+            <div className={styles.toggleTitle}>
+              {t('account_center.security.two_step_verification')}
+            </div>
+            <div className={styles.toggleDescription}>
+              {t('account_center.security.turn_on_2_step_verification_description')}
+            </div>
+          </div>
+          <ToggleSwitch
+            isChecked={isTwoStepEnabled}
+            onChange={(checked) => {
+              void onToggleChange(checked);
+            }}
+          />
+        </div>
+      )}
+      {hasToggle && rows.length > 0 && <div className={styles.divider} />}
+      <MfaRows rows={rows} />
+    </>
+  );
+};
+
+const MfaSection = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { accountCenterSettings, experienceSettings, verificationId, setVerificationId, setToast } =
+    useContext(PageContext);
+  const [mfaVerifications, setMfaVerifications] = useState<UserMfaVerificationResponse>();
+  const [skipMfaOnSignIn, setSkipMfaOnSignIn] = useState<boolean>();
+  const [hasLoadedMfaVerifications, setHasLoadedMfaVerifications] = useState(false);
+  const [isLoadingMfaVerifications, setIsLoadingMfaVerifications] = useState(false);
+  const [hasLoadedMfaSettings, setHasLoadedMfaSettings] = useState(false);
+  const [isLoadingMfaSettings, setIsLoadingMfaSettings] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const handleError = useErrorHandler();
+
+  const updateMfaSettingsApi = useApi(updateMfaSettings);
+
+  const mfaControl = accountCenterSettings?.fields.mfa;
+  const enabledFactors = experienceSettings?.mfa.factors ?? [];
+  const mfaPolicy = experienceSettings?.mfa.policy;
+  const isEditable = mfaControl === AccountCenterControlValue.Edit;
+  const isMfaSectionVisible = hasVisibleMfaSection(mfaControl, experienceSettings);
+
+  const showToggle =
+    isEditable &&
+    mfaPolicy !== undefined &&
+    !mandatoryMfaPolicies.has(mfaPolicy) &&
+    enabledFactors.length > 0;
+
+  const isTwoStepEnabled = skipMfaOnSignIn === false;
+  const hasConfiguredMfa = (mfaVerifications?.length ?? 0) > 0;
+  const isMfaSectionLoading =
+    (isMfaSectionVisible && (!hasLoadedMfaVerifications || isLoadingMfaVerifications)) ||
+    (showToggle && (!hasLoadedMfaSettings || isLoadingMfaSettings));
+
+  const getMfaRequest = useApi(getMfaVerifications, { silent: true });
+  const getMfaSettingsRequest = useApi(getMfaSettings, { silent: true });
+
+  const fetchMfaVerifications = useCallback(async () => {
+    setIsLoadingMfaVerifications(true);
+    const [error, result] = await getMfaRequest();
+    if (!error && result) {
+      setMfaVerifications(result);
+    }
+    setHasLoadedMfaVerifications(true);
+    setIsLoadingMfaVerifications(false);
+  }, [getMfaRequest]);
+
+  const fetchMfaSettings = useCallback(async () => {
+    setIsLoadingMfaSettings(true);
+    const [error, result] = await getMfaSettingsRequest();
+    if (!error && result) {
+      setSkipMfaOnSignIn(result.skipMfaOnSignIn);
+    }
+    setHasLoadedMfaSettings(true);
+    setIsLoadingMfaSettings(false);
+  }, [getMfaSettingsRequest]);
+
+  useEffect(() => {
+    if (isMfaSectionVisible) {
+      void fetchMfaVerifications();
+    }
+  }, [isMfaSectionVisible, fetchMfaVerifications]);
+
+  useEffect(() => {
+    if (showToggle) {
+      void fetchMfaSettings();
+    }
+  }, [showToggle, fetchMfaSettings]);
+
+  const navigateTo = useCallback(
+    (route: string) => {
+      setPendingReturn(getPendingReturn() ?? window.location.href);
+      navigate(route);
+    },
+    [navigate]
+  );
+
+  const rows = useMfaRows(mfaVerifications, navigateTo);
+  const shouldShowMfaCard = showToggle || rows.length > 0;
+
+  const updateSkipMfaOnSignIn = useCallback(
+    async (verifiedId: string, skipMfaOnSignIn: boolean) => {
+      const [error] = await updateMfaSettingsApi(verifiedId, { skipMfaOnSignIn });
+
+      if (error) {
+        await handleError(error, {
+          'verification_record.permission_denied': async () => {
+            setVerificationId(undefined);
+            setToast(t('account_center.verification.verification_required'));
+          },
+        });
+        return;
+      }
+
+      setSkipMfaOnSignIn(skipMfaOnSignIn);
+    },
+    [handleError, setToast, setVerificationId, t, updateMfaSettingsApi]
+  );
+
+  const handleToggleChange = useCallback(
+    async (checked: boolean) => {
+      const skipMfa = !checked;
+
+      if (!checked) {
+        setIsConfirmModalOpen(true);
+        return;
+      }
+
+      if (verificationId) {
+        await updateSkipMfaOnSignIn(verificationId, skipMfa);
+        return;
+      }
+
+      sessionStorage.setPendingVerifiedAction('enable-mfa');
+      navigateTo(verifiedActionRoute);
+    },
+    [navigateTo, updateSkipMfaOnSignIn, verificationId]
+  );
+
+  const handleConfirmDisable = useCallback(async () => {
+    setIsConfirmModalOpen(false);
+
+    if (verificationId) {
+      await updateSkipMfaOnSignIn(verificationId, true);
+      return;
+    }
+
+    sessionStorage.setPendingVerifiedAction('disable-mfa');
+    navigateTo(verifiedActionRoute);
+  }, [navigateTo, updateSkipMfaOnSignIn, verificationId]);
+
+  useEffect(() => {
+    if (!verificationId) {
+      return;
+    }
+
+    const pendingAction = sessionStorage.getPendingVerifiedAction();
+
+    if (pendingAction !== 'enable-mfa' && pendingAction !== 'disable-mfa') {
+      return;
+    }
+
+    sessionStorage.clearPendingVerifiedAction();
+    void updateSkipMfaOnSignIn(verificationId, pendingAction === 'disable-mfa');
+  }, [updateSkipMfaOnSignIn, verificationId]);
+
+  if (!shouldShowMfaCard) {
+    return null;
+  }
+
+  return (
+    <>
+      <div className={classNames(styles.section, layoutClassNames.section)}>
+        <div className={classNames(styles.sectionTitle, layoutClassNames.sectionTitle)}>
+          {t('account_center.security.two_step_verification')}
+        </div>
+        {!isMfaSectionLoading && showToggle && isTwoStepEnabled && !hasConfiguredMfa && (
+          <InlineNotification
+            message="account_center.security.no_verification_method_warning"
+            className={styles.notification}
+          />
+        )}
+        <div className={classNames(styles.card, layoutClassNames.card)}>
+          <MfaContent
+            isLoading={isMfaSectionLoading}
+            hasToggle={showToggle}
+            isTwoStepEnabled={isTwoStepEnabled}
+            rows={rows}
+            onToggleChange={handleToggleChange}
+          />
+        </div>
+      </div>
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        title="account_center.security.turn_off_2_step_verification"
+        confirmText="account_center.security.disable_2_step_verification"
+        confirmButtonType="danger"
+        cancelText="action.cancel"
+        onConfirm={() => {
+          void handleConfirmDisable();
+        }}
+        onCancel={() => {
+          setIsConfirmModalOpen(false);
+        }}
+      >
+        {t('account_center.security.turn_off_2_step_verification_description')}
+      </ConfirmModal>
+    </>
+  );
+};
+
+export default MfaSection;

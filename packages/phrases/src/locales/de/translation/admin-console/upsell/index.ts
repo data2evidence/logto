@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'Upgrade-Plan',
   compare_plans: 'Pläne vergleichen',
+  try_with_product_name: 'Jetzt {{productName}} ausprobieren',
   view_plans: 'Pläne anzeigen',
   create_tenant: {
     title: 'Wählen Sie Ihren Tenant-Plan aus',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'Plan aktualisieren',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'Token-Nutzung hat das Limit überschritten. Upgrade deinen Plan.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      'Du hast dein <planName/>-Token-Nutzungslimit überschritten. Benutzer werden nicht in der Lage sein, den Logto-Dienst ordnungsgemäß zu nutzen. Bitte upgrade deinen Plan umgehend auf Premium, um Unannehmlichkeiten zu vermeiden.',
   },
   payment_overdue_modal: {
     title: 'Zahlungsrückstand für Rechnung',
@@ -50,6 +49,24 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'Sie werden Ihren Entwicklungstenant in einen Produktionstenant umwandeln',
+    description:
+      'Bereit für den Live-Betrieb? Die Umwandlung dieses Entw-Tenant in einen Produkt-Tenant schaltet die volle Funktionalität frei',
+    benefits: {
+      stable_environment: 'Für Endbenutzer: Eine stabile Umgebung für den realen Einsatz.',
+      keep_pro_features:
+        'Pro-Funktionen behalten: Sie werden den Pro-Plan abonnieren. <a>Pro-Funktionen ansehen.</a>',
+      no_dev_restrictions:
+        'Keine Entwicklerbeschränkungen: Entfernt Entitäts- und Ressourcensystemlimits sowie das Anmeldebanner.',
+    },
+    cards: {
+      dev_description: 'Testzwecke',
+      prod_description: 'Echte Produktion',
+      convert_label: 'umwandeln',
+    },
+    button: 'In Produkt-Tenant umwandeln',
+  },
 };
 
 export default Object.freeze(upsell);

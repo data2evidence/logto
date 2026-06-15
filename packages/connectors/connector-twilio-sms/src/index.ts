@@ -13,11 +13,16 @@ import {
   validateConfig,
   ConnectorType,
   replaceSendMessageHandlebars,
+  getConfigTemplateByType,
 } from '@logto/connector-kit';
 
 import { defaultMetadata, endpoint } from './constant.js';
 import type { PublicParameters } from './types.js';
 import { twilioSmsConfigGuard } from './types.js';
+
+// Phone number validity is checked upstream; only normalize a missing "+" for Twilio E.164 input.
+const toE164PhoneNumber = (phoneNumber: string) =>
+  phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
 
 const sendMessage =
   (getConfig: GetConnectorConfig): SendMessageFunction =>
@@ -25,8 +30,8 @@ const sendMessage =
     const { to, type, payload } = data;
     const config = inputConfig ?? (await getConfig(defaultMetadata.id));
     validateConfig(config, twilioSmsConfigGuard);
-    const { accountSID, authToken, fromMessagingServiceSID, templates } = config;
-    const template = templates.find((template) => template.usageType === type);
+    const { accountSID, authToken, fromMessagingServiceSID, disableRiskCheck } = config;
+    const template = getConfigTemplateByType(type, config);
 
     assert(
       template,
@@ -37,9 +42,10 @@ const sendMessage =
     );
 
     const parameters: PublicParameters = {
-      To: to,
+      To: toE164PhoneNumber(to),
       MessagingServiceSid: fromMessagingServiceSID,
       Body: replaceSendMessageHandlebars(template.content, payload),
+      RiskCheck: disableRiskCheck ? 'disable' : 'enable',
     };
 
     try {

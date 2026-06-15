@@ -128,7 +128,7 @@ describe('IdentifierSignInForm', () => {
         if (identifier === SignInIdentifier.Username) {
           await waitFor(() => {
             expect(sendVerificationCodeApi).not.toBeCalled();
-            expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' });
+            expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' }, undefined);
           });
 
           return;
@@ -143,7 +143,7 @@ describe('IdentifierSignInForm', () => {
         if (password && (isPasswordPrimary || !verificationCode)) {
           await waitFor(() => {
             expect(sendVerificationCodeApi).not.toBeCalled();
-            expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' });
+            expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' }, undefined);
           });
 
           return;
@@ -160,6 +160,7 @@ describe('IdentifierSignInForm', () => {
                     ? `${getDefaultCountryCallingCode()}${value}`
                     : value,
               },
+              undefined,
               undefined
             );
             expect(mockedNavigate).not.toBeCalled();
@@ -194,7 +195,7 @@ describe('IdentifierSignInForm', () => {
 
       await waitFor(() => {
         expect(getSingleSignOnConnectorsMock).not.toBeCalled();
-        expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' });
+        expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' }, undefined);
       });
     });
 
@@ -221,7 +222,7 @@ describe('IdentifierSignInForm', () => {
 
       await waitFor(() => {
         expect(getSingleSignOnConnectorsMock).not.toBeCalled();
-        expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' });
+        expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' }, undefined);
       });
     });
 
@@ -255,7 +256,7 @@ describe('IdentifierSignInForm', () => {
       });
 
       await waitFor(() => {
-        expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' });
+        expect(mockedNavigate).toBeCalledWith({ pathname: '/sign-in/password' }, undefined);
       });
     });
 
@@ -293,7 +294,10 @@ describe('IdentifierSignInForm', () => {
       });
 
       await waitFor(() => {
-        expect(mockedNavigate).toBeCalledWith(`/${experience.routes.sso}/connectors`);
+        expect(mockedNavigate).toBeCalledWith(
+          { pathname: `/${experience.routes.sso}/connectors` },
+          undefined
+        );
       });
     });
   });

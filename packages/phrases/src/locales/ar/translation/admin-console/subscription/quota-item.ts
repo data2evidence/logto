@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'اجلب واجهة المستخدم الخاصة بك',
     not_eligible: 'قم بإزالة أصول واجهة المستخدم المخصصة الخاصة بك',
   },
+  collect_user_profile_enabled: {
+    name: 'جمع ملف تعريف المستخدم',
+    limited: 'جمع ملف تعريف المستخدم',
+    unlimited: 'جمع ملف تعريف المستخدم',
+    not_eligible: 'قم بإزالة حقول جمع ملف تعريف المستخدم الخاصة بك',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'تسجيل الدخول الأحادي الذي بدأه موفر الهوية',
+    limited: 'تسجيل الدخول الأحادي الذي بدأه موفر الهوية',
+    unlimited: 'تسجيل الدخول الأحادي الذي بدأه موفر الهوية',
+    not_eligible: 'تسجيل الدخول الأحادي الذي بدأه موفر الهوية غير مسموح',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'تطبيقات SAML',
+    limited: '{{count, number}} تطبيق SAML',
+    limited_other: '{{count, number}} تطبيقات SAML',
+    unlimited: 'عدد غير محدود من تطبيقات SAML',
+    not_eligible: 'قم بإزالة تطبيقات SAML الخاصة بك',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'قم بإزالة CAPTCHA الخاص بك',
+  },
+  security_features_enabled: {
+    name: 'الأمان المتقدّم',
+    limited: 'الأمان المتقدّم',
+    unlimited: 'الأمان المتقدّم',
+    not_eligible: 'قم بإزالة إعدادات الأمان المتقدّمة الخاصة بك',
+  },
+  custom_domains_limit: {
+    name: 'النطاقات المخصصة',
+    limited: '{{count, number}} نطاق مخصص',
+    limited_other: '{{count, number}} نطاقات مخصصة',
+    unlimited: 'عدد غير محدود من النطاقات المخصصة',
+    not_eligible: 'قم بإزالة النطاقات المخصصة الخاصة بك',
+  },
+  passkey_sign_in_enabled: {
+    name: 'تسجيل الدخول بمفتاح المرور',
+    limited: 'تسجيل الدخول بمفتاح المرور',
+    unlimited: 'تسجيل الدخول بمفتاح المرور',
+    not_eligible: 'لا يتوفر دعم لتسجيل الدخول بمفتاح المرور',
   },
 };
 

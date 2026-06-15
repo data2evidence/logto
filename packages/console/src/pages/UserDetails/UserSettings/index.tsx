@@ -1,22 +1,24 @@
 import { emailRegEx, usernameRegEx } from '@logto/core-kit';
-import type { User } from '@logto/schemas';
+import type { SignInExperience, User } from '@logto/schemas';
 import { parsePhoneNumber } from '@logto/shared/universal';
 import { conditionalString, trySafe } from '@silverhand/essentials';
-import { parsePhoneNumberWithError } from 'libphonenumber-js';
+import { parsePhoneNumberWithError } from 'libphonenumber-js/mobile';
 import { useForm, useController } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { Trans, useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
+import useSWRImmutable from 'swr/immutable';
 
 import DetailsForm from '@/components/DetailsForm';
 import FormCard from '@/components/FormCard';
+import LearnMore from '@/components/LearnMore';
 import UnsavedChangesAlertModal from '@/components/UnsavedChangesAlertModal';
-import { profilePropertyReferenceLink } from '@/consts';
+import { profilePropertyReferenceLink, userCustomData } from '@/consts';
 import CodeEditor from '@/ds-components/CodeEditor';
 import FormField from '@/ds-components/FormField';
 import TextInput from '@/ds-components/TextInput';
 import TextLink from '@/ds-components/TextLink';
-import useApi from '@/hooks/use-api';
+import useApi, { type RequestError } from '@/hooks/use-api';
 import { useConfirmModal } from '@/hooks/use-confirm-modal';
 import useDocumentationUrl from '@/hooks/use-documentation-url';
 import { trySubmitSafe } from '@/utils/form';
@@ -27,10 +29,12 @@ import { type UserDetailsForm, type UserDetailsOutletContext } from '../types';
 import { userDetailsParser } from '../utils';
 
 import PersonalAccessTokens from './PersonalAccessTokens';
+import UserConnections from './UserConnections';
 import UserMfaVerifications from './UserMfaVerifications';
 import UserPassword from './UserPassword';
-import UserSocialIdentities from './UserSocialIdentities';
-import UserSsoIdentities from './UserSsoIdentities';
+import UserSessions from './UserSessions';
+import UserSignInPasskeys from './UserSignInPasskeys';
+import UserThirdPartyApps from './UserThirdPartyApps';
 
 function UserSettings() {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
@@ -39,6 +43,10 @@ function UserSettings() {
   const { user, isDeleting, onUserUpdated } = useOutletContext<UserDetailsOutletContext>();
 
   const userFormData = userDetailsParser.toLocalForm(user);
+
+  const { data: signInExperience } = useSWRImmutable<SignInExperience, RequestError>(
+    'api/sign-in-exp'
+  );
 
   const {
     handleSubmit,
@@ -159,23 +167,19 @@ function UserSettings() {
               }}
             />
           </FormField>
-          <FormField title="user_details.field_connectors">
-            <UserSocialIdentities
-              userId={user.id}
-              identities={user.identities}
-              onDelete={() => {
-                onUserUpdated();
-              }}
-            />
-          </FormField>
-          <FormField title="user_details.field_sso_connectors">
-            <UserSsoIdentities ssoIdentities={user.ssoIdentities ?? []} />
-          </FormField>
+          {signInExperience?.passkeySignIn.enabled && (
+            <FormField title="user_details.passkey.field_name">
+              <UserSignInPasskeys userId={user.id} />
+            </FormField>
+          )}
           <FormField title="user_details.mfa.field_name">
             <UserMfaVerifications userId={user.id} />
           </FormField>
           <PersonalAccessTokens userId={user.id} />
         </FormCard>
+        <UserConnections userId={user.id} />
+        <UserSessions userId={user.id} />
+        <UserThirdPartyApps userId={user.id} />
         <FormCard title="user_details.user_profile">
           <FormField title="user_details.field_name">
             <TextInput {...register('name')} placeholder={t('users.placeholder_name')} />
@@ -192,7 +196,12 @@ function UserSettings() {
           </FormField>
           <FormField
             title="user_details.field_custom_data"
-            tip={t('user_details.field_custom_data_tip')}
+            tip={
+              <>
+                {t('user_details.field_custom_data_tip')}
+                <LearnMore href={userCustomData} />
+              </>
+            }
           >
             <CodeEditor language="json" value={customData.value} onChange={customData.onChange} />
           </FormField>

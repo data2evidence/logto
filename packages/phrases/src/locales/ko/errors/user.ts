@@ -7,6 +7,7 @@ const user = {
   email_not_exist: '이메일 주소가 아직 등록되지 않았어요.',
   phone_not_exist: '휴대전화번호가 아직 등록되지 않았어요.',
   identity_not_exist: '소셜 계정이 아직 등록되지 않았어요.',
+  sso_identity_not_exist: '엔터프라이즈 SSO 계정이 아직 등록되지 않았어요.',
   identity_already_in_use: '소셜 계정이 이미 등록되어 있어요.',
   social_account_exists_in_profile: '이 소셜 계정은 이미 연동되어 있습니다.',
   cannot_delete_self: '자기 자신을 삭제할 수 없어요.',
@@ -29,25 +30,27 @@ const user = {
   role_exists: '역할 ID {{roleId}}은/는 이미 이 사용자에게 할당되어 있어요.',
   invalid_role_type:
     '유효하지 않은 역할 유형입니다. 사용자에게 기계 대 기계 역할을 할당할 수 없습니다.',
-  missing_mfa: 'You need to bind additional MFA before signing-in.',
-  totp_already_in_use: 'TOTP is already in use.',
-  backup_code_already_in_use: 'Backup code is already in use.',
+  suggest_mfa: '계정 보안을 강화하려면 MFA를 계정에 연동하는 것을 권장해요.',
+  missing_mfa: '추가 MFA를 연동한 후에 로그인할 수 있습니다.',
+  totp_already_in_use: 'TOTP가 이미 사용 중입니다.',
+  backup_code_already_in_use: '백업 코드가 이미 사용 중입니다.',
   password_algorithm_required: '비밀번호 알고리즘이 필요합니다.',
-  password_and_digest: 'You cannot set both plain text password and password digest.',
+  password_and_digest: '일반 텍스트 비밀번호와 비밀번호 다이제스트를 동시에 설정할 수 없습니다.',
   personal_access_token_name_exists: '개인 액세스 토큰 이름이 이미 존재합니다.',
-  /** UNTRANSLATED */
-  totp_secret_invalid: 'Invalid TOTP secret supplied.',
-  /** UNTRANSLATED */
-  wrong_backup_code_format: 'Backup code format is invalid.',
-  /** UNTRANSLATED */
-  username_required: 'Username is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
+  totp_secret_invalid: '제공된 TOTP 비밀이 잘못되었습니다.',
+  wrong_backup_code_format: '백업 코드 형식이 잘못되었습니다.',
+  username_required: '사용자 이름은 필수 식별자이며, null로 설정할 수 없습니다.',
   email_or_phone_required:
-    'Email address or phone number is a required identifier, at least one is required.',
-  /** UNTRANSLATED */
-  email_required: 'Email address is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  phone_required: 'Phone number is a required identifier, you can not set it to null.',
+    '이메일 주소 또는 휴대전화번호는 필수 식별자이며, 적어도 하나는 필요합니다.',
+  last_sign_in_method_required:
+    '계정에는 사용할 수 있는 로그인 방법을 최소 하나 이상 유지해야 합니다.',
+  email_required: '이메일 주소는 필수 식별자이며, null로 설정할 수 없습니다.',
+  phone_required: '휴대전화번호는 필수 식별자이며, null로 설정할 수 없습니다.',
+  enterprise_sso_identity_not_exists:
+    '사용자는 지정된 SSO 커넥터 ID: {{ssoConnectorId}}에 연결된 엔터프라이즈 아이덴티티가 없습니다.',
+  identity_not_exists_in_current_user:
+    '지정된 아이덴티티는 현재 사용자 계정에 존재하지 않습니다. 진행하기 전에 아이덴티티를 연동해주세요.',
+  passkey_preferred: '패스키를 만들어 로그인 과정을 더 간단하게 하세요.',
 };
 
 export default Object.freeze(user);

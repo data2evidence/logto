@@ -9,12 +9,13 @@ const general = {
   search: '搜索',
   search_placeholder: '搜索',
   clear_result: '清除结果',
+  today: '今天',
+  clear: '清除',
   save: '保存',
   save_changes: '保存更改',
   saved: '保存成功',
   discard: '放弃',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: '下载',
   loading: '读取中...',
   redirecting: '页面跳转中...',
   add: '添加',
@@ -30,10 +31,8 @@ const general = {
   edit: '编辑',
   delete: '删除',
   deleted: '已删除',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  activate: '激活',
+  deactivate: '停用',
   more_options: '更多选项',
   close: '关闭',
   copy: '复制',
@@ -52,7 +51,7 @@ const general = {
   continue: '继续',
   page_info: '{{min, number}}-{{max, number}} 共 {{total, number}} 条',
   learn_more: '了解更多',
-  tab_error_one: '{{count, number}} 个错误',
+  tab_error: '{{count, number}} 个错误',
   tab_error_other: '{{count, number}} 个错误',
   skip_for_now: '先跳过',
   remove: '移除',
@@ -78,6 +77,8 @@ const general = {
   or: '或',
   reset: '重置',
   generate: '生成',
+  manage: '管理',
+  live_preview: '实时预览',
 };
 
 export default Object.freeze(general);

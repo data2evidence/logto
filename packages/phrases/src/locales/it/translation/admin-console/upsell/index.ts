@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'Aggiorna piano',
   compare_plans: 'Confronta i piani',
+  try_with_product_name: 'Prova {{productName}} ora',
   view_plans: 'Visualizza piani',
   create_tenant: {
     title: 'Seleziona il piano del tenant',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'Aggiorna piano',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'Utilizzo dei token ha superato il limite. Aggiorna il tuo piano.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      'Hai superato il limite di utilizzo dei token <planName/>. Gli utenti non saranno in grado di accedere correttamente al servizio Logto. Si prega di aggiornare tempestivamente il proprio piano a premium per evitare qualsiasi inconveniente.',
   },
   payment_overdue_modal: {
     title: 'Pagamento della fattura in ritardo',
@@ -50,6 +49,24 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'Stai per cambiare il tuo tenant di sviluppo in tenant di produzione',
+    description:
+      'Pronto per il lancio? Convertire questo tenant di sviluppo in un tenant di produzione sblocca tutte le funzionalità',
+    benefits: {
+      stable_environment: "Per gli utenti finali: Un ambiente stabile per l'uso reale.",
+      keep_pro_features:
+        'Mantieni le funzionalità Pro: Stai per abbonarti al piano Pro. <a>Visualizza funzionalità Pro.</a>',
+      no_dev_restrictions:
+        'Nessuna restrizione di sviluppo: Rimuove i limiti del sistema di entità e risorse e il banner di accesso.',
+    },
+    cards: {
+      dev_description: 'Per scopi di test',
+      prod_description: 'Produzione reale',
+      convert_label: 'convertire',
+    },
+    button: 'Converti al tenant di produzione',
+  },
 };
 
 export default Object.freeze(upsell);

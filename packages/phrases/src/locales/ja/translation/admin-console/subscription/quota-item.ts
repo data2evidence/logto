@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'カスタム UI',
     not_eligible: 'カスタム UI を削除してください',
   },
+  collect_user_profile_enabled: {
+    name: 'ユーザープロフィール収集',
+    limited: 'ユーザープロフィール収集',
+    unlimited: 'ユーザープロフィール収集',
+    not_eligible: 'ユーザープロフィール収集フィールドを削除してください',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'IDPによって開始された SSO',
+    limited: 'IDPによって開始された SSO',
+    unlimited: 'IDPによって開始された SSO',
+    not_eligible: 'IDPによって開始された SSO は許可されていません',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'SAML アプリケーション',
+    limited: '{{count, number}} SAML アプリケーション',
+    limited_other: '{{count, number}} SAML アプリケーション',
+    unlimited: '無制限のSAMLアプリケーション',
+    not_eligible: 'SAMLアプリケーションを削除してください',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'あなたの CAPTCHA を削除してください',
+  },
+  security_features_enabled: {
+    name: '高度なセキュリティ',
+    limited: '高度なセキュリティ',
+    unlimited: '高度なセキュリティ',
+    not_eligible: '高度なセキュリティ設定を削除してください',
+  },
+  custom_domains_limit: {
+    name: 'カスタムドメイン',
+    limited: '{{count, number}} カスタムドメイン',
+    limited_other: '{{count, number}} カスタムドメイン',
+    unlimited: '無制限のカスタムドメイン',
+    not_eligible: 'カスタムドメインを削除してください',
+  },
+  passkey_sign_in_enabled: {
+    name: 'パスキーサインイン',
+    limited: 'パスキーサインイン',
+    unlimited: 'パスキーサインイン',
+    not_eligible: 'パスキーサインインはサポートされていません',
   },
 };
 

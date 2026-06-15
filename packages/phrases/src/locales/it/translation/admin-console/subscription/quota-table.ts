@@ -9,7 +9,8 @@ const quota_table = {
     title: 'Applicazioni',
     total: 'Totale applicazioni',
     m2m: 'Machine-to-machine',
-    third_party: 'App di terze parti',
+    third_party: 'App di terze parti OIDC/OAuth',
+    saml_app: 'App SAML',
   },
   resource: {
     title: 'Risorse API',
@@ -86,7 +87,7 @@ const quota_table = {
   unlimited: 'Illimitato',
   contact: 'Contatta',
   monthly_price: '${{value, number}}/mese',
-  days_one: '{{count, number}} giorno',
+  days: '{{count, number}} giorno',
   days_other: '{{count, number}} giorni',
   add_on: 'Aggiuntiva',
   tier: 'Livello{{value, number}}: ',

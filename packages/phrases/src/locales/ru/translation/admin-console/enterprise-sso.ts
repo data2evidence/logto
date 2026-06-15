@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'Единый вход в предприятие',
   title: 'Единый вход в предприятие',
-  subtitle:
-    'Подключите поставщика идентификации предприятия и включите одностороннюю аутентификацию с инициацией службы.',
+  subtitle: 'Подключите корпоративного поставщика удостоверений и включите единый вход.',
   create: 'Добавить предприятий коннектор',
   col_connector_name: 'Имя коннектора',
   col_type: 'Тип',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       'Создайте новую интеграцию приложения с помощью SAML 2.0 в вашем провайдере идентичности {{name}}. Затем вставьте следующее значение в него.',
     saml: {
       acs_url_field_name: 'URL потребителя утверждений (URL ответа)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: 'URI аудитории (идентификатор сущности SP)',
+      entity_id_field_name: 'Идентификатор сущности поставщика услуг (SP)',
+      entity_id_field_tooltip:
+        'Идентификатор сущности SP может иметь любую строку, обычно используемая форма URI или URL как идентификатор, но это не обязательно.',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'URI перенаправления (URL обратного вызова)',
+      redirect_uri_field_description:
+        'URI перенаправления — это адрес, куда пользователи попадают после SSO-аутентификации. Добавьте этот URI в конфигурацию вашего IdP.',
+      redirect_uri_field_custom_domain_description:
+        'Если вы используете в Logto несколько <a>пользовательских доменов</a>, обязательно добавьте все соответствующие URI обратного вызова в IdP, чтобы SSO работал на каждом домене.\n\nДомен Logto по умолчанию (*.logto.app) всегда действителен — включайте его только если хотите поддерживать SSO и на этом домене.',
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Секрет клиента',
       issuer_field_name: 'Издатель',
       scope_field_name: 'Область',
+      scope_field_placeholder: 'Введите области (разделенные пробелом)',
     },
   },
 };

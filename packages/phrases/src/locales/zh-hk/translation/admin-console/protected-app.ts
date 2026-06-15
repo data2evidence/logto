@@ -1,8 +1,6 @@
 const protected_app = {
   name: '受保護應用程式',
   title: '建立一個受保護的應用程式: 透過簡潔和極速添加身分驗證',
-  description:
-    '受保護的應用程式安全地維護使用者會話並代理您的應用程式請求。由 Cloudflare Workers 提供支援，享受全球頂尖性能和 0 毫秒的全球啟動速度。 <a>了解更多</a>',
   fast_create: '快速建立',
   modal_title: '建立受保護的應用程式',
   modal_subtitle: '透過點擊啟用安全和快速保護。輕鬆為您現有的網絡應用程式添加身分驗證功能。',
@@ -30,6 +28,18 @@ const protected_app = {
         "無效的原始 URL 格式: 僅支援 http:// 或 https://。注意: 目前不支援 '/pathname'。",
       localhost: '請先將本地伺服器暴露到互聯網。了解更多關於 <a>本地開發</a>。',
     },
+  },
+  id_token_claims: {
+    card_title: 'ID token 聲明',
+    card_description:
+      '在受保護應用程式登入過程中請求額外的用戶 scope，將已啟用的擴展聲明包含在轉發的 ID token 中。',
+    field_title: '附加 scope',
+    field_description:
+      '聲明僅在 <a>Custom JWT > ID token</a> 中啟用且此處請求了對應 scope 時才會被包含。',
+    table_column_scope: 'Scope',
+    table_column_claims_forwarded: '轉發的聲明',
+    disabled_claims_hint:
+      '灰色的聲明尚未被轉發。請在 <a>Custom JWT > ID token</a> 中啟用它們，使其包含在 ID token 中。',
   },
   success_message: '🎉 應用程式身分驗證成功啟用！探索您的網站的全新體驗。',
 };

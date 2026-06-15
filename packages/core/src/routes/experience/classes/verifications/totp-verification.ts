@@ -1,26 +1,34 @@
-import { type ToZodObject } from '@logto/connector-kit';
 import {
   MfaFactor,
   VerificationType,
   type BindTotp,
   type MfaVerificationTotp,
   type User,
+  type TotpVerificationRecordData,
+  totpVerificationRecordDataGuard,
+  type SanitizedTotpVerificationRecordData,
 } from '@logto/schemas';
 import { generateStandardId, getUserDisplayName } from '@logto/shared';
 import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
-import { z } from 'zod';
 
-import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import {
   generateTotpSecret,
   validateTotpToken,
-} from '#src/routes/interaction/utils/totp-validation.js';
+} from '#src/libraries/verification-helpers/totp-validation.js';
+import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import type Libraries from '#src/tenants/Libraries.js';
 import type Queries from '#src/tenants/Queries.js';
 import assertThat from '#src/utils/assert-that.js';
 
 import { type MfaVerificationRecord } from './verification-record.js';
+
+export {
+  type TotpVerificationRecordData,
+  type SanitizedTotpVerificationRecordData,
+  totpVerificationRecordDataGuard,
+  sanitizedTotpVerificationRecordDataGuard,
+} from '@logto/schemas';
 
 const defaultDisplayName = 'Unnamed User';
 
@@ -29,23 +37,6 @@ const findUserTotp = (
   mfaVerifications: User['mfaVerifications']
 ): MfaVerificationTotp | undefined =>
   mfaVerifications.find((mfa): mfa is MfaVerificationTotp => mfa.type === MfaFactor.TOTP);
-
-export type TotpVerificationRecordData = {
-  id: string;
-  type: VerificationType.TOTP;
-  /** UserId is required for verifying or binding new TOTP */
-  userId: string;
-  secret?: string;
-  verified: boolean;
-};
-
-export const totpVerificationRecordDataGuard = z.object({
-  id: z.string(),
-  type: z.literal(VerificationType.TOTP),
-  userId: z.string(),
-  secret: z.string().optional(),
-  verified: z.boolean(),
-}) satisfies ToZodObject<TotpVerificationRecordData>;
 
 export class TotpVerification implements MfaVerificationRecord<VerificationType.TOTP> {
   /**
@@ -182,6 +173,12 @@ export class TotpVerification implements MfaVerificationRecord<VerificationType.
       secret,
       verified,
     };
+  }
+
+  toSanitizedJson(): SanitizedTotpVerificationRecordData {
+    const { id, type, userId, verified } = this;
+
+    return { id, type, userId, verified };
   }
 
   /**

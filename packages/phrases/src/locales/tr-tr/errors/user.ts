@@ -7,6 +7,7 @@ const user = {
   email_not_exist: 'E-posta adresi henüz kaydedilmedi.',
   phone_not_exist: 'Telefon numarası henüz kaydedilmedi',
   identity_not_exist: 'Sosyal platform hesabı henüz kaydedilmedi.',
+  sso_identity_not_exist: 'Kurumsal SSO hesabı henüz kaydedilmedi.',
   identity_already_in_use: 'Sosyal platform hesabı kaydedildi.',
   social_account_exists_in_profile: 'Bu sosyal hesap zaten ilişkilendirilmiş.',
   cannot_delete_self: 'Kendinizi silemezsiniz.',
@@ -29,25 +30,27 @@ const user = {
   missing_profile: 'Oturum açmadan önce ek bilgi sağlamanız gerekiyor.',
   role_exists: '{{roleId}} rol kimliği bu kullanıcıya zaten eklenmiştir.',
   invalid_role_type: 'Geçersiz rol türü, makine-makine rolü kullanıcıya atanamaz.',
+  suggest_mfa: "Daha iyi hesap güvenliği için MFA'yı hesabınıza bağlamanızı öneririz.",
   missing_mfa: 'Oturum açmadan önce ekstra MFA bağlamanız gerekiyor.',
   totp_already_in_use: 'TOTP zaten kullanımda.',
   backup_code_already_in_use: 'Yedek kod zaten kullanımda.',
   password_algorithm_required: 'Şifre algoritması gereklidir.',
   password_and_digest: 'Düz metin şifresini ve şifre özetini aynı anda belirleyemezsiniz.',
   personal_access_token_name_exists: 'Kişisel erişim belirteci adı zaten mevcut.',
-  /** UNTRANSLATED */
-  totp_secret_invalid: 'Invalid TOTP secret supplied.',
-  /** UNTRANSLATED */
-  wrong_backup_code_format: 'Backup code format is invalid.',
-  /** UNTRANSLATED */
-  username_required: 'Username is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
+  totp_secret_invalid: 'Geçersiz TOTP sırrı sağlandı.',
+  wrong_backup_code_format: 'Yedek kod biçimi geçersiz.',
+  username_required: 'Kullanıcı adı gerekli bir tanımlayıcıdır, boş bırakılamaz.',
   email_or_phone_required:
-    'Email address or phone number is a required identifier, at least one is required.',
-  /** UNTRANSLATED */
-  email_required: 'Email address is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  phone_required: 'Phone number is a required identifier, you can not set it to null.',
+    'E-posta adresi veya telefon numarası gerekli bir tanımlayıcıdır, en az bir tanesi gereklidir.',
+  last_sign_in_method_required:
+    'Hesabınızda kullanılabilir en az bir oturum açma yöntemi bulundurmanız gerekir.',
+  email_required: 'E-posta adresi gerekli bir tanımlayıcıdır, boş bırakılamaz.',
+  phone_required: 'Telefon numarası gerekli bir tanımlayıcıdır, boş bırakılamaz.',
+  enterprise_sso_identity_not_exists:
+    'Kullanıcının belirtilen SSO bağlantı kimliği ile bağlantılı bir kurumsal kimliği yoktur: {{ ssoConnectorId }}.',
+  identity_not_exists_in_current_user:
+    'Belirtilen kimlik mevcut kullanıcı hesabında mevcut değil. Lütfen devam etmeden önce kimliği ekleyin.',
+  passkey_preferred: 'Oturum açma sürecini basitleştirmek için bir passkey oluşturun.',
 };
 
 export default Object.freeze(user);

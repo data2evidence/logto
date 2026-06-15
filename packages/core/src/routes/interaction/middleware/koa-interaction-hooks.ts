@@ -3,7 +3,7 @@ import type { MiddlewareType } from 'koa';
 import type { IRouterParamContext } from 'koa-router';
 
 import {
-  DataHookContextManager,
+  HookContextManager,
   InteractionHookContextManager,
 } from '#src/libraries/hook/context-manager.js';
 import type { WithInteractionDetailsContext } from '#src/middleware/koa-interaction-details.js';
@@ -15,14 +15,14 @@ import { getInteractionStorage } from '../utils/interaction.js';
 export type WithInteractionHooksContext<
   ContextT extends IRouterParamContext = IRouterParamContext,
 > = ContextT & {
-  assignInteractionHookResult: InteractionHookContextManager['assignInteractionHookResult'];
-  appendDataHookContext: DataHookContextManager['appendContext'];
+  assignReleaseOnSuccessInteractionHookResult: InteractionHookContextManager['assignReleaseOnSuccessInteractionHookResult'];
+  appendDataHookContext: HookContextManager['appendDataHookContext'];
 };
 
 /**
  * The factory to create a new interaction hook middleware function.
  * Interaction related event hooks will be triggered once we got the interaction hook result.
- * Use `assignInteractionHookResult` to assign the interaction hook result.
+ * Use `assignReleaseOnSuccessInteractionHookResult` to assign the interaction hook result.
  */
 export default function koaInteractionHooks<
   StateT,
@@ -52,24 +52,31 @@ export default function koaInteractionHooks<
       userIp: ip,
     });
 
-    ctx.assignInteractionHookResult =
-      interactionHookContext.assignInteractionHookResult.bind(interactionHookContext);
+    ctx.assignReleaseOnSuccessInteractionHookResult =
+      interactionHookContext.assignReleaseOnSuccessInteractionHookResult.bind(
+        interactionHookContext
+      );
 
-    const dataHookContext = new DataHookContextManager({
+    const dataHookContext = new HookContextManager({
       ...interactionApiMetadata,
       ip,
     });
 
-    ctx.appendDataHookContext = dataHookContext.appendContext.bind(dataHookContext);
+    ctx.appendDataHookContext = dataHookContext.appendDataHookContext.bind(dataHookContext);
 
     await next();
 
-    if (interactionHookContext.interactionHookResult) {
+    if (interactionHookContext.interactionHookResults.length > 0) {
       // Hooks should not crash the app
-      void trySafe(triggerInteractionHooks(getConsoleLogFromContext(ctx), interactionHookContext));
+      void trySafe(
+        triggerInteractionHooks(
+          getConsoleLogFromContext(ctx),
+          interactionHookContext.getReleaseOnSuccessDispatchContext()
+        )
+      );
     }
 
-    if (dataHookContext.contextArray.length > 0) {
+    if (dataHookContext.dataHookContextArray.length > 0) {
       // Hooks should not crash the app
       void trySafe(triggerDataHooks(getConsoleLogFromContext(ctx), dataHookContext));
     }

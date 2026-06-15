@@ -9,7 +9,8 @@ const quota_table = {
     title: 'アプリケーション',
     total: '総アプリケーション数',
     m2m: 'マシン・ツー・マシン',
-    third_party: 'サードパーティーアプリ',
+    third_party: 'OIDC/OAuth サードパーティーアプリ',
+    saml_app: 'SAML アプリ',
   },
   resource: {
     title: 'APIリソース',
@@ -86,7 +87,7 @@ const quota_table = {
   unlimited: '無制限',
   contact: 'お問い合わせ',
   monthly_price: '${{value, number}}/mo',
-  days_one: '{{count, number}} 日',
+  days: '{{count, number}} 日',
   days_other: '{{count, number}} 日',
   add_on: 'アドオン',
   tier: 'レベル{{value, number}}: ',

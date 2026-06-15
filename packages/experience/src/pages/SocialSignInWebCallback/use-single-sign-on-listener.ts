@@ -1,24 +1,27 @@
 import { AgreeToTermsPolicy, SignInMode, VerificationType, experience } from '@logto/schemas';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
-import UserInteractionContext from '@/Providers/UserInteractionContextProvider/UserInteractionContext';
 import { registerWithVerifiedIdentifier, signInWithSso } from '@/apis/experience';
 import useApi from '@/hooks/use-api';
+import useEmailBlockedErrorHandler from '@/hooks/use-email-blocked-error-handler';
 import useErrorHandler from '@/hooks/use-error-handler';
 import useGlobalRedirectTo from '@/hooks/use-global-redirect-to';
+import useNavigateWithPreservedSearchParams from '@/hooks/use-navigate-with-preserved-search-params';
+import useRedirectCallbackValidation from '@/hooks/use-redirect-callback-validation';
 import { useSieMethods } from '@/hooks/use-sie';
 import useTerms from '@/hooks/use-terms';
 import useToast from '@/hooks/use-toast';
 import { parseQueryParameters } from '@/utils';
-import { validateState } from '@/utils/social-connectors';
 
 const useSingleSignOnRegister = () => {
   const handleError = useErrorHandler();
+  const emailBlockedErrorHandler = useEmailBlockedErrorHandler();
+
   const request = useApi(registerWithVerifiedIdentifier);
   const { termsValidation, agreeToTermsPolicy } = useTerms();
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPreservedSearchParams();
   const redirectTo = useGlobalRedirectTo();
 
   return useCallback(
@@ -36,7 +39,7 @@ const useSingleSignOnRegister = () => {
       const [error, result] = await request(verificationId);
 
       if (error) {
-        await handleError(error);
+        await handleError(error, emailBlockedErrorHandler);
 
         return;
       }
@@ -45,7 +48,15 @@ const useSingleSignOnRegister = () => {
         await redirectTo(result.redirectTo);
       }
     },
-    [agreeToTermsPolicy, handleError, navigate, redirectTo, request, termsValidation]
+    [
+      agreeToTermsPolicy,
+      emailBlockedErrorHandler,
+      handleError,
+      navigate,
+      redirectTo,
+      request,
+      termsValidation,
+    ]
   );
 };
 
@@ -67,11 +78,15 @@ const useSingleSignOnListener = (connectorId: string) => {
   const { setToast } = useToast();
   const redirectTo = useGlobalRedirectTo();
   const { signInMode } = useSieMethods();
-  const { verificationIdsMap } = useContext(UserInteractionContext);
-  const verificationId = verificationIdsMap[VerificationType.EnterpriseSso];
+
+  const { validateAndRestore } = useRedirectCallbackValidation({
+    connectorId,
+    flow: 'sso',
+    verificationType: VerificationType.EnterpriseSso,
+  });
 
   const handleError = useErrorHandler();
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPreservedSearchParams();
 
   const singleSignOnAuthorizationRequest = useApi(signInWithSso);
   const registerSingleSignOnIdentity = useSingleSignOnRegister();
@@ -90,7 +105,7 @@ const useSingleSignOnListener = (connectorId: string) => {
       if (error) {
         setLoading(false);
         await handleError(error, {
-          'user.identity_not_exist': async (error) => {
+          'user.sso_identity_not_exist': async (error) => {
             // Should not let user register new social account under sign-in only mode
             if (signInMode === SignInMode.SignIn) {
               setToast(error.message);
@@ -137,21 +152,15 @@ const useSingleSignOnListener = (connectorId: string) => {
     // Cleanup the search parameters once it's consumed
     setSearchParameters({}, { replace: true });
 
-    // Validate the state parameter
-    if (!validateState(state, connectorId)) {
-      setToast(t('error.invalid_connector_auth'));
+    const result = validateAndRestore(state);
+
+    if (!result.valid) {
+      setToast(t(`error.${result.error}`));
       navigate('/' + experience.routes.signIn);
       return;
     }
 
-    // Validate the verificationId
-    if (!verificationId) {
-      setToast(t('error.invalid_session'));
-      navigate('/' + experience.routes.signIn);
-      return;
-    }
-
-    void singleSignOnHandler(connectorId, verificationId, rest);
+    void singleSignOnHandler(connectorId, result.verificationId, rest);
   }, [
     connectorId,
     isConsumed,
@@ -161,7 +170,7 @@ const useSingleSignOnListener = (connectorId: string) => {
     setToast,
     singleSignOnHandler,
     t,
-    verificationId,
+    validateAndRestore,
   ]);
 
   return { loading };

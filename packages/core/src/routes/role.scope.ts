@@ -85,7 +85,7 @@ export default function roleScopeRoutes<T extends ManagementApiRouter>(
       params: object({ id: string().min(1) }),
       body: object({ scopeIds: string().min(1).array().nonempty() }),
       response: Scopes.guard.array(),
-      status: [201, 400, 404, 422],
+      status: [201, 400, 403, 404, 422],
     }),
     async (ctx, next) => {
       const {
@@ -93,7 +93,10 @@ export default function roleScopeRoutes<T extends ManagementApiRouter>(
         body: { scopeIds },
       } = ctx.guard;
 
-      await quota.guardEntityScopesUsage('roles', id);
+      await quota.guardTenantUsageByKey('scopesPerRoleLimit', {
+        entityId: id,
+        consumeUsageCount: scopeIds.length,
+      });
 
       await validateRoleScopeAssignment(scopeIds, id);
       await insertRolesScopes(

@@ -1,4 +1,9 @@
-import { VerificationType, totpVerificationVerifyPayloadGuard } from '@logto/schemas';
+import {
+  AdditionalIdentifier,
+  SentinelActivityAction,
+  VerificationType,
+  totpVerificationVerifyPayloadGuard,
+} from '@logto/schemas';
 import { Action } from '@logto/schemas/lib/types/log/interaction.js';
 import type Router from 'koa-router';
 import { z } from 'zod';
@@ -8,6 +13,7 @@ import koaGuard from '#src/middleware/koa-guard.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
 
+import { withSentinel } from '../classes/libraries/sentinel-guard.js';
 import { TotpVerification } from '../classes/verifications/totp-verification.js';
 import { experienceRoutes } from '../const.js';
 import koaExperienceVerificationsAuditLog from '../middleware/koa-experience-verifications-audit-log.js';
@@ -17,7 +23,7 @@ export default function totpVerificationRoutes<T extends ExperienceInteractionRo
   router: Router<unknown, T>,
   tenantContext: TenantContext
 ) {
-  const { libraries, queries } = tenantContext;
+  const { libraries, queries, sentinel } = tenantContext;
 
   router.post(
     `${experienceRoutes.verification}/totp/secret`,
@@ -131,7 +137,21 @@ export default function totpVerificationRoutes<T extends ExperienceInteractionRo
         experienceInteraction.identifiedUserId
       );
 
-      await totpVerificationRecord.verifyUserExistingTotp(code);
+      await withSentinel(
+        {
+          ctx,
+          sentinel,
+          action: SentinelActivityAction.MfaTotp,
+          identifier: {
+            type: AdditionalIdentifier.UserId,
+            value: experienceInteraction.identifiedUserId,
+          },
+          payload: {
+            verificationId: totpVerificationRecord.id,
+          },
+        },
+        totpVerificationRecord.verifyUserExistingTotp(code)
+      );
 
       ctx.experienceInteraction.setVerificationRecord(totpVerificationRecord);
 

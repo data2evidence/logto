@@ -45,14 +45,17 @@ function MauTokenExceededModal() {
         currentTenant && {
           mauLimit: currentTenant.usage.activeUsers,
           tokenLimit: currentTenant.usage.tokenUsage,
+          userTokenLimit: currentTenant.usage.userTokenUsage,
+          m2mTokenLimit: currentTenant.usage.m2mTokenUsage,
         }
       ),
     [currentTenant]
   );
 
   const isMauExceeded = conditional(
-    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
     currentTenant &&
+      // MAU usage add-on will be automatically applied for paid plans
+      !isPaidSubscriptionPlan &&
       currentTenant.quota.mauLimit !== null &&
       currentTenant.usage.activeUsers >= currentTenant.quota.mauLimit
   );

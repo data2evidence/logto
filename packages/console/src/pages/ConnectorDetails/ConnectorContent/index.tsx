@@ -14,9 +14,9 @@ import ConnectorTester from '@/components/ConnectorTester';
 import DetailsForm from '@/components/DetailsForm';
 import FormCard from '@/components/FormCard';
 import UnsavedChangesAlertModal from '@/components/UnsavedChangesAlertModal';
+import { connectors, emailConnectors } from '@/consts';
 import useApi from '@/hooks/use-api';
 import { useConnectorFormConfigParser } from '@/hooks/use-connector-form-config-parser';
-import useDocumentationUrl from '@/hooks/use-documentation-url';
 import { SyncProfileMode } from '@/types/connector';
 import type { ConnectorFormType } from '@/types/connector';
 import { convertResponseToForm } from '@/utils/connector-form';
@@ -33,9 +33,9 @@ type Props = {
 
 function ConnectorContent({ isDeleted, connectorData, onConnectorUpdated }: Props) {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
-  const { getDocumentationUrl } = useDocumentationUrl();
   const api = useApi();
   const formData = useMemo(() => convertResponseToForm(connectorData), [connectorData]);
+
   const methods = useForm<ConnectorFormType>({
     reValidateMode: 'onBlur',
     // eslint-disable-next-line no-restricted-syntax -- The original type will cause "infinitely deep type" error.
@@ -55,6 +55,7 @@ function ConnectorContent({ isDeleted, connectorData, onConnectorUpdated }: Prop
     type: connectorType,
     formItems,
     isStandard: isStandardConnector,
+    isTokenStorageSupported,
   } = connectorData;
 
   const isSocialConnector = connectorType === ConnectorType.Social;
@@ -65,7 +66,7 @@ function ConnectorContent({ isDeleted, connectorData, onConnectorUpdated }: Prop
   const onSubmit = handleSubmit(
     trySubmitSafe(async (data) => {
       const { formItems, isStandard, id } = connectorData;
-      const { syncProfile, name, logo, logoDark, target, rawConfig } = data;
+      const { syncProfile, name, logo, logoDark, target, rawConfig, enableTokenStorage } = data;
       // Apply the raw config first to avoid losing data updated from other forms that are not
       // included in the form items.
       // Explicitly SKIP falsy values removal logic (the last argument of `configParser()` method) for social connectors.
@@ -78,6 +79,7 @@ function ConnectorContent({ isDeleted, connectorData, onConnectorUpdated }: Prop
         ? {
             config,
             syncProfile: syncProfile === SyncProfileMode.EachSignIn,
+            enableTokenStorage,
           }
         : { config };
       const standardConnectorPayload = {
@@ -122,13 +124,17 @@ function ConnectorContent({ isDeleted, connectorData, onConnectorUpdated }: Prop
         {isSocialConnector && (
           <FormCard
             title="connector_details.settings"
-            description="connector_details.settings_description"
-            learnMoreLink={{
-              href: getDocumentationUrl('/docs/references/connectors'),
-              targetBlank: 'noopener',
-            }}
+            description={
+              isTokenStorageSupported
+                ? 'connector_details.setting_description_with_token_storage_supported'
+                : 'connector_details.settings_description'
+            }
+            learnMoreLink={{ href: connectors }}
           >
-            <BasicForm isStandard={isStandardConnector} />
+            <BasicForm
+              isStandard={isStandardConnector}
+              isTokenStorageSupported={isTokenStorageSupported}
+            />
           </FormCard>
         )}
         {isEmailServiceConnector ? (
@@ -137,14 +143,9 @@ function ConnectorContent({ isDeleted, connectorData, onConnectorUpdated }: Prop
           <FormCard
             title="connector_details.parameter_configuration"
             description={conditional(
-              !isSocialConnector && 'connector_details.settings_description'
+              !isSocialConnector && 'connector_details.email_connector_settings_description'
             )}
-            learnMoreLink={conditional(
-              !isSocialConnector && {
-                href: getDocumentationUrl('/docs/references/connectors'),
-                targetBlank: 'noopener',
-              }
-            )}
+            learnMoreLink={conditional(!isSocialConnector && { href: emailConnectors })}
           >
             <ConfigForm
               formItems={formItems}

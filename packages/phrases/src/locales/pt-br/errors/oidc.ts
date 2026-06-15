@@ -6,8 +6,7 @@ const oidc = {
   insufficient_scope: 'Token sem escopo `{{scope}}`.',
   invalid_request: 'A solicitação é inválida.',
   invalid_grant: 'A concessão é inválida.',
-  /** UNTRANSLATED */
-  invalid_issuer: 'Invalid issuer.',
+  invalid_issuer: 'Emissor inválido.',
   invalid_redirect_uri:
     '`redirect_uri` não corresponde a nenhum `redirect_uris` registrado do cliente.',
   access_denied: 'Acesso negado.',
@@ -18,8 +17,15 @@ const oidc = {
   provider_error: 'Erro interno OIDC: {{message}}.',
   server_error: 'Ocorreu um erro OIDC desconhecido. Por favor, tente novamente mais tarde.',
   provider_error_fallback: 'Ocorreu um erro OIDC: {{code}}.',
+  custom_claims_script_error: 'Erro de script de claims personalizados: {{error_description}}',
   key_required: 'Pelo menos uma chave é necessária.',
   key_not_found: 'Chave com ID {{id}} não encontrada.',
+  only_previous_key_can_be_deleted: 'Somente uma chave anterior pode ser excluída.',
+  invalid_session_payload: 'Conteúdo de sessão inválido.',
+  session_not_found: 'Sessão não encontrada.',
+  invalid_session_account_id: 'Incompatibilidade de accountId da sessão.',
+  failed_to_revoke_grant: 'Falha ao revogar a concessão.',
+  failed_to_cleanup_session_authorization: 'Falha ao limpar a autorização da sessão.',
 };
 
 export default Object.freeze(oidc);

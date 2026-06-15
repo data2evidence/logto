@@ -84,6 +84,21 @@ const profile = {
     about_to_start_deletion: '削除プロセスを開始しようとしています。この操作は元に戻せません。',
     permanently_delete: '完全に削除',
   },
+  mfa: {
+    title: '二要素認証',
+    section_description:
+      '認証アプリ、パスキー、またはバックアップコードを使用して、アカウントにセキュリティを追加します。',
+    two_step_verification: '2段階認証',
+    not_configured: '未設定',
+    configured: '設定済み',
+    passkeys_count_one: '{{count}} 個のパスキー',
+    passkeys_count_other: '{{count}} 個のパスキー',
+    backup_codes_count_one: '{{count}} 個のバックアップコードが利用可能',
+    backup_codes_count_other: '{{count}} 個のバックアップコードが利用可能',
+    add: '追加',
+    view: '表示',
+    remove: '削除',
+  },
   set: '設定する',
   change: '変更する',
   link: 'リンクする',
@@ -103,6 +118,49 @@ const profile = {
   unlink_confirm_text: 'はい、リンクを解除します',
   unlink_reminder:
     'リンクを解除すると、ユーザーは<span></span>アカウントでサインインできなくなります。本当に進めますか？',
+  fields: {
+    name: '名前',
+    name_description: '表示可能な形式のユーザーのフルネーム（例: "Jane Doe"）。',
+    avatar: 'アバター',
+    avatar_description: 'ユーザーのアバター画像のURL。',
+    familyName: '姓',
+    familyName_description: 'ユーザーの姓または名字（例: "Doe"）。',
+    givenName: '名',
+    givenName_description: 'ユーザーの名またはファーストネーム（例: "Jane"）。',
+    middleName: 'ミドルネーム',
+    middleName_description: 'ユーザーのミドルネーム（例: "Marie"）。',
+    nickname: 'ニックネーム',
+    nickname_description:
+      'ユーザーのカジュアルまたは親しみやすい名前で、法的な名前とは異なる場合があります。',
+    preferredUsername: '希望ユーザー名',
+    preferredUsername_description: 'ユーザーが参照されることを望む短縮識別子。',
+    profile: 'プロフィール',
+    profile_description:
+      'ユーザーの人間が読めるプロフィールページのURL（例: ソーシャルメディアプロフィール）。',
+    website: 'ウェブサイト',
+    website_description: 'ユーザーの個人ウェブサイトまたはブログのURL。',
+    gender: '性別',
+    gender_description: 'ユーザーが自己識別する性別（例: "女性"、"男性"、"ノンバイナリー"）。',
+    birthdate: '生年月日',
+    birthdate_description: '指定された形式のユーザーの生年月日（例: "MM-dd-yyyy"）。',
+    zoneinfo: 'タイムゾーン',
+    zoneinfo_description:
+      'IANA形式のユーザーのタイムゾーン（例: "America/New_York" または "Europe/Paris"）。',
+    locale: '言語',
+    locale_description: 'IETF BCP 47形式のユーザーの言語（例: "en-US" または "zh-CN"）。',
+    address: {
+      formatted: '住所',
+      streetAddress: '番地',
+      locality: '市区町村',
+      region: '都道府県',
+      postalCode: '郵便番号',
+      country: '国',
+    },
+    address_description:
+      '表示可能な形式のユーザーの完全な住所（例: "123 Main St, Anytown, USA 12345"）。',
+    fullname: 'フルネーム',
+    fullname_description: '設定に基づいて姓、名、ミドルネームを柔軟に組み合わせたもの。',
+  },
 };
 
 export default Object.freeze(profile);

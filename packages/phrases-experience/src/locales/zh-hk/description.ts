@@ -10,15 +10,16 @@ const description = {
   sign_in: '登錄',
   privacy_policy: '隱私政策',
   create_account: '創建帳號',
+  switch_account: '切換帳號',
   or: '或',
   and: '和',
   enter_passcode: '驗證碼已經發送至你的{{ address }} {{target}}',
   passcode_sent: '驗證碼已經發送',
   resend_after_seconds: '還沒收到？ <span>{{seconds}}</span> 秒後重發',
   resend_passcode: '還沒收到？ <a>重發驗證碼</a>',
-  create_account_id_exists: '{{type}}為 {{value}} 的帳號已存在，你要登錄嗎？',
+  create_account_id_exists: '帳號 {{value}} 已存在，繼續登錄。',
   link_account_id_exists: ' {{type}}為 {{value}} 的帳號已註冊，你要綁定至這個帳號嗎？',
-  sign_in_id_does_not_exist: '{{type}}為 {{value}} 的帳號不存在，你要創建一個新帳號嗎？',
+  sign_in_id_does_not_exist: '未找到帳號 {{value}}，創建一個新帳號？',
   sign_in_id_does_not_exist_alert: '{{type}}為 {{value}} 的帳號不存在。',
   create_account_id_exists_alert: '{{type}} {{value}} 已綁定其他帳號。請嘗試其他{{type}}。',
   social_identity_exist: ' {{type}} {{value}} 已綁定其他帳號。請嘗試其他{{type}}',
@@ -49,14 +50,25 @@ const description = {
   continue_with_more_information: '為保障你的帳號安全，需要你補充以下信息。',
   create_your_account: '註冊你的帳號',
   sign_in_to_your_account: '登錄你的帳號',
+  device_activation: '裝置啟用',
+  device_activation_description: '輸入你裝置上顯示的代碼。確認代碼匹配後，繼續在此裝置上登錄。',
+  device_activation_error_description: '輸入你裝置上顯示的代碼。',
+  device_activation_success: '你的裝置已連線！',
+  device_activation_success_description: '請返回你的裝置以繼續。',
   no_region_code_found: '沒有找到區域碼',
   verify_email: '驗證你的郵箱',
   verify_phone: '驗證你的手機號',
   password_requirements: '要求密碼 {{items, list}}。',
   password_requirement: {
     length_one: '要求至少 {{count}} 個字符',
+    length_two: '要求至少 {{count}} 個字符',
+    length_few: '要求至少 {{count}} 個字符',
+    length_many: '要求至少 {{count}} 個字符',
     length_other: '要求至少 {{count}} 個字符',
     character_types_one: '要求包含至少 {{count}} 類型的大寫字母，小寫字母，數字和符號',
+    character_types_two: '要求包含至少 {{count}} 類型的大寫字母，小寫字母，數字和符號',
+    character_types_few: '要求包含至少 {{count}} 類型的大寫字母，小寫字母，數字和符號',
+    character_types_many: '要求包含至少 {{count}} 類型的大寫字母，小寫字母，數字和符號',
     character_types_other: '要求包含至少 {{count}} 類型的大寫字母，小寫字母，數字和符號',
   },
   use: '使用',
@@ -64,30 +76,18 @@ const description = {
   single_sign_on_connectors_list:
     '您的企業已為電郵賬戶{{email}}啟用單一登入。您可以繼續使用以下的SSO供應商登入。',
   single_sign_on_enabled: '該帳戶已啟用單一登入',
-  /** UNTRANSLATED */
-  authorize_title: 'Authorize {{name}}',
-  /** UNTRANSLATED */
-  request_permission: '{{name}} is requesting access to:',
-  /** UNTRANSLATED */
-  grant_organization_access: 'Grant the organization access:',
-  /** UNTRANSLATED */
-  authorize_personal_data_usage: 'Authorize the use of your personal data:',
-  /** UNTRANSLATED */
-  authorize_organization_access: 'Authorize access to the specific organization:',
-  /** UNTRANSLATED */
-  user_scopes: 'Personal user data',
-  /** UNTRANSLATED */
-  organization_scopes: 'Organization access',
-  /** UNTRANSLATED */
-  authorize_agreement: `By authorizing the access, you agree to the {{name}}'s <link></link>.`,
-  /** UNTRANSLATED */
-  authorize_agreement_with_redirect: `By authorizing the access, you agree to the {{name}}'s <link></link>, and will be redirected to {{uri}}.`,
-  /** UNTRANSLATED */
-  not_you: 'Not you?',
-  /** UNTRANSLATED */
-  user_id: 'User ID: {{id}}',
-  /** UNTRANSLATED */
-  redirect_to: 'You will be redirected to {{name}}.',
+  authorize_title: '授權 {{name}}',
+  request_permission: '{{name}} 正在請求訪問：',
+  grant_organization_access: '授予組織訪問權限：',
+  authorize_personal_data_usage: '授權使用你的個人數據：',
+  authorize_organization_access: '授權訪問指定的組織：',
+  user_scopes: '個人用戶數據',
+  organization_scopes: '組織訪問',
+  authorize_agreement: `通過授權訪問，您同意 {{name}} 的 <link></link>。`,
+  authorize_agreement_with_redirect: `通過授權訪問，您同意 {{name}} 的 <link></link>，並將被重定向到 {{uri}}。`,
+  not_you: '不是你？',
+  user_id: '用戶 ID：{{id}}',
+  redirect_to: '您將被重定向到 {{name}}。',
   auto_agreement: '繼續即表示您同意<link></link>。',
   identifier_sign_in_description: '輸入您的{{types, list(type: disjunction;)}}以登入。',
   all_sign_in_options: '所有登入選項',
@@ -96,6 +96,20 @@ const description = {
   back_to_sign_in: '返回登入',
   support_email: '支持郵件：<link></link>',
   support_website: '支持網站：<link></link>',
+  switch_account_title: '你當前以 {{account}} 登錄',
+  switch_account_description: '要繼續，你將退出當前帳號，並自動切換到新帳號。',
+  about_yourself: '講講你自己',
+  verify_identity: '驗證你的身份',
+  choose_verification_method: '選擇你要登入的方式',
+  verification_method: {
+    passkey: 'Passkey',
+    passkey_description: '透過你的裝置或 USB 硬體驗證',
+    password: '密碼',
+    password_description: '輸入密碼',
+    email_verification_code: '電郵驗證碼',
+    phone_verification_code: '短訊驗證碼',
+    verification_code_description: '發送至 {{target}}',
+  },
 };
 
 export default Object.freeze(description);

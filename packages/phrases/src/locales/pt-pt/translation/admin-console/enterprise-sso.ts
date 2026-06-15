@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'SSO Empresarial',
   title: 'SSO Empresarial',
-  subtitle:
-    'Conecte o fornecedor de identidade empresarial e ative o Logon Único iniciado pelo SP.',
+  subtitle: 'Conectar o provedor de identidade empresarial e ativar o Single Sign-On.',
   create: 'Adicionar conector empresarial',
   col_connector_name: 'Nome do conector',
   col_type: 'Tipo',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       'Crie uma nova integração de aplicativo usando SAML 2.0 no seu provedor de identidade {{name}}. Em seguida, cole o seguinte valor nele.',
     saml: {
       acs_url_field_name: 'URL do serviço de consumo de afirmação (URL de resposta)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: 'URI do público (ID da entidade SP)',
+      entity_id_field_name: 'ID da Entidade do Provedor de Serviço (SP)',
+      entity_id_field_tooltip:
+        'O ID da Entidade SP pode estar em qualquer formato de string, geralmente usando um formato de URI ou um formato de URL como identificador, mas isso não é obrigatório.',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'URI de redirecionamento (URL de retorno)',
+      redirect_uri_field_description:
+        'A URI de redirecionamento é para onde os utilizadores são enviados após a autenticação SSO. Adicione esta URI à configuração do seu IdP.',
+      redirect_uri_field_custom_domain_description:
+        'Se utilizar vários <a>domínios personalizados</a> no Logto, certifique-se de adicionar todas as URIs de callback correspondentes ao seu IdP para que o SSO funcione em cada domínio.\n\nO domínio predefinido do Logto (*.logto.app) é sempre válido; inclua-o apenas se também quiser suportar SSO nesse domínio.',
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Segredo de cliente',
       issuer_field_name: 'Emissor',
       scope_field_name: 'Âmbito',
+      scope_field_placeholder: 'Introduza os âmbitos (separados por um espaço)',
     },
   },
 };

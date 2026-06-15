@@ -2,7 +2,7 @@ const users = {
   page_title: 'Gestão de utilizadores',
   title: 'Gestão de utilizadores',
   subtitle:
-    'Gerencie os utilizadores, incluindo a criação, edição de informações, visualização de logs, recuperações de password e exclusões',
+    'Gerencie os utilizadores, incluindo a criação, edição de informações, visualização de logs, recuperações de password e exclusões.',
   create: 'Adicionar usuário',
   create_subtitle: 'Fornecer pelo menos um dos seguintes campos para proceder.',
   error_missing_identifier: 'Tem de fornecer pelo menos um identificador para criar um utilizador.',
@@ -22,6 +22,8 @@ const users = {
   placeholder_title: 'Gestão de utilizadores',
   placeholder_description:
     'Cada utilizador tem um perfil contendo todas as informações do utilizador. Consiste em dados básicos, identidades sociais e dados personalizados',
+  dev_tenant_data_retention_notice:
+    'Nos tenants de desenvolvimento, as contas de utilizador com mais de 90 dias são eliminadas automaticamente. <a>Saber mais</a>',
 };
 
 export default Object.freeze(users);

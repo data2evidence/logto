@@ -10,24 +10,39 @@ const sign_up_and_sign_in = {
     title: 'サインアップ',
     sign_up_identifier: 'サインアップ識別子',
     identifier_description:
-      'サインアップ識別子はアカウント作成に必要で、サインイン画面に含める必要があります。',
+      '新しいアカウントを作成する際に、すべての選択されたサインアップ識別子が必要です。',
     sign_up_authentication: 'サインアップの認証設定',
+    verification_tip:
+      'ユーザーはサインアップ中に確認コードを入力することで、設定されたメールや電話番号を確認する必要があります。',
     authentication_description:
       '選択したすべてのアクションは、ユーザーがフローを完了するために必須です。',
     set_a_password_option: 'パスワードの設定',
     verify_at_sign_up_option: 'サインアップ時に確認する',
     social_only_creation_description: '（これはソーシャルアカウント作成に適用されます）',
+    collect_user_profile: 'ユーザープロフィールを収集',
+    add_profile_fields: 'プロフィールフィールドを追加',
+    profile_fields_hint: {
+      not_in_list: '一覧にない場合は?',
+      set_up: '設定',
+      go_to: '他のプロフィールフィールドに移動します。',
+    },
   },
   sign_in: {
     title: 'サインイン',
     sign_in_identifier_and_auth: 'サインインの識別子と認証設定',
-    description:
-      'ユーザーは利用可能なすべてのオプションを使用してサインインできます。下のオプションをドラッグ＆ドロップしてレイアウトを調整してください。',
+    description: 'ユーザーは利用可能なすべてのオプションを使用してサインインできます',
     add_sign_in_method: 'サインイン方法を追加',
+    add_sign_up_method: 'サインアップ方法を追加',
     password_auth: 'パスワード',
     verification_code_auth: '確認コード',
     auth_swap_tip: '以下のオプションを交換して、フローで最初に表示されるオプションを決定します。',
     require_auth_factor: '少なくとも 1 つの認証要素を選択する必要があります。',
+    forgot_password: 'パスワードを忘れた場合',
+    forgot_password_description:
+      'ユーザーは利用可能な確認方法を使用してパスワードをリセットできます。',
+    add_verification_method: '確認方法を追加',
+    email_verification_code: 'メール確認コード',
+    phone_verification_code: '電話確認コード',
   },
   social_sign_in: {
     title: 'ソーシャルサインイン',
@@ -40,9 +55,24 @@ const sign_up_and_sign_in = {
       set_up_more: '設定',
       go_to: '他のソーシャルコネクタに移動します。',
     },
-    automatic_account_linking: '自動アカウントリンク',
-    automatic_account_linking_label:
-      'オンにすると、ユーザーがシステムに新しいソーシャルアイデンティティでサインインし、同じ識別子 (例：メールアドレス) を持つ既存のアカウントが 1 つだけ存在する場合、Logto はアカウントリンクのプロンプトを表示する代わりに、そのアカウントをソーシャルアイデンティティに自動的にリンクします。',
+    settings_title: 'ソーシャルサインインエクスペリエンス',
+    automatic_account_linking: '同じ識別子を持つアカウントを自動的にリンクする',
+    automatic_account_linking_tip:
+      '有効にすると、ユーザーが新しいソーシャルアイデンティティでサインインした際に、同じ識別子（例：メールアドレス）を持つ既存のアカウントが正確に 1 つある場合、Logto はそのソーシャルアイデンティティを自動的にそのアカウントにリンクします。ユーザーはアカウントをリンクするかどうかを選択するようには求められません。',
+    required_sign_up_identifiers: '欠落しているサインアップ識別子の提供をユーザーに要求する',
+    required_sign_up_identifiers_tip:
+      '有効にすると、ソーシャルプロバイダー経由でログインするユーザーは、ログインを完了する前に、（メールのような）欠落している必須サインアップ識別子を記入する必要があります。 \n\n無効にすると、ソーシャルアカウントがそれを同期しなかった場合でも、ユーザーは欠落した識別子を提供せずに続行できます。',
+  },
+  passkey_sign_in: {
+    title: 'パスキーサインイン',
+    passkey_sign_in: 'パスキーサインイン',
+    enable_passkey_sign_in_description:
+      'ユーザーが生体認証やセキュリティキーなどを使用して、パスキー（WebAuthn）経由でアプリケーションに迅速かつ安全にアクセスできるようにします。',
+    prompts: 'パスキープロンプト',
+    show_passkey_button: 'サインインページに「パスキーで続行」ボタンを表示',
+    show_passkey_button_tip:
+      '「パスキーで続行」ボタンを無効にすると、サインインフローは識別子優先になり、次のステップでパスワードとパスキーのオプションが表示されます。',
+    allow_autofill: '識別子フィールドで登録済みパスキーのプロンプトと自動入力を許可',
   },
   tip: {
     set_a_password: 'ユーザー名にユニークなパスワードを設定することが重要です。',
@@ -52,7 +82,13 @@ const sign_up_and_sign_in = {
       'これは、サインアッププロセス中にパスワードを設定するオプションを有効にした場合に必要です。',
     verification_code_auth:
       'これは、サインアップ時に確認コードの提供オプションのみを有効にした場合に必要です。サインアッププロセスでパスワード設定を許可する場合は、ボックスのチェックを外してもかまいません。',
+    email_mfa_enabled:
+      'メール確認コードはすでに MFA に対して有効になっているため、セキュリティのためにプライマリサインイン方法として再利用することはできません。',
+    phone_mfa_enabled:
+      '電話確認コードはすでに MFA に対して有効になっているため、セキュリティのためにプライマリサインイン方法として再利用することはできません。',
     delete_sign_in_method: 'これは {{identifier}} を必須の識別子として選択した場合に必要です。',
+    password_disabled_notification:
+      'ユーザー名のサインアップで「パスワードを作成する」オプションが無効になっており、ユーザーがサインインできない可能性があります。保存を続行するには確認してください。',
   },
   advanced_options: {
     title: '高度なオプション',
@@ -67,11 +103,9 @@ const sign_up_and_sign_in = {
     enable_user_registration: 'ユーザー登録を有効にする',
     enable_user_registration_description:
       'ユーザー登録を有効または無効にできます。無効にすると、ユーザーは管理コンソールで追加できますが、サインイン画面でアカウントを作成することはできません。',
-    /** UNTRANSLATED */
-    unknown_session_redirect_url: 'Unknown session redirect URL',
-    /** UNTRANSLATED */
+    unknown_session_redirect_url: '不明なセッションのリダイレクト URL',
     unknown_session_redirect_url_tip:
-      'Sometimes, Logto may not recognize a user’s session on the sign-in page, like when a session expires or the user bookmarks or shares the sign-in link. By default, an “unknown session” 404 error appears. To enhance user experience, set a fallback URL to redirect users back to your app and restart authentication.',
+      'Logto がサインインページでユーザーのセッションを認識できないことがあります。例えば、セッションが期限切れになった場合や、ユーザーがサインインリンクをブックマークまたは共有した場合です。デフォルトでは、「不明なセッション」404 エラーが表示されます。ユーザーエクスペリエンスを向上させるために、ユーザーをアプリに戻して認証を再開するためのフォールバック URL を設定します。',
   },
 };
 

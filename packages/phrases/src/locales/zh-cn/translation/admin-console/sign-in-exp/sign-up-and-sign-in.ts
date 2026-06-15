@@ -9,22 +9,36 @@ const sign_up_and_sign_in = {
   sign_up: {
     title: '注册',
     sign_up_identifier: '注册标识',
-    identifier_description: '创建账户时你需要设定注册标识。这些信息在用户登录时，属于必选项。',
+    identifier_description: '创建新账户时，所有选定的注册标识都是必需的。',
     sign_up_authentication: '注册身份认证设置',
+    verification_tip: '用户必须在注册时通过输入验证码，验证你已配置的邮箱或手机号。',
     authentication_description: '注册时，你的用户将要完成以下所有勾选的任务。',
     set_a_password_option: '创建密码',
     verify_at_sign_up_option: '注册时验证身份',
     social_only_creation_description: '（仅对社交注册用户适用）',
+    collect_user_profile: '收集用户资料',
+    add_profile_fields: '添加资料字段',
+    profile_fields_hint: {
+      not_in_list: '没有你想要的字段？',
+      set_up: '立即设置',
+      go_to: '其他资料字段。',
+    },
   },
   sign_in: {
     title: '登录',
     sign_in_identifier_and_auth: '登录标识和身份认证设置',
-    description: '用户可以使用任何可用的选项进行登录。拖拽选项即可调整页面布局。',
+    description: '用户可以使用任何可用的选项进行登录。',
     add_sign_in_method: '添加登录方式',
+    add_sign_up_method: '添加注册方式',
     password_auth: '密码',
     verification_code_auth: '验证码',
     auth_swap_tip: '交换以下选项的位置即可设定它们在用户登录流程中出现的先后。',
     require_auth_factor: '请至少选择一种认证方式。',
+    forgot_password: '忘记密码',
+    forgot_password_description: '用户可以使用任何可用的验证方式重置密码。',
+    add_verification_method: '添加验证方式',
+    email_verification_code: '邮箱验证码',
+    phone_verification_code: '手机验证码',
   },
   social_sign_in: {
     title: '社交登录',
@@ -36,9 +50,24 @@ const sign_up_and_sign_in = {
       set_up_more: '立即设置',
       go_to: '其他社交连接器。',
     },
-    automatic_account_linking: '自动账号关联',
-    automatic_account_linking_label:
-      '开启后，如果用户使用系统中新社交身份登录，且系统中存在同一标识（如邮件地址）的唯一账号，Logto 会自动将该账号与社交身份关联，而不是提示用户进行账号关联。',
+    settings_title: '社交登录体验',
+    automatic_account_linking: '自动关联具有相同标识符的账户',
+    automatic_account_linking_tip:
+      '启用后，如果用户使用新的社交身份登录，并且有且仅有一个现有账户具有相同的标识符（例如电子邮件地址），Logto 将自动将该社交身份链接到该账户。用户不会被要求选择是否链接账户。',
+    required_sign_up_identifiers: '要求用户提供缺失的注册标识符',
+    required_sign_up_identifiers_tip:
+      '启用后，通过社交提供商登录的用户必须填写任何缺失的必需注册标识符（例如电子邮件），才能完成登录。\n\n如果禁用，用户可以在不提供缺失标识符的情况下继续，即使社交账户没有同步它们。',
+  },
+  passkey_sign_in: {
+    title: '通行密钥登录',
+    passkey_sign_in: '通行密钥登录',
+    enable_passkey_sign_in_description:
+      '启用用户通过通行密钥（WebAuthn）快速安全地访问应用程序，使用生物识别或安全密钥等。',
+    prompts: '通行密钥提示',
+    show_passkey_button: '在登录页面显示"使用通行密钥继续"按钮',
+    show_passkey_button_tip:
+      '禁用"使用通行密钥继续"按钮后，登录流程将优先使用标识符，在下一步显示密码和通行密钥选项。',
+    allow_autofill: '允许在标识符字段中提示和自动填充已注册的通行密钥',
   },
   tip: {
     set_a_password: '启用户名注册，必须设置密码。',
@@ -47,8 +76,13 @@ const sign_up_and_sign_in = {
     password_auth: '因注册设置里你启用了用户名密码标识。这个信息在用户登录时，属于必选项。',
     verification_code_auth:
       '因注册设置里你启用了验证码标识，验证码属于用户必选项。开启密码注册后，你可以选择关闭验证码登录。',
+    email_mfa_enabled:
+      '电子邮件验证码已启用为多因素身份验证，所以不能重复用于主要登录方式以确保安全。',
+    phone_mfa_enabled: '手机验证码已启用为多因素身份验证，所以不能重复用于主要登录方式以确保安全。',
     delete_sign_in_method:
       '因注册设置里你启用了{{identifier}}标识。这些信息在用户登录时，属于必选项。',
+    password_disabled_notification:
+      '用户名注册时，"创建密码" 选项已禁用，这可能会阻止用户登录。确认后继续保存。',
   },
   advanced_options: {
     title: '高级选项',
@@ -62,11 +96,9 @@ const sign_up_and_sign_in = {
     enable_user_registration: '启用用户注册',
     enable_user_registration_description:
       '启用或禁用用户注册。禁用后，管理员仍然可以添加用户，但用户无法通过登录界面建立账户。',
-    /** UNTRANSLATED */
-    unknown_session_redirect_url: 'Unknown session redirect URL',
-    /** UNTRANSLATED */
+    unknown_session_redirect_url: '未知会话重定向 URL',
     unknown_session_redirect_url_tip:
-      'Sometimes, Logto may not recognize a user’s session on the sign-in page, like when a session expires or the user bookmarks or shares the sign-in link. By default, an “unknown session” 404 error appears. To enhance user experience, set a fallback URL to redirect users back to your app and restart authentication.',
+      '有时，Logto 可能无法识别用户在登录页面的会话，例如会话过期，或用户收藏或分享了登录链接。默认情况下，会出现“未知会话” 404 错误。为提升用户体验，请设置一个备用 URL ，将用户重定向回你的应用程序并重新开始身份验证。',
   },
 };
 

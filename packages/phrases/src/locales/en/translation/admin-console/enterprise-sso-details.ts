@@ -7,6 +7,8 @@ const enterprise_sso_details = {
   tab_connection: 'Connection',
   tab_idp_initiated_auth: 'IdP-initiated SSO',
   general_settings_title: 'General',
+  general_settings_description:
+    'Configure end-user experience and link enterprise email domain for SP-initiated SSO flow.',
   custom_branding_title: 'Display',
   custom_branding_description:
     "Customize the name and logo displayed in the end users' Single Sign-On flow. When empty, defaults are used.",
@@ -114,6 +116,13 @@ const enterprise_sso_details = {
     'Always trust the unverified email addresses returned from the identity provider',
   trust_unverified_email_tip:
     'The Entra ID (OIDC) connector does not return the `email_verified` claim, meaning that email addresses from Azure are not guaranteed to be verified. By default, Logto will not sync unverified email addresses to the user profile. Enable this option only if you trust all the email addresses from the Entra ID directory.',
+  trust_unverified_email_tip_oidc:
+    'The OIDC connector may not return the `email_verified` claim, meaning that email addresses from the identity provider are not guaranteed to be verified. By default, Logto will not sync unverified email addresses to the user profile. Enable this option only if you trust all the email addresses from the identity provider.',
+  offline_access: {
+    label: 'Refresh access token',
+    description:
+      'Enable Google `offline` access to request a refresh token, allowing your app to refresh the access token without user re-authorization.',
+  },
 };
 
 export default Object.freeze(enterprise_sso_details);

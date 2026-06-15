@@ -1,4 +1,4 @@
-import { defaultTenantId, TenantTag } from '@logto/schemas';
+import { adminTenantId, defaultTenantId, TenantTag } from '@logto/schemas';
 import { conditionalArray, noop } from '@silverhand/essentials';
 import type { ReactNode } from 'react';
 import { useCallback, useMemo, createContext, useState } from 'react';
@@ -15,6 +15,10 @@ export enum GlobalAnonymousRoute {
   /** The global callback route for OpenID Connect. */
   Callback = '/callback',
   SocialDemoCallback = '/social-demo-callback',
+  /** The one-time token landing page. */
+  OneTimeTokenLanding = '/one-time-token',
+  /** The external Google One Tap landing page for external website integration. */
+  ExternalGoogleOneTapLanding = '/external-google-one-tap',
 }
 
 /**
@@ -27,6 +31,7 @@ export enum GlobalRoute {
   AcceptInvitation = '/accept',
   Profile = '/profile',
   HandleSocial = '/handle-social',
+  EnterpriseSubscription = '/subscriptions',
 }
 
 const reservedRoutes: Readonly<string[]> = Object.freeze([
@@ -59,9 +64,16 @@ type Tenants = {
   removeTenant: (tenantId: string) => void;
   /** Update a tenant by ID if it exists in the current tenants data. */
   updateTenant: (tenantId: string, data: Partial<TenantResponse>) => void;
-  /** The current tenant ID parsed from the URL. */
+  /**
+   * The current tenant ID parsed from the URL.
+   *
+   * - If it's a non-cloud deployment, it will always be `default`.
+   * - For cloud deployment, if it's `''`, the user is not in a tenant context (e.g. in onboarding
+   * routes).
+   */
   currentTenantId: string;
   currentTenant?: TenantResponse;
+  /** Indicates if the current tenant is a development tenant. */
   isDevTenant: boolean;
   /** Navigate to the given tenant ID. */
   navigateTenant: (tenantId: string) => void;
@@ -158,7 +170,8 @@ function TenantsProvider({ children }: Props) {
       updateTenant,
       isInitComplete,
       currentTenantId,
-      isDevTenant: currentTenant?.tag === TenantTag.Development,
+      isDevTenant:
+        currentTenant?.tag === TenantTag.Development && currentTenant.id !== adminTenantId,
       currentTenant,
       navigateTenant,
     }),

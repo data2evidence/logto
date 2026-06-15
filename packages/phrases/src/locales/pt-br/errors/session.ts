@@ -45,9 +45,32 @@ const session = {
     invalid_backup_code: 'Código de backup inválido.',
     mfa_policy_not_user_controlled: 'A política de MFA não é controlada pelo usuário.',
     mfa_factor_not_enabled: 'O fator MFA não está habilitado.',
+    suggest_additional_mfa:
+      'Para maior proteção, considere adicionar outro método de MFA. Você pode pular esta etapa e continuar.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Não foi possível encontrar as informações pendentes de login com passkey. Inicie o fluxo de login novamente.',
+    conflict_rp_id:
+      'O ID da Relying Party não corresponde. Use o cliente correto para fazer login.',
+    sso_users_not_allowed: 'A opção de login com passkey não está disponível para usuários SSO.',
   },
   sso_enabled:
     'O login único está habilitado para este e-mail fornecido. Faça login com SSO, por favor.',
+  captcha_required: 'Captcha é necessário.',
+  captcha_failed: 'Falha na verificação do captcha.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'Falha na validação do endereço de email.',
+    invalid_email: 'Endereço de email inválido.',
+    email_subaddressing_not_allowed: 'Subendereçamento de email não é permitido.',
+    email_not_allowed:
+      'O endereço de email "{{email}}" está restrito. Por favor, escolha um diferente.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Incompatibilidade de cookies do Google One Tap.',
+    invalid_id_token: 'Token de ID do Google inválido.',
+    unverified_email: 'Email não verificado.',
+  },
 };
 
 export default Object.freeze(session);

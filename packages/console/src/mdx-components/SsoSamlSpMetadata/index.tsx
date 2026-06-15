@@ -1,9 +1,15 @@
+import { conditionalString } from '@silverhand/essentials';
 import { useContext, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+import DomainSelector from '@/components/DomainSelector';
+import { isCloud } from '@/consts/env';
 import { SsoConnectorContext } from '@/contexts/SsoConnectorContextProvider';
 import CopyToClipboard from '@/ds-components/CopyToClipboard';
 import FormField from '@/ds-components/FormField';
+import useDomainSelection from '@/hooks/use-domain-selection';
+import { applyDomain } from '@/utils/url';
 
 import styles from './index.module.scss';
 
@@ -19,7 +25,9 @@ const samlProviderConfigGuard = z.object({
 });
 
 function SsoSamlSpMetadata() {
+  const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
   const { ssoConnector } = useContext(SsoConnectorContext);
+  const [selectedDomain, setSelectedDomain] = useDomainSelection();
 
   const serviceProviderMetadata = useMemo(() => {
     if (!ssoConnector) {
@@ -42,6 +50,14 @@ function SsoSamlSpMetadata() {
 
   return (
     <div>
+      {isCloud && (
+        <DomainSelector
+          value={selectedDomain}
+          className={styles.domainSelector}
+          tip={t('domain.switch_saml_connector_domain_tip')}
+          onChange={setSelectedDomain}
+        />
+      )}
       <FormField
         title="enterprise_sso.basic_info.saml.audience_uri_field_name"
         className={styles.inputField}
@@ -49,7 +65,10 @@ function SsoSamlSpMetadata() {
         <CopyToClipboard
           displayType="block"
           variant="border"
-          value={serviceProviderMetadata?.entityId ?? ''}
+          value={conditionalString(
+            serviceProviderMetadata?.entityId &&
+              applyDomain(serviceProviderMetadata.entityId, selectedDomain)
+          )}
         />
       </FormField>
       <FormField
@@ -59,7 +78,10 @@ function SsoSamlSpMetadata() {
         <CopyToClipboard
           displayType="block"
           variant="border"
-          value={serviceProviderMetadata?.assertionConsumerServiceUrl ?? ''}
+          value={conditionalString(
+            serviceProviderMetadata?.assertionConsumerServiceUrl &&
+              applyDomain(serviceProviderMetadata.assertionConsumerServiceUrl, selectedDomain)
+          )}
         />
       </FormField>
     </div>

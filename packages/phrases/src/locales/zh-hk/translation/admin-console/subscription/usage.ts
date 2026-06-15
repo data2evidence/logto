@@ -1,89 +1,96 @@
 const usage = {
-  /** UNTRANSLATED */
-  status_active: 'In use',
-  /** UNTRANSLATED */
-  status_inactive: 'Not in use',
-  /** UNTRANSLATED */
-  limited_status_quota_description: '(First {{quota}} included)',
-  /** UNTRANSLATED */
-  unlimited_status_quota_description: '(Included)',
-  /** UNTRANSLATED */
-  disabled_status_quota_description: '(Not included)',
-  /** UNTRANSLATED */
-  usage_description_with_unlimited_quota: '{{usage}}<span> (Unlimited)</span>',
-  /** UNTRANSLATED */
-  usage_description_with_limited_quota: '{{usage}}<span> (First {{basicQuota}} included)</span>',
-  /** UNTRANSLATED */
-  usage_description_without_quota: '{{usage}}<span> (Not included)</span>',
+  status_active: '使用中',
+  status_inactive: '未使用中',
+  limited_status_quota_description: '(首 {{quota}} 包含在內)',
+  unlimited_status_quota_description: '(包含在內)',
+  disabled_status_quota_description: '(不包含在內)',
+  usage_description_with_unlimited_quota: '{{usage}}<span> (無限使用)</span>',
+  usage_description_with_limited_quota: '{{usage}}<span> (首 {{basicQuota}} 包含在內)</span>',
+  usage_description_without_quota: '{{usage}}<span> (不包含在內)</span>',
   mau: {
     title: 'MAU',
     tooltip:
       'MAU 是指在一個計費周期內至少與 Logto 交換過一次 Token 的獨立用戶。專業計劃不限量。<a>了解更多</a>',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'A MAU is a unique user who has exchanged at least one token with Logto within a billing cycle. Unlimited for the Enterprise Plan.',
+      'MAU 是指在一個計費周期內至少與 Logto 交換過一次 Token 的獨立用戶。企業計劃不限量。',
   },
   organizations: {
     title: '組織',
     tooltip: '附加功能，每月固定費用 ${{price, number}}。費用不受組織數量或其活躍程度影響。',
-    /** UNTRANSLATED */
-    description_for_enterprise: '(Included)',
-    /** UNTRANSLATED */
+    description_for_enterprise: '(包含在內)',
     tooltip_for_enterprise:
-      'Inclusion depends on your plan. If the organization feature isn’t in your initial contract, it will be added to your bill when you activate it. The add-on costs ${{price, number}}/month, regardless of the number of organizations or their activity.',
-    /** UNTRANSLATED */
+      '是否包含取決於你的計劃。如果組織功能不在你最初的合約中，當你啟用時將添加到賬單中。附加功能費用為 ${{price, number}}/月，不受組織數量或其活躍程度的影響。',
     tooltip_for_enterprise_with_numbered_basic_quota:
-      'Your plan includes the first {{basicQuota}} organizations for free. If you need more, you can add them with the organization add-on at a flat rate of ${{price, number}} per month, regardless of the number of organizations or their activity level.',
+      '你的計劃包含最初的 {{basicQuota}} 個組織免費使用。如果你需要更多，可以按 ${{price, number}} 的固定費率以附加功能形式每月添加，不受組織數量或其活躍程度的影響。',
   },
   mfa: {
     title: '多重身份驗證',
     tooltip: '附加功能，每月固定費用 ${{price, number}}。費用不受使用的驗證因素數量影響。',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'Inclusion depends on your plan. If the MFA feature isn’t in your initial contract, it will be added to your bill when you activate it. The add-on costs ${{price, number}}/month, regardless of the number of authentication factors used.',
+      '是否包含取決於你的計劃。如果 MFA 功能不在你最初的合約中，當你啟用時將添加到賬單中。附加功能費用為 ${{price, number}}/月，不受使用的驗證因素數量影響。',
   },
   enterprise_sso: {
     title: '企業單一簽入',
     tooltip: '附加功能，每個 SSO 連接每月 ${{price, number}}。',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'Add-on feature with a price of ${{price, number}} per SSO connection per month. The first {{basicQuota}} SSO are included and free to use in your contract-based plan.',
+      '附加功能，每個 SSO 連接每月 ${{price, number}}。你的合約計劃中包含前 {{basicQuota}} 個 SSO 並可免費使用。',
   },
   api_resources: {
     title: 'API 資源',
     tooltip: '附加功能，每個資源每月 ${{price, number}}。首 3 個 API 資源免費。',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'The first {{basicQuota}} API resources are included and free to use in your contract-based plan. If you need more, ${{price, number}} per API resource per month.',
+      '你的合約計劃中包含前 {{basicQuota}} 個 API 資源並可免費使用。如果你需要更多，每個 API 資源每月 ${{price, number}}。',
   },
   machine_to_machine: {
     title: '機器對機器',
     tooltip: '附加功能，每個應用程式每月 ${{price, number}}。首個機器對機器應用程式免費。',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'The first {{basicQuota}} machine-to-machine app is free to use in your contract-based plan. If you need more, ${{price, number}} per app per month.',
+      '你的合約計劃中包含前 {{basicQuota}} 個機器對機器應用程式免費使用。如果你需要更多，每個應用程式每月 ${{price, number}}。',
   },
   tenant_members: {
     title: '租戶成員',
-    tooltip: '附加功能，每位成員每月 ${{price, number}}。首 3 位租戶成員免費。',
-    /** UNTRANSLATED */
+    tooltip: '附加功能，每位成員每月 ${{price, number}}。首 {{count}} 位租戶成員免費。',
+    tooltip_one: '每位租戶成員每月 ${{price, number}} 的附加功能。首 {{count}} 位租戶成員免費。',
+    tooltip_other: '每位租戶成員每月 ${{price, number}} 的附加功能。首 {{count}} 位租戶成員免費。',
     tooltip_for_enterprise:
-      'The first {{basicQuota}} tenant members are included and free to use in your contract-based plan. If you need more, ${{price, number}} per tenant member per month.',
+      '你的合約計劃中包含前 {{basicQuota}} 位租戶成員免費使用。如果你需要更多，每位租戶成員每月 ${{price, number}}。',
+  },
+  custom_domains: {
+    title: '自訂網域',
+    tooltip: '附加功能，每月 ${{price, number}}，最多 10 個自訂網域。首個自訂網域免費。',
   },
   tokens: {
     title: '令牌',
     tooltip:
       '附加功能，每 {{tokenLimit}} 次令牌 ${{price, number}}。首 {{basicQuota}} 次令牌已包含在內。',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'The first {{basicQuota}} tokens is included and free to use in your contract-based plan. If you need more, ${{price, number}} per {{tokenLimit}} tokens per month.',
+      '你的合約計劃中包含前 {{basicQuota}} 次令牌並可免費使用。如果你需要更多，每 {{tokenLimit}} 次令牌每月 ${{price, number}}。',
+  },
+  m2mTokens: {
+    title: 'M2M 令牌',
   },
   hooks: {
     title: '鉤子',
     tooltip: '附加功能，每個鉤子 ${{price, number}}。首 10 個鉤子已包含在內。',
-    /** UNTRANSLATED */
     tooltip_for_enterprise:
-      'The first {{basicQuota}} hooks are included and free to use in your contract-based plan. If you need more, ${{price, number}} per hook per month.',
+      '你的合約計劃中包含前 {{basicQuota}} 個鉤子並可免費使用。如果你需要更多，每個鉤子每月 ${{price, number}}。',
+  },
+  security_features: {
+    title: '高級安全性',
+    tooltip:
+      '附加功能，整個高級安全套裝每月 ${{price, number}}，包括 CAPTCHA、標識符鎖定、電子郵件阻止名單等。',
+  },
+  saml_applications: {
+    title: 'SAML 應用程式',
+    tooltip: '附加功能，每個 SAML 應用程式每月 ${{price, number}}。',
+  },
+  third_party_applications: {
+    title: '第三方應用程式',
+    tooltip: '附加功能，每個應用程式每月 ${{price, number}}。',
+  },
+  rbacEnabled: {
+    title: '角色',
+    tooltip: '附加功能，每月固定費用 ${{price, number}}。價格不受全局角色數量影響。',
   },
   pricing: {
     add_on_changes_in_current_cycle_notice:

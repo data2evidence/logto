@@ -1,9 +1,15 @@
 import { ConnectorType } from '@logto/connector-kit';
-import { InteractionEvent, MfaFactor, SignInIdentifier } from '@logto/schemas';
+import {
+  userOnboardingDataKey,
+  InteractionEvent,
+  MfaFactor,
+  SignInIdentifier,
+} from '@logto/schemas';
 import { authenticator } from 'otplib';
 
-import { createUserMfaVerification } from '#src/api/admin-user.js';
-import { initExperienceClient } from '#src/helpers/client.js';
+import { createUserMfaVerification, deleteUser, getUser } from '#src/api/admin-user.js';
+import { updateSignInExperience } from '#src/api/sign-in-experience.js';
+import { initExperienceClient, logoutClient, processSession } from '#src/helpers/client.js';
 import {
   clearConnectorsByTypes,
   setEmailConnector,
@@ -22,7 +28,7 @@ import {
   resetMfaSettings,
 } from '#src/helpers/sign-in-experience.js';
 import { generateNewUserProfile, UserApiTest } from '#src/helpers/user.js';
-import { generateEmail } from '#src/utils.js';
+import { generateEmail, generateNationalPhoneNumber, generatePassword } from '#src/utils.js';
 
 describe('Fulfill User Profiles', () => {
   const userApi = new UserApiTest();
@@ -38,7 +44,9 @@ describe('Fulfill User Profiles', () => {
   });
 
   it('should throw 400 if the interaction event is ForgotPassword', async () => {
-    const client = await initExperienceClient(InteractionEvent.ForgotPassword);
+    const client = await initExperienceClient({
+      interactionEvent: InteractionEvent.ForgotPassword,
+    });
 
     await expectRejects(
       client.updateProfile({ type: SignInIdentifier.Username, value: 'username' }),
@@ -77,7 +85,10 @@ describe('Fulfill User Profiles', () => {
       }
     );
 
-    await expectRejects(client.updateProfile({ type: 'password', value: 'password' }), {
+    const newPassword = generatePassword();
+    const passwordForUpdate = newPassword === password ? `${newPassword}_1` : newPassword;
+
+    await expectRejects(client.updateProfile({ type: 'password', value: passwordForUpdate }), {
       status: 422,
       code: 'user.password_exists_in_profile',
     });
@@ -113,12 +124,70 @@ describe('Fulfill User Profiles', () => {
     });
   });
 
+  describe('phone number collision detect with normalization', () => {
+    const nationalNumber = generateNationalPhoneNumber();
+    const countryCode = '49';
+    const internationalPhoneNumber = `${countryCode}${nationalNumber}`;
+    const withLeadingZeroPhoneNumber = `${countryCode}0${nationalNumber}`;
+
+    const testCases: Array<{
+      existing: string;
+      newCreated: string;
+    }> = [
+      {
+        existing: internationalPhoneNumber,
+        newCreated: withLeadingZeroPhoneNumber,
+      },
+      {
+        existing: withLeadingZeroPhoneNumber,
+        newCreated: internationalPhoneNumber,
+      },
+    ];
+
+    it.each(testCases)(
+      'should throw 422 if the phone number %existing is used by another user',
+      async ({ existing, newCreated }) => {
+        await userApi.create({ primaryPhone: existing });
+
+        const { username, password } = generateNewUserProfile({ username: true, password: true });
+        await userApi.create({ username, password });
+
+        const client = await initExperienceClient();
+        await identifyUserWithUsernamePassword(client, username, password);
+
+        const { verificationId, code: verificationCode } = await successfullySendVerificationCode(
+          client,
+          {
+            identifier: { type: SignInIdentifier.Phone, value: newCreated },
+            interactionEvent: InteractionEvent.SignIn,
+          }
+        );
+
+        await successfullyVerifyVerificationCode(client, {
+          identifier: { type: SignInIdentifier.Phone, value: newCreated },
+          verificationId,
+          code: verificationCode,
+        });
+
+        await expectRejects(
+          client.updateProfile({ type: SignInIdentifier.Phone, verificationId }),
+          {
+            status: 422,
+            code: 'user.phone_already_in_use',
+          }
+        );
+      }
+    );
+  });
+
   describe('MFA verification status is required', () => {
     beforeAll(async () => {
       await enableMandatoryMfaWithTotpAndBackupCode();
+      await updateSignInExperience({ adaptiveMfa: { enabled: false } });
     });
     afterAll(async () => {
       await resetMfaSettings();
+      await updateSignInExperience({ adaptiveMfa: { enabled: false } });
     });
 
     it('should throw 422 if the mfa is enabled but not verified', async () => {
@@ -175,6 +244,111 @@ describe('Fulfill User Profiles', () => {
       await expect(
         client.updateProfile({ type: SignInIdentifier.Email, verificationId })
       ).resolves.not.toThrow();
+    });
+  });
+
+  describe('Fulfill extra profile fields', () => {
+    it('should update extra profile fields successfully', async () => {
+      const { username, password } = generateNewUserProfile({ username: true, password: true });
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
+      await client.updateProfile({ type: SignInIdentifier.Username, value: username });
+      await client.updateProfile({ type: 'password', value: password });
+      await client.updateProfile({
+        type: 'extraProfile',
+        values: {
+          name: 'John Doe',
+          avatar: 'https://example.com/avatar.jpg',
+          givenName: 'John',
+          familyName: 'Doe',
+          gender: 'male',
+          birthdate: '1990-01-01',
+          zoneinfo: 'UTC',
+          locale: 'en',
+          website: 'https://example.com',
+          customField1: 'customValue1',
+          customField2: 'customValue2',
+        },
+      });
+
+      await client.identifyUser();
+      const { redirectTo } = await client.submitInteraction();
+      const userId = await processSession(client, redirectTo);
+
+      const user = await getUser(userId);
+      expect(user).toMatchObject({
+        name: 'John Doe',
+        avatar: 'https://example.com/avatar.jpg',
+        profile: {
+          givenName: 'John',
+          familyName: 'Doe',
+          gender: 'male',
+          birthdate: '1990-01-01',
+          zoneinfo: 'UTC',
+          locale: 'en',
+          website: 'https://example.com',
+        },
+        customData: {
+          customField1: 'customValue1',
+          customField2: 'customValue2',
+        },
+      });
+
+      await logoutClient(client);
+      await deleteUser(userId);
+    });
+
+    it('should throw 400 if the extra profile fields are invalid', async () => {
+      const { username, password } = generateNewUserProfile({ username: true, password: true });
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
+      await client.updateProfile({ type: SignInIdentifier.Username, value: username });
+      await client.updateProfile({ type: 'password', value: password });
+      await expectRejects(
+        client.updateProfile({
+          type: 'extraProfile',
+          values: {
+            username: 'johndoe',
+            fullName: 'John Doe',
+            customField1: 'customValue1',
+            customField2: 'customValue2',
+          },
+        }),
+        {
+          status: 400,
+          code: 'custom_profile_fields.name_conflict_sign_in_identifier',
+        }
+      );
+      await expectRejects(
+        client.updateProfile({
+          type: 'extraProfile',
+          values: {
+            givenName: 'John',
+            familyName: 'Doe',
+            [userOnboardingDataKey]: 'customValue',
+          },
+        }),
+        {
+          status: 400,
+          code: 'custom_profile_fields.name_conflict_custom_data',
+        }
+      );
+      await expectRejects(
+        client.updateProfile({
+          type: 'extraProfile',
+          values: {
+            givenName: 'John',
+            familyName: 'Doe',
+            preferredUsername: 'john',
+          },
+        }),
+        {
+          status: 400,
+          code: 'custom_profile_fields.name_conflict_built_in_prop',
+        }
+      );
     });
   });
 });

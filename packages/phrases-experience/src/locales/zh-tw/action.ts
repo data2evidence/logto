@@ -1,6 +1,7 @@
 const action = {
   sign_in: '登錄',
   continue: '繼續',
+  continue_as: '以 {{name}} 繼續',
   create_account: '註冊',
   create_account_without_linking: '創建新的帳戶',
   create: '註冊',
@@ -20,6 +21,7 @@ const action = {
   switch_to: '切換到{{method}}',
   sign_in_via_passcode: '用驗證碼登錄',
   sign_in_via_password: '密碼登錄',
+  sign_in_via_passkey: '用 Passkey 登錄',
   change: '更改{{method}}',
   link_another_email: '綁定其他郵箱',
   link_another_phone: '綁定其他手機',
@@ -28,11 +30,14 @@ const action = {
   copy: '複製',
   verify_via_passkey: '透過 Passkey 驗證',
   download: '下載',
+  remove: '移除',
+  edit: '編輯',
+  save: '儲存',
   single_sign_on: '單點登錄',
-  /** UNTRANSLATED */
-  authorize: 'Authorize',
-  /** UNTRANSLATED */
-  use_another_account: 'Use another account',
+  authorize: '授權',
+  use_another_account: '使用其他帳戶',
+  back_to_current_account: '返回當前帳戶',
+  done: '完成',
 };
 
 export default Object.freeze(action);

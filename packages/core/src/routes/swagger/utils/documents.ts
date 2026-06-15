@@ -27,31 +27,49 @@ import {
 } from './general.js';
 import { buildPathIdParameters, customParameters, mergeParameters } from './parameters.js';
 
-// Add more components here to cover more ID parameters in paths. For example, if there is a
-const managementApiIdentifiableEntityNames = Object.freeze([
-  'key',
-  'connector-factory',
-  'factory',
-  'application',
-  'connector',
-  'sso-connector',
-  'resource',
-  'user',
-  'log',
-  'role',
-  'scope',
-  'hook',
-  'domain',
-  'verification',
-  'organization',
-  'organization-role',
-  'organization-scope',
-  'organization-invitation',
-]);
+// Add more components here to cover more ID parameters in paths. For example, if there is a new API
+// identifiable entity `/api/entities`, and you want to use `/api/entities/{id}`, add the entity here.
+const managementApiIdentifiableEntityNames = Object.freeze(
+  condArray<string>(
+    'key',
+    'connector-factory',
+    'factory',
+    'application',
+    'connector',
+    'sso-connector',
+    'resource',
+    'user',
+    'log',
+    'role',
+    'scope',
+    'hook',
+    'domain',
+    'verification',
+    'organization',
+    'organization-role',
+    'organization-scope',
+    'organization-invitation',
+    'saml-application',
+    'secret',
+    'email-template',
+    'one-time-token',
+    'session',
+    'grant'
+  )
+);
 
 /** Additional tags that cannot be inferred from the path. */
 const additionalTags = Object.freeze(
-  condArray<string>('Organization applications', 'Custom UI assets', 'Organization users')
+  condArray<string>(
+    'Organization applications',
+    'Custom UI assets',
+    'Organization users',
+    'SAML applications',
+    'SAML applications auth flow',
+    'One-time tokens',
+    'Captcha provider',
+    'Custom profile fields'
+  )
 );
 
 export const buildManagementApiBaseDocument = (
@@ -152,7 +170,14 @@ export const buildExperienceApiBaseDocument = (
   tags: [...tags].map((tag) => ({ name: tag })),
 });
 
-const userApiIdentifiableEntityNames = Object.freeze(['profile', 'verification']);
+// ID parameters for account API entities.
+const userApiIdentifiableEntityNames = Object.freeze([
+  'profile',
+  'verification',
+  'connector',
+  'session',
+  'grant',
+]);
 
 export const buildUserApiBaseDocument = (
   pathMap: Map<string, OpenAPIV3.PathItemObject>,

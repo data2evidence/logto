@@ -14,19 +14,18 @@ import {
   defaultTenantId,
   getTenantOrganizationId,
   getTenantRole,
+  userMfaDataKey,
   userOnboardingDataKey,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
-import { conditional, conditionalArray, trySafe } from '@silverhand/essentials';
+import { conditional, conditionalArray } from '@silverhand/essentials';
 
 import { EnvSet } from '#src/env-set/index.js';
-import { assignInteractionResults } from '#src/libraries/session.js';
+import { assignInteractionResults } from '#src/libraries/session/index.js';
 import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import type { LogEntry, WithLogContext } from '#src/middleware/koa-audit-log.js';
 import type { WithInteractionDetailsContext } from '#src/middleware/koa-interaction-details.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
-import { getConsoleLogFromContext } from '#src/utils/console.js';
-import { buildAppInsightsTelemetry } from '#src/utils/request.js';
 import { getTenantId } from '#src/utils/tenant.js';
 
 import { type WithInteractionHooksContext } from '../middleware/koa-interaction-hooks.js';
@@ -36,9 +35,8 @@ import type {
   VerifiedSignInInteractionResult,
 } from '../types/index.js';
 import { clearInteractionStorage } from '../utils/interaction.js';
-import { userMfaDataKey } from '../verifications/mfa-verification.js';
 
-import { hasUpdatedProfile, parseUserProfile, postAffiliateLogs } from './helpers.js';
+import { hasUpdatedProfile, parseUserProfile } from './helpers.js';
 
 const parseBindMfas = ({
   bindMfas,
@@ -67,6 +65,7 @@ const parseBindMfas = ({
       };
     }
 
+    // MfaFactor.PhoneVerificationCode
     return {
       id: generateStandardId(),
       createdAt: new Date().toISOString(),
@@ -164,7 +163,10 @@ async function handleSubmitRegister(
         }
       ),
     },
-    getInitialUserRoles(isInAdminTenant, isCreatingFirstAdminUser, isCloud)
+    {
+      roleNames: getInitialUserRoles(isInAdminTenant, isCreatingFirstAdminUser, isCloud),
+      isInteractive: true,
+    }
   );
 
   if (isCreatingFirstAdminUser) {
@@ -187,7 +189,7 @@ async function handleSubmitRegister(
 
   await assignInteractionResults(ctx, provider, { login: { accountId: id } });
 
-  ctx.assignInteractionHookResult({ userId: id });
+  ctx.assignReleaseOnSuccessInteractionHookResult({ userId: id });
   ctx.appendDataHookContext('User.Created', { user });
 
   // JIT provisioning for email domain
@@ -207,11 +209,6 @@ async function handleSubmitRegister(
   log?.append({ userId: id });
   appInsights.client?.trackEvent({
     name: getEventName(Component.Core, CoreEvent.Register),
-  });
-
-  void trySafe(postAffiliateLogs(ctx, cloudConnection, id, tenantId), (error) => {
-    getConsoleLogFromContext(ctx).warn('Failed to post affiliate logs', error);
-    void appInsights.trackException(error, buildAppInsightsTelemetry(ctx));
   });
 }
 
@@ -253,7 +250,7 @@ async function handleSubmitSignIn(
 
   await assignInteractionResults(ctx, provider, { login: { accountId } });
 
-  ctx.assignInteractionHookResult({ userId: accountId });
+  ctx.assignReleaseOnSuccessInteractionHookResult({ userId: accountId });
   // Trigger user.updated data hook event if the user profile or mfa data is updated
   if (hasUpdatedProfile(updateUserProfile) || mfaVerifications.length > 0) {
     ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
@@ -294,7 +291,7 @@ export default async function submitInteraction(
     passwordEncrypted,
     passwordEncryptionMethod,
   });
-  ctx.assignInteractionHookResult({ userId: accountId });
+  ctx.assignReleaseOnSuccessInteractionHookResult({ userId: accountId });
   ctx.appendDataHookContext('User.Data.Updated', { user });
 
   await clearInteractionStorage(ctx, provider);

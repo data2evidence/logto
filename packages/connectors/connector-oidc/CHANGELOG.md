@@ -1,5 +1,113 @@
 # @logto/connector-oidc
 
+## 1.7.3
+
+### Patch Changes
+
+- Updated dependencies [41a56f79e3]
+  - @logto/connector-kit@5.0.1
+  - @logto/connector-oauth@1.7.6
+
+## 1.7.2
+
+### Patch Changes
+
+- Updated dependencies [3350b13ec8]
+  - @logto/shared@3.4.0
+  - @logto/connector-oauth@1.7.5
+
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [4e25126228]
+- Updated dependencies [4e25126228]
+  - @logto/connector-kit@5.0.0
+  - @logto/connector-oauth@1.7.4
+
+## 1.7.0
+
+### Minor Changes
+
+- c8b2caec5c: add trust-unverified-email support for OIDC social connector and OIDC-based enterprise SSO connectors
+
+  - Add `trustUnverifiedEmail` to the OIDC social connector config (default `false`) to allow syncing emails when `email_verified` is missing or false
+  - Apply the setting in core OIDC/Azure OIDC SSO connectors and expose it in the Admin Console with new tips and translations
+
+### Patch Changes
+
+- Updated dependencies [317f9744d1]
+  - @logto/shared@3.3.1
+  - @logto/connector-oauth@1.7.3
+
+## 1.6.2
+
+### Patch Changes
+
+- Updated dependencies [462e430445]
+- Updated dependencies [7c87ebc068]
+  - @logto/connector-kit@4.7.0
+  - @logto/connector-oauth@1.7.2
+
+## 1.6.1
+
+### Patch Changes
+
+- Updated dependencies [ad4f9d6abf]
+- Updated dependencies [5da6792d40]
+  - @logto/connector-kit@4.6.0
+  - @logto/connector-oauth@1.7.1
+
+## 1.6.0
+
+### Minor Changes
+
+- 0343699d7: feat: add token storage support to social connectors
+
+  The connector has been updated to support token storage. When enabled, Logto will securely store the token set issued by social providers in the [Secret Vault](https://docs.logto.io/secret-vault/) after successful user authentication. This allows your application to retrieve the access token later and access third-party APIs without requiring the user to reauthenticate. Please check the [Federated token set storage](https://docs.logto.io/secret-vault/federated-token-set) for more details.
+
+- 34964af46: feat: support custom scope in the `getAuthorizationUri` method
+
+  This change allows the `getAuthorizationUri` method in the social connectors to accept an extra `scope` parameter, enabling more flexible authorization requests.
+
+  If the scope is provided, it will be used in the authorization request; otherwise, the default scope configured in the connector settings will be used.
+
+### Patch Changes
+
+- Updated dependencies [0343699d7]
+- Updated dependencies [34964af46]
+  - @logto/connector-oauth@1.7.0
+  - @logto/connector-kit@4.4.0
+
+## 1.5.0
+
+### Minor Changes
+
+- 2961d355d: bump node version to ^22.14.0
+
+### Patch Changes
+
+- 752d406bd: support string-typed boolean claims
+
+  Add an optional `acceptStringTypedBooleanClaims` configuration to `OidcConnectorConfig`, with default value `false`.
+  For standard OIDC protocol, some claims such as `email_verified` and `phone_verified` are boolean-typed, but some providers may return them as string-typed. Enabling this option will convert string-typed boolean claims to boolean-typed, which provides better compatibility.
+  By enabling this configuration, the connector will accept string-typed boolean ID token claims, such as `email_verified` and `phone_verified`.
+
+- Updated dependencies [2961d355d]
+  - @logto/connector-oauth@1.6.0
+  - @logto/connector-kit@4.3.0
+  - @logto/shared@3.2.0
+
+## 1.4.1
+
+### Patch Changes
+
+- e11e57de8: bump dependencies for security update
+- Updated dependencies [e11e57de8]
+  - @logto/connector-oauth@1.5.1
+  - @logto/connector-kit@4.1.1
+  - @logto/shared@3.1.4
+
 ## 1.4.0
 
 ### Minor Changes

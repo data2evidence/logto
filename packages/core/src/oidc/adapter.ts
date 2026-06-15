@@ -1,5 +1,11 @@
 import type { CreateApplication } from '@logto/schemas';
-import { ApplicationType, adminConsoleApplicationId, demoAppApplicationId } from '@logto/schemas';
+import {
+  ApplicationType,
+  accountCenterApplicationId,
+  adminConsoleApplicationId,
+  demoAppApplicationId,
+  deviceDemoAppApplicationId,
+} from '@logto/schemas';
 import { appendPath, tryThat, conditional } from '@silverhand/essentials';
 import { addSeconds } from 'date-fns';
 import type { AdapterFactory, AllClientMetadata } from 'oidc-provider';
@@ -39,7 +45,7 @@ const transpileMetadata = (clientId: string, data: AllClientMetadata): AllClient
 };
 
 const buildDemoAppClientMetadata = (envSet: EnvSet): AllClientMetadata => {
-  const urlStrings = getTenantUrls(envSet.tenantId, EnvSet.values).map(
+  const urlStrings = getTenantUrls(envSet.tenantId, EnvSet.values, envSet.endpoint).map(
     (url) => appendPath(url, '/demo-app').href
   );
 
@@ -49,6 +55,42 @@ const buildDemoAppClientMetadata = (envSet: EnvSet): AllClientMetadata => {
     client_name: 'Live Preview',
     redirect_uris: urlStrings,
     post_logout_redirect_uris: urlStrings,
+  };
+};
+
+/**
+ * Real device flow clients (TVs, CLIs) cannot perform RP-Initiated Logout because they have no
+ * browser redirect capability — they can only revoke tokens locally.
+ *
+ * However, since this demo app runs in a browser to simulate a device, we register
+ * `post_logout_redirect_uris` so the "Sign out" button can end the OIDC session and redirect back,
+ * providing a smooth demo experience.
+ */
+const buildDeviceDemoAppClientMetadata = (envSet: EnvSet): AllClientMetadata => {
+  const urlStrings = getTenantUrls(envSet.tenantId, EnvSet.values, envSet.endpoint).map(
+    (url) => appendPath(url, '/device-demo-app').href
+  );
+
+  return {
+    ...getConstantClientMetadata(envSet, ApplicationType.Native, { isDeviceFlow: true }),
+    client_id: deviceDemoAppApplicationId,
+    client_name: 'Device Flow Preview',
+    post_logout_redirect_uris: urlStrings,
+  };
+};
+
+const buildAccountCenterClientMetadata = (envSet: EnvSet): AllClientMetadata => {
+  const urlStrings = getTenantUrls(envSet.tenantId, EnvSet.values, envSet.endpoint).map(
+    (url) => appendPath(url, '/account').href
+  );
+
+  return {
+    ...getConstantClientMetadata(envSet, ApplicationType.SPA),
+    client_id: accountCenterApplicationId,
+    client_name: 'Account Center',
+    redirect_uris: urlStrings,
+    post_logout_redirect_uris: urlStrings,
+    alwaysIssueRefreshToken: true,
   };
 };
 
@@ -95,7 +137,8 @@ export default function postgresAdapter(
       consumeInstanceById,
       destroyInstanceById,
       findPayloadById,
-      findPayloadByPayloadField,
+      findPayloadByUid,
+      findPayloadByUserCode,
       revokeInstanceByGrantId,
       upsertInstance,
     },
@@ -119,7 +162,7 @@ export default function postgresAdapter(
       client_id,
       client_secret,
       client_name,
-      ...getConstantClientMetadata(envSet, type),
+      ...getConstantClientMetadata(envSet, type, customClientMetadata),
       ...transpileMetadata(client_id, snakecaseKeys(oidcClientMetadata)),
       // `node-oidc-provider` won't camelCase custom parameter keys, so we need to keep the keys camelCased
       ...customClientMetadata,
@@ -132,6 +175,12 @@ export default function postgresAdapter(
       find: async (id) => {
         if (id === demoAppApplicationId) {
           return buildDemoAppClientMetadata(envSet);
+        }
+        if (id === accountCenterApplicationId) {
+          return buildAccountCenterClientMetadata(envSet);
+        }
+        if (id === deviceDemoAppApplicationId) {
+          return buildDeviceDemoAppClientMetadata(envSet);
         }
 
         const application = await tryThat(
@@ -163,8 +212,8 @@ export default function postgresAdapter(
         expiresAt: addSeconds(Date.now(), expiresIn).valueOf(),
       }),
     find: async (id) => findPayloadById(modelName, id),
-    findByUserCode: async (userCode) => findPayloadByPayloadField(modelName, 'userCode', userCode),
-    findByUid: async (uid) => findPayloadByPayloadField(modelName, 'uid', uid),
+    findByUserCode: async (userCode) => findPayloadByUserCode(modelName, userCode),
+    findByUid: async (uid) => findPayloadByUid(modelName, uid),
     consume: async (id) => consumeInstanceById(modelName, id),
     destroy: async (id) => destroyInstanceById(modelName, id),
     revokeByGrantId: async (grantId) => revokeInstanceByGrantId(modelName, grantId),

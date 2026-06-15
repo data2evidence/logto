@@ -10,16 +10,16 @@ const description = {
   sign_in: 'Войти',
   privacy_policy: 'Политикой конфиденциальности',
   create_account: 'Создать аккаунт',
+  switch_account: 'Сменить аккаунт',
   or: 'или',
   and: 'и',
   enter_passcode: 'Код подтверждения был отправлен на {{address}}',
   passcode_sent: 'Код подтверждения был отправлен повторно',
   resend_after_seconds: 'Еще не получили? Отправить повторно через <span>{{seconds}}</span> секунд',
   resend_passcode: 'Еще не получили? <a>Отправить повторно код подтверждения</a>',
-  create_account_id_exists: 'Учетная запись для {{value}} уже существует, хотите войти?',
+  create_account_id_exists: 'Учетная запись {{value}} уже существует. Продолжить вход.',
   link_account_id_exists: 'Учетная запись для {{value}} уже существует, хотите привязать?',
-  sign_in_id_does_not_exist:
-    'Учетная запись для {{value}} не существует, хотите зарегистрироваться?',
+  sign_in_id_does_not_exist: 'Учетная запись для {{value}} не найдена. Создать новую?',
   sign_in_id_does_not_exist_alert: 'Учетная запись для {{value}} не существует.',
   create_account_id_exists_alert:
     'Аккаунт с {{type}} {{value}} связан с другим аккаунтом. Пожалуйста, попробуйте другой {{type}}.',
@@ -59,15 +59,30 @@ const description = {
     'Для дополнительной безопасности, пожалуйста, заполните приведенные ниже данные учетной записи.',
   create_your_account: 'Создайте свой аккаунт',
   sign_in_to_your_account: 'Войди в свой аккаунт',
+  device_activation: 'Активация устройства',
+  device_activation_description:
+    'Введите код, отображённый на вашем устройстве. Убедитесь, что он совпадает, затем продолжите вход на этом устройстве.',
+  device_activation_error_description: 'Введите код, отображённый на вашем устройстве.',
+  device_activation_success: 'Ваше устройство подключено!',
+  device_activation_success_description: 'Вернитесь к вашему устройству, чтобы продолжить.',
   no_region_code_found: 'Не удалось определить код региона',
   verify_email: 'Подтвердите Ваш электронный адрес',
   verify_phone: 'Подтвердите свой номер телефона',
   password_requirements: 'Требования к паролю {{items, list}}.',
   password_requirement: {
     length_one: 'требуется минимум {{count}} символ',
+    length_two: 'требуется минимум {{count}} символа',
+    length_few: 'требуется минимум {{count}} символа',
+    length_many: 'требуется минимум {{count}} символов',
     length_other: 'требуется минимум {{count}} символов',
     character_types_one:
       'должен содержать по крайней мере {{count}} тип прописных букв, строчных букв, цифр и символов',
+    character_types_two:
+      'должен содержать по крайней мере {{count}} типа прописных букв, строчных букв, цифр и символов',
+    character_types_few:
+      'должен содержать по крайней мере {{count}} типа прописных букв, строчных букв, цифр и символов',
+    character_types_many:
+      'должен содержать по крайней мере {{count}} типов прописных букв, строчных букв, цифр и символов',
     character_types_other:
       'должен содержать по крайней мере {{count}} типа прописных букв, строчных букв, цифр и символов',
   },
@@ -76,30 +91,18 @@ const description = {
   single_sign_on_connectors_list:
     'Ваше предприятие включило функцию единого входа для электронной почты {{email}}. Вы можете продолжить вход в систему с помощью следующих провайдеров SSO.',
   single_sign_on_enabled: 'Единый вход в систему включен для этой учетной записи',
-  /** UNTRANSLATED */
-  authorize_title: 'Authorize {{name}}',
-  /** UNTRANSLATED */
-  request_permission: '{{name}} is requesting access to:',
-  /** UNTRANSLATED */
-  grant_organization_access: 'Grant the organization access:',
-  /** UNTRANSLATED */
-  authorize_personal_data_usage: 'Authorize the use of your personal data:',
-  /** UNTRANSLATED */
-  authorize_organization_access: 'Authorize access to the specific organization:',
-  /** UNTRANSLATED */
-  user_scopes: 'Personal user data',
-  /** UNTRANSLATED */
-  organization_scopes: 'Organization access',
-  /** UNTRANSLATED */
-  authorize_agreement: `By authorizing the access, you agree to the {{name}}'s <link></link>.`,
-  /** UNTRANSLATED */
-  authorize_agreement_with_redirect: `By authorizing the access, you agree to the {{name}}'s <link></link>, and will be redirected to {{uri}}.`,
-  /** UNTRANSLATED */
-  not_you: 'Not you?',
-  /** UNTRANSLATED */
-  user_id: 'User ID: {{id}}',
-  /** UNTRANSLATED */
-  redirect_to: 'You will be redirected to {{name}}.',
+  authorize_title: 'Авторизовать {{name}}',
+  request_permission: '{{name}} запрашивает доступ к:',
+  grant_organization_access: 'Предоставить доступ организации:',
+  authorize_personal_data_usage: 'Авторизовать использование ваших личных данных:',
+  authorize_organization_access: 'Авторизовать доступ к конкретной организации:',
+  user_scopes: 'Личные данные пользователя',
+  organization_scopes: 'Доступ к организации',
+  authorize_agreement: `Авторизуя доступ, вы соглашаетесь с <link></link> {{name}}.`,
+  authorize_agreement_with_redirect: `Авторизуя доступ, вы соглашаетесь с <link></link> {{name}}, и будете перенаправлены на {{uri}}.`,
+  not_you: 'Это не вы?',
+  user_id: 'ID пользователя: {{id}}',
+  redirect_to: 'Вы будете перенаправлены на {{name}}.',
   auto_agreement: 'Продолжая, вы соглашаетесь с <link></link>.',
   identifier_sign_in_description: 'Введите свои {{types, list(type: disjunction;)}} для входа.',
   all_sign_in_options: 'Все варианты входа',
@@ -109,6 +112,21 @@ const description = {
   back_to_sign_in: 'Вернуться ко входу',
   support_email: 'Поддержка по электронной почте: <link></link>',
   support_website: 'Сайт поддержки: <link></link>',
+  switch_account_title: 'В настоящее время вы вошли как {{account}}',
+  switch_account_description:
+    'Чтобы продолжить, вы будете выйти из текущей учетной записи и автоматически переключены на новую учетную запись.',
+  about_yourself: 'Расскажите нам о себе',
+  verify_identity: 'Подтвердите свою личность',
+  choose_verification_method: 'Выберите способ входа',
+  verification_method: {
+    passkey: 'Ключ доступа',
+    passkey_description: 'Проверка через устройство или USB-оборудование',
+    password: 'Пароль',
+    password_description: 'Введите пароль',
+    email_verification_code: 'Код подтверждения по электронной почте',
+    phone_verification_code: 'Код подтверждения по телефону',
+    verification_code_description: 'Отправить на {{target}}',
+  },
 };
 
 export default Object.freeze(description);

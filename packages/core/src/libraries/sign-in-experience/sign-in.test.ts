@@ -1,4 +1,4 @@
-import { ConnectorType, SignInIdentifier } from '@logto/schemas';
+import { ConnectorType, SignInIdentifier, MfaFactor, MfaPolicy } from '@logto/schemas';
 
 import {
   mockAliyunDmConnector,
@@ -113,131 +113,6 @@ describe('validate sign-in', () => {
     });
   });
 
-  describe('The sign up identifier must be included in sign in', () => {
-    it('throws when sign up is username and sign in methods does not include username', () => {
-      expect(() => {
-        validateSignIn(
-          {
-            methods: [
-              {
-                ...mockSignInMethod,
-                identifier: SignInIdentifier.Phone,
-              },
-            ],
-          },
-          {
-            ...mockSignUp,
-            identifiers: [SignInIdentifier.Username],
-          },
-          enabledConnectors
-        );
-      }).toMatchError(
-        new RequestError({
-          code: 'sign_in_experiences.miss_sign_up_identifier_in_sign_in',
-        })
-      );
-    });
-
-    it('throws when sign up is email and sign in methods does not include email', () => {
-      expect(() => {
-        validateSignIn(
-          {
-            methods: [
-              {
-                ...mockSignInMethod,
-                identifier: SignInIdentifier.Username,
-              },
-            ],
-          },
-          {
-            ...mockSignUp,
-            identifiers: [SignInIdentifier.Email],
-          },
-          enabledConnectors
-        );
-      }).toMatchError(
-        new RequestError({
-          code: 'sign_in_experiences.miss_sign_up_identifier_in_sign_in',
-        })
-      );
-    });
-
-    it('throws when sign up is phone and sign in methods does not include phone', () => {
-      expect(() => {
-        validateSignIn(
-          {
-            methods: [
-              {
-                ...mockSignInMethod,
-                identifier: SignInIdentifier.Username,
-              },
-            ],
-          },
-          {
-            ...mockSignUp,
-            identifiers: [SignInIdentifier.Phone],
-          },
-          enabledConnectors
-        );
-      }).toMatchError(
-        new RequestError({
-          code: 'sign_in_experiences.miss_sign_up_identifier_in_sign_in',
-        })
-      );
-    });
-
-    it('throws when sign up is `email or phone` and sign in methods does not include email and phone', () => {
-      expect(() => {
-        validateSignIn(
-          {
-            methods: [
-              {
-                ...mockSignInMethod,
-                identifier: SignInIdentifier.Email,
-              },
-            ],
-          },
-          {
-            ...mockSignUp,
-            identifiers: [SignInIdentifier.Email, SignInIdentifier.Phone],
-          },
-          enabledConnectors
-        );
-      }).toMatchError(
-        new RequestError({
-          code: 'sign_in_experiences.miss_sign_up_identifier_in_sign_in',
-        })
-      );
-    });
-  });
-
-  it('throws when sign up requires set a password and sign in password is not enabled', () => {
-    expect(() => {
-      validateSignIn(
-        {
-          methods: [
-            {
-              ...mockSignInMethod,
-              identifier: SignInIdentifier.Email,
-              password: false,
-              verificationCode: true,
-            },
-          ],
-        },
-        {
-          ...mockSignUp,
-          identifiers: [SignInIdentifier.Email],
-          password: true,
-        },
-        enabledConnectors
-      );
-    }).toMatchError(
-      new RequestError({
-        code: 'sign_in_experiences.password_sign_in_must_be_enabled',
-      })
-    );
-  });
-
   it('throws when sign up only requires verify and sign in verification code is not enabled', () => {
     expect(() => {
       validateSignIn(
@@ -297,5 +172,107 @@ describe('validate sign-in', () => {
         code: 'sign_in_experiences.at_least_one_authentication_factor',
       })
     );
+  });
+
+  describe('MFA conflicts', () => {
+    test('should throw when email verification code is used for both sign-in and MFA', () => {
+      expect(() => {
+        validateSignIn(
+          {
+            methods: [
+              {
+                ...mockSignInMethod,
+                identifier: SignInIdentifier.Email,
+                verificationCode: true,
+                password: false,
+              },
+            ],
+          },
+          mockSignUp,
+          enabledConnectors,
+          {
+            policy: MfaPolicy.Mandatory,
+            factors: [MfaFactor.EmailVerificationCode, MfaFactor.TOTP],
+          }
+        );
+      }).toMatchError(
+        new RequestError({
+          code: 'sign_in_experiences.email_verification_code_cannot_be_used_for_sign_in',
+        })
+      );
+    });
+
+    test('should throw when phone verification code is used for both sign-in and MFA', () => {
+      expect(() => {
+        validateSignIn(
+          {
+            methods: [
+              {
+                ...mockSignInMethod,
+                identifier: SignInIdentifier.Phone,
+                verificationCode: true,
+                password: false,
+              },
+            ],
+          },
+          mockSignUp,
+          enabledConnectors,
+          {
+            policy: MfaPolicy.Mandatory,
+            factors: [MfaFactor.PhoneVerificationCode, MfaFactor.BackupCode],
+          }
+        );
+      }).toMatchError(
+        new RequestError({
+          code: 'sign_in_experiences.phone_verification_code_cannot_be_used_for_sign_in',
+        })
+      );
+    });
+
+    test('should pass when email is used with password and MFA uses email verification code', () => {
+      expect(() => {
+        validateSignIn(
+          {
+            methods: [
+              {
+                ...mockSignInMethod,
+                identifier: SignInIdentifier.Email,
+                verificationCode: false,
+                password: true,
+              },
+            ],
+          },
+          mockSignUp,
+          enabledConnectors,
+          {
+            policy: MfaPolicy.Mandatory,
+            factors: [MfaFactor.EmailVerificationCode, MfaFactor.TOTP],
+          }
+        );
+      }).not.toThrow();
+    });
+
+    test('should pass when phone is used with password and MFA uses phone verification code', () => {
+      expect(() => {
+        validateSignIn(
+          {
+            methods: [
+              {
+                ...mockSignInMethod,
+                identifier: SignInIdentifier.Phone,
+                verificationCode: false,
+                password: true,
+              },
+            ],
+          },
+          mockSignUp,
+          enabledConnectors,
+          {
+            policy: MfaPolicy.Mandatory,
+            factors: [MfaFactor.PhoneVerificationCode, MfaFactor.TOTP],
+          }
+        );
+      }).not.toThrow();
+    });
   });
 });

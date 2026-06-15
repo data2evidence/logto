@@ -48,9 +48,33 @@ const session = {
     invalid_backup_code: 'Code de sauvegarde non valide.',
     mfa_policy_not_user_controlled: "La politique MFA n'est pas contrôlée par l'utilisateur.",
     mfa_factor_not_enabled: "Le facteur MFA n'est pas activé.",
+    suggest_additional_mfa:
+      'Pour une meilleure protection, ajoutez une autre méthode MFA. Vous pouvez ignorer cette étape et continuer.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Impossible de trouver les informations de connexion par passkey en attente. Veuillez relancer le flux de connexion.',
+    conflict_rp_id:
+      "L'ID de la partie de confiance (Relying Party) ne correspond pas. Veuillez utiliser le bon client pour vous connecter.",
+    sso_users_not_allowed:
+      "L'option de connexion par passkey n'est pas disponible pour les utilisateurs SSO.",
   },
   sso_enabled:
     'La connexion unique est activée pour cet e-mail donné. Veuillez vous connecter avec SSO.',
+  captcha_required: 'Le captcha est requis.',
+  captcha_failed: 'La vérification du captcha a échoué.',
+  email_blocklist: {
+    disposable_email_validation_failed: "Échec de la validation de l'adresse e-mail.",
+    invalid_email: 'Adresse e-mail invalide.',
+    email_subaddressing_not_allowed: "Le sous-adressage des e-mails n'est pas autorisé.",
+    email_not_allowed:
+      'L\'adresse e-mail "{{email}}" est restreinte. Veuillez en choisir une autre.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Incompatibilité des cookies Google One Tap.',
+    invalid_id_token: "Jeton d'ID Google invalide.",
+    unverified_email: 'E-mail non vérifié.',
+  },
 };
 
 export default Object.freeze(session);

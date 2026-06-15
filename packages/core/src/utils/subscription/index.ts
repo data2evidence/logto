@@ -1,10 +1,10 @@
+import { ReservedPlanId } from '@logto/schemas';
 import { trySafe } from '@silverhand/essentials';
 
 import { type CloudConnectionLibrary } from '#src/libraries/cloud-connection.js';
 
 import {
   type SubscriptionQuota,
-  type SubscriptionUsage,
   type Subscription,
   type ReportSubscriptionUpdatesUsageKey,
   allReportSubscriptionUpdatesUsageKeys,
@@ -25,25 +25,6 @@ export const getTenantSubscription = async (
     currentPeriodStart: new Date(currentPeriodStart).toISOString(),
     currentPeriodEnd: new Date(currentPeriodEnd).toISOString(),
   };
-};
-
-export const getTenantSubscriptionData = async (
-  cloudConnection: CloudConnectionLibrary
-): Promise<{
-  planId: string;
-  isEnterprisePlan: boolean;
-  quota: SubscriptionQuota;
-  usage: SubscriptionUsage;
-  resources: Record<string, number>;
-  roles: Record<string, number>;
-}> => {
-  const client = await cloudConnection.getClient();
-  const [{ planId, isEnterprisePlan }, { quota, usage, resources, roles }] = await Promise.all([
-    client.get('/api/tenants/my/subscription'),
-    client.get('/api/tenants/my/subscription-usage'),
-  ]);
-
-  return { planId, isEnterprisePlan, quota, usage, resources, roles };
 };
 
 export const reportSubscriptionUpdates = async (
@@ -74,4 +55,19 @@ export const isReportSubscriptionUpdatesUsageKey = (
 ): value is ReportSubscriptionUpdatesUsageKey => {
   // eslint-disable-next-line no-restricted-syntax
   return allReportSubscriptionUpdatesUsageKeys.includes(value as ReportSubscriptionUpdatesUsageKey);
+};
+
+const paidReservedPlans = new Set<string>([
+  ReservedPlanId.Pro,
+  ReservedPlanId.Pro202411,
+  ReservedPlanId.Pro202509,
+]);
+
+/**
+ * @remarks
+ * Check whether the provided plan ID is a reportable (paid) plan.
+ * This method is mainly used in the usage reporting logic.
+ */
+export const isReportablePlan = (planId: string, isEnterprisePlan: boolean): boolean => {
+  return paidReservedPlans.has(planId) || isEnterprisePlan;
 };

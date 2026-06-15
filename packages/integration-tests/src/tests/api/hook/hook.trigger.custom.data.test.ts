@@ -1,4 +1,9 @@
-import { SignInIdentifier, hookEvents, userInfoSelectFields } from '@logto/schemas';
+import {
+  OrganizationInvitationStatus,
+  SignInIdentifier,
+  hookEvents,
+  userInfoSelectFields,
+} from '@logto/schemas';
 import { pick } from '@silverhand/essentials';
 
 import { deleteUser } from '#src/api/admin-user.js';
@@ -8,9 +13,9 @@ import { createScope } from '#src/api/scope.js';
 import { updateSignInExperience } from '#src/api/sign-in-experience.js';
 import { SsoConnectorApi } from '#src/api/sso-connector.js';
 import { setEmailConnector, setSmsConnector } from '#src/helpers/connector.js';
-import { WebHookApiTest } from '#src/helpers/hook.js';
-import { registerWithEmail } from '#src/helpers/interactions.js';
-import { OrganizationApiTest } from '#src/helpers/organization.js';
+import { registerNewUserWithVerificationCode } from '#src/helpers/experience/index.js';
+import { getSupportedHookEvents, WebHookApiTest } from '#src/helpers/hook.js';
+import { OrganizationApiTest, OrganizationInvitationApiTest } from '#src/helpers/organization.js';
 import { enableAllVerificationCodeSignInMethods } from '#src/helpers/sign-in-experience.js';
 import { registerNewUserWithSso } from '#src/helpers/single-sign-on.js';
 import { UserApiTest } from '#src/helpers/user.js';
@@ -20,7 +25,7 @@ import WebhookMockServer from './WebhookMockServer.js';
 import { assertHookLogResult } from './utils.js';
 
 describe('manual data hook tests', () => {
-  const webbHookMockServer = new WebhookMockServer(9999);
+  const webHookMockServer = new WebhookMockServer(9999);
   const webHookApi = new WebHookApiTest();
   const userApi = new UserApiTest();
   const organizationApi = new OrganizationApiTest();
@@ -28,18 +33,18 @@ describe('manual data hook tests', () => {
   const ssoConnectorApi = new SsoConnectorApi();
 
   beforeAll(async () => {
-    await webbHookMockServer.listen();
+    await webHookMockServer.listen();
   });
 
   afterAll(async () => {
-    await webbHookMockServer.close();
+    await webHookMockServer.close();
   });
 
   beforeEach(async () => {
     await webHookApi.create({
       name: hookName,
-      events: [...hookEvents],
-      config: { url: webbHookMockServer.endpoint },
+      events: getSupportedHookEvents([...hookEvents]),
+      config: { url: webHookMockServer.endpoint },
     });
   });
 
@@ -144,7 +149,10 @@ describe('manual data hook tests', () => {
       const domain = 'example.com';
       await organizationApi.jit.addEmailDomain(organization.id, domain);
 
-      await registerWithEmail(`${randomString()}@${domain}`);
+      await registerNewUserWithVerificationCode({
+        type: SignInIdentifier.Email,
+        value: `${randomString()}@${domain}`,
+      });
       await assertOrganizationMembershipUpdated(organization.id);
     });
 
@@ -166,6 +174,37 @@ describe('manual data hook tests', () => {
         },
       });
 
+      await assertOrganizationMembershipUpdated(organization.id);
+    });
+  });
+
+  describe('organization membership update by accept organization invitation', () => {
+    const invitationApi = new OrganizationInvitationApiTest();
+
+    afterEach(async () => {
+      await invitationApi.cleanUp();
+    });
+
+    it('should trigger `Organization.Membership.Updated` event when user accept organization invitation', async () => {
+      const organization = await organizationApi.create({ name: generateName() });
+      const invitation = await invitationApi.create({
+        organizationId: organization.id,
+        invitee: generateEmail(),
+        expiresAt: Date.now() + 1_000_000,
+      });
+      expect(invitation.status).toBe('Pending');
+
+      const user = await userApi.create({
+        primaryEmail: invitation.invitee,
+      });
+
+      const updated = await invitationApi.updateStatus(
+        invitation.id,
+        OrganizationInvitationStatus.Accepted,
+        user.id
+      );
+
+      expect(updated.status).toBe('Accepted');
       await assertOrganizationMembershipUpdated(organization.id);
     });
   });

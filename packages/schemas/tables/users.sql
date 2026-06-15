@@ -1,6 +1,6 @@
 /* init_order = 1 */
 
-create type users_password_encryption_method as enum ('Argon2i', 'Argon2id', 'Argon2d', 'SHA1', 'SHA256', 'MD5', 'Bcrypt');
+create type users_password_encryption_method as enum ('Argon2i', 'Argon2id', 'Argon2d', 'SHA1', 'SHA256', 'MD5', 'Bcrypt', 'Legacy');
 
 create table users (
   tenant_id varchar(21) not null
@@ -9,7 +9,7 @@ create table users (
   username varchar(128),
   primary_email varchar(128),
   primary_phone varchar(128),
-  password_encrypted varchar(128),
+  password_encrypted varchar(256),
   password_encryption_method users_password_encryption_method,
   name varchar(128),
   /** The URL that points to the user's profile picture. Mapped to OpenID Connect's `picture` claim. */ 
@@ -34,11 +34,15 @@ create table users (
     unique (tenant_id, primary_phone)
 );
 
-create index users__id
+/* Unique index on (tenant_id, id) required for foreign key constraint in organization_user_relations table. */
+create unique index users__id
   on users (tenant_id, id);
 
 create index users__name
   on users (tenant_id, name);
+
+create index users_mfa_verifications_gin
+  on users using gin (mfa_verifications jsonb_path_ops);
 
 create trigger set_updated_at
   before update on users

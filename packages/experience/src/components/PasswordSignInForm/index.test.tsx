@@ -174,16 +174,19 @@ describe('UsernamePasswordSignInForm', () => {
     });
 
     await waitFor(() => {
-      expect(signInWithPasswordIdentifier).toBeCalledWith({
-        identifier: {
-          type,
-          value:
-            type === SignInIdentifier.Phone
-              ? `${getDefaultCountryCallingCode()}${identifier}`
-              : identifier,
+      expect(signInWithPasswordIdentifier).toBeCalledWith(
+        {
+          identifier: {
+            type,
+            value:
+              type === SignInIdentifier.Phone
+                ? `${getDefaultCountryCallingCode()}${identifier}`
+                : identifier,
+          },
+          password: 'password',
         },
-        password: 'password',
-      });
+        undefined
+      );
     });
   });
 
@@ -264,7 +267,10 @@ describe('UsernamePasswordSignInForm', () => {
     });
 
     await waitFor(() => {
-      expect(mockedNavigate).toBeCalledWith(`/${experience.routes.sso}/connectors`);
+      expect(mockedNavigate).toBeCalledWith(
+        { pathname: `/${experience.routes.sso}/connectors` },
+        undefined
+      );
     });
   });
 

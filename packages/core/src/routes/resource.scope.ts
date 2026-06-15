@@ -81,7 +81,7 @@ export default function resourceScopeRoutes<T extends ManagementApiRouter>(
       params: object({ resourceId: string().min(1) }),
       body: Scopes.createGuard.pick({ name: true, description: true }),
       response: Scopes.guard,
-      status: [201, 422, 400, 404],
+      status: [201, 400, 403, 404, 422],
     }),
     async (ctx, next) => {
       const {
@@ -89,7 +89,7 @@ export default function resourceScopeRoutes<T extends ManagementApiRouter>(
         body,
       } = ctx.guard;
 
-      await quota.guardEntityScopesUsage('resources', resourceId);
+      await quota.guardTenantUsageByKey('scopesPerResourceLimit', { entityId: resourceId });
 
       assertThat(!/\s/.test(body.name), 'scope.name_with_space');
 

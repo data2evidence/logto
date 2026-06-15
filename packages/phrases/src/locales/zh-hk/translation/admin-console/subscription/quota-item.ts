@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: '自帶介面',
     not_eligible: '移除您的自定義介面資產',
   },
+  collect_user_profile_enabled: {
+    name: '收集用戶資料',
+    limited: '收集用戶資料',
+    unlimited: '收集用戶資料',
+    not_eligible: '移除您的用戶資料收集欄位',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'IDP 启动的 SSO',
+    limited: 'IDP 启动的 SSO',
+    unlimited: 'IDP 启动的 SSO',
+    not_eligible: '不允許 IDP 启动的 SSO',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'SAML 應用程式',
+    limited: '{{count, number}} 個 SAML 應用程式',
+    limited_other: '{{count, number}} 個 SAML 應用程式',
+    unlimited: '無限 SAML 應用程式',
+    not_eligible: '刪除您的 SAML 應用程式',
+  },
+  captcha_enabled: {
+    name: '驗證碼',
+    limited: '驗證碼',
+    unlimited: '驗證碼',
+    not_eligible: '刪除您的驗證碼',
+  },
+  security_features_enabled: {
+    name: '高級安全',
+    limited: '高級安全',
+    unlimited: '高級安全',
+    not_eligible: '移除您的高級安全設置',
+  },
+  custom_domains_limit: {
+    name: '自定義域名',
+    limited: '{{count, number}} 個自定義域名',
+    limited_other: '{{count, number}} 個自定義域名',
+    unlimited: '無限自定義域名',
+    not_eligible: '刪除您的自定義域名',
+  },
+  passkey_sign_in_enabled: {
+    name: '通行密鑰登入',
+    limited: '通行密鑰登入',
+    unlimited: '通行密鑰登入',
+    not_eligible: '不支援通行密鑰登入',
   },
 };
 

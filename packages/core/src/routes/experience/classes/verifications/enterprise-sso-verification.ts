@@ -1,4 +1,3 @@
-import { type ToZodObject } from '@logto/connector-kit';
 import {
   VerificationType,
   type JsonObject,
@@ -6,18 +5,22 @@ import {
   type SupportedSsoConnector,
   type User,
   type UserSsoIdentity,
+  type EnterpriseSsoVerificationRecordData,
+  enterpriseSsoVerificationRecordDataGuard,
+  type SanitizedEnterpriseSsoVerificationRecordData,
+  type EncryptedTokenSet,
+  type SecretEnterpriseSsoConnectorRelationPayload,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
 import { conditional } from '@silverhand/essentials';
-import { z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
-import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import {
   getSsoAuthorizationUrl,
   verifySsoIdentity,
-} from '#src/routes/interaction/utils/single-sign-on.js';
-import { extendedSocialUserInfoGuard, type ExtendedSocialUserInfo } from '#src/sso/types/saml.js';
+} from '#src/libraries/verification-helpers/single-sign-on.js';
+import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
+import { type ExtendedSocialUserInfo } from '#src/sso/types/saml.js';
 import type Libraries from '#src/tenants/Libraries.js';
 import type Queries from '#src/tenants/Queries.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
@@ -28,25 +31,17 @@ import type { InteractionProfile } from '../../types.js';
 
 import { type IdentifierVerificationRecord } from './verification-record.js';
 
-/** The JSON data type for the EnterpriseSsoVerification record stored in the interaction storage */
-export type EnterpriseSsoVerificationRecordData = {
-  id: string;
-  connectorId: string;
-  type: VerificationType.EnterpriseSso;
-  /**
-   * The enterprise SSO identity returned by the connector.
-   */
-  enterpriseSsoUserInfo?: ExtendedSocialUserInfo;
-  issuer?: string;
-};
+export {
+  type EnterpriseSsoVerificationRecordData,
+  type SanitizedEnterpriseSsoVerificationRecordData,
+  enterpriseSsoVerificationRecordDataGuard,
+  sanitizedEnterpriseSsoVerificationRecordDataGuard,
+} from '@logto/schemas';
 
-export const enterPriseSsoVerificationRecordDataGuard = z.object({
-  id: z.string(),
-  connectorId: z.string(),
-  type: z.literal(VerificationType.EnterpriseSso),
-  enterpriseSsoUserInfo: extendedSocialUserInfoGuard.optional(),
-  issuer: z.string().optional(),
-}) satisfies ToZodObject<EnterpriseSsoVerificationRecordData>;
+export type EnterpriseSsoConnectorTokenSetSecret = {
+  encryptedTokenSet: EncryptedTokenSet;
+  enterpriseSsoConnectorRelationPayload: SecretEnterpriseSsoConnectorRelationPayload;
+};
 
 export class EnterpriseSsoVerification
   implements IdentifierVerificationRecord<VerificationType.EnterpriseSso>
@@ -63,6 +58,7 @@ export class EnterpriseSsoVerification
   public readonly type = VerificationType.EnterpriseSso;
   public readonly connectorId: string;
   public enterpriseSsoUserInfo?: ExtendedSocialUserInfo;
+  public encryptedTokenSet?: EncryptedTokenSet;
   public issuer?: string;
 
   private connectorDataCache?: SupportedSsoConnector;
@@ -72,13 +68,14 @@ export class EnterpriseSsoVerification
     private readonly queries: Queries,
     data: EnterpriseSsoVerificationRecordData
   ) {
-    const { id, connectorId, enterpriseSsoUserInfo, issuer } =
-      enterPriseSsoVerificationRecordDataGuard.parse(data);
+    const { id, connectorId, enterpriseSsoUserInfo, encryptedTokenSet, issuer } =
+      enterpriseSsoVerificationRecordDataGuard.parse(data);
 
     this.id = id;
     this.connectorId = connectorId;
     this.enterpriseSsoUserInfo = enterpriseSsoUserInfo;
     this.issuer = issuer;
+    this.encryptedTokenSet = encryptedTokenSet;
   }
 
   /** Returns true if the enterprise SSO identity has been verified */
@@ -98,7 +95,7 @@ export class EnterpriseSsoVerification
    * Create the authorization URL for the enterprise SSO connector.
    *
    * @remarks
-   * Refers to thr {@link getSsoAuthorizationUrl} function in the interaction/utils/single-sign-on.ts file.
+   * Refers to the {@link getSsoAuthorizationUrl} function in the libraries/verification-helpers/single-sign-on.ts file.
    * Currently, all the intermediate connector session results are stored in the provider's interactionDetails separately,
    * apart from the new verification record.
    * For compatibility reasons, we keep using the old {@link getSsoAuthorizationUrl} method here as a single source of truth.
@@ -119,13 +116,13 @@ export class EnterpriseSsoVerification
    * Verify the enterprise SSO identity and store the enterprise SSO identity in the verification record.
    *
    * @remarks
-   * Refers to the {@link verifySsoIdentity} function in the interaction/utils/single-sign-on.ts file.
+   * Refers to the {@link verifySsoIdentity} function in the libraries/verification-helpers/single-sign-on.ts file.
    * For compatibility reasons, we keep using the old {@link verifySsoIdentity} method here as a single source of truth.
    * See the above {@link createAuthorizationUrl} method for more details.
    */
   async verify(ctx: WithLogContext, tenantContext: TenantContext, callbackData: JsonObject) {
     const connectorData = await this.getConnectorData();
-    const { issuer, userInfo } = await verifySsoIdentity(
+    const { issuer, userInfo, encryptedTokenSet } = await verifySsoIdentity(
       ctx,
       tenantContext,
       connectorData,
@@ -134,6 +131,7 @@ export class EnterpriseSsoVerification
 
     this.issuer = issuer;
     this.enterpriseSsoUserInfo = userInfo;
+    this.encryptedTokenSet = encryptedTokenSet;
   }
 
   /**
@@ -151,7 +149,7 @@ export class EnterpriseSsoVerification
       return userSsoIdentityResult.user;
     }
 
-    throw new RequestError({ code: 'user.identity_not_exist', status: 404 });
+    throw new RequestError({ code: 'user.sso_identity_not_exist', status: 404 });
   }
 
   async identifyRelatedUser(): Promise<User> {
@@ -166,7 +164,7 @@ export class EnterpriseSsoVerification
       return relatedUser;
     }
 
-    throw new RequestError({ code: 'user.identity_not_exist', status: 404 });
+    throw new RequestError({ code: 'user.sso_identity_not_exist', status: 404 });
   }
 
   /**
@@ -221,16 +219,39 @@ export class EnterpriseSsoVerification
       : {};
   }
 
+  getTokenSetSecret(): EnterpriseSsoConnectorTokenSetSecret | undefined {
+    // Not verified or token set not found
+    if (!this.enterpriseSsoUserInfo || !this.issuer || !this.encryptedTokenSet) {
+      return;
+    }
+
+    return {
+      encryptedTokenSet: this.encryptedTokenSet,
+      enterpriseSsoConnectorRelationPayload: {
+        ssoConnectorId: this.connectorId,
+        issuer: this.issuer,
+        identityId: this.enterpriseSsoUserInfo.id,
+      },
+    };
+  }
+
   toJson(): EnterpriseSsoVerificationRecordData {
-    const { id, connectorId, type, enterpriseSsoUserInfo, issuer } = this;
+    const { id, type, connectorId, enterpriseSsoUserInfo, encryptedTokenSet, issuer } = this;
 
     return {
       id,
-      connectorId,
       type,
+      connectorId,
       enterpriseSsoUserInfo,
+      encryptedTokenSet,
       issuer,
     };
+  }
+
+  toSanitizedJson(): SanitizedEnterpriseSsoVerificationRecordData {
+    const { id, type, connectorId, enterpriseSsoUserInfo, issuer } = this;
+
+    return { id, type, connectorId, enterpriseSsoUserInfo, issuer };
   }
 
   private async findUserSsoIdentityByEnterpriseSsoUserInfo(): Promise<

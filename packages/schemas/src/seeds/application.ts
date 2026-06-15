@@ -17,21 +17,112 @@ import { adminTenantId } from './tenant.js';
 export const adminConsoleApplicationId = 'admin-console';
 
 export const demoAppApplicationId = 'demo-app';
+export const accountCenterApplicationId = 'account-center';
+export const deviceDemoAppApplicationId = 'device-demo-app';
 
-export const buildDemoAppDataForTenant = (tenantId: string): Application => ({
+const buildSpaApplicationData = (
+  tenantId: string,
+  {
+    id,
+    name,
+    description,
+  }: {
+    id: string;
+    name: string;
+    description: string;
+  }
+): Application => ({
   tenantId,
-  id: demoAppApplicationId,
-  name: 'Live Preview',
+  id,
+  name,
   secret: 'N/A',
-  description: 'Preview for Sign-in Experience.',
+  description,
   type: ApplicationType.SPA,
   oidcClientMetadata: { redirectUris: [], postLogoutRedirectUris: [] },
   customClientMetadata: {},
   protectedAppMetadata: null,
   isThirdParty: false,
+  appLevelAccessControlEnabled: false,
   createdAt: 0,
   customData: {},
 });
+
+export const buildDemoAppDataForTenant = (tenantId: string): Application =>
+  buildSpaApplicationData(tenantId, {
+    id: demoAppApplicationId,
+    name: 'Live Preview',
+    description: 'Preview for Sign-in Experience.',
+  });
+
+export const buildAccountCenterAppDataForTenant = (tenantId: string): Application =>
+  buildSpaApplicationData(tenantId, {
+    id: accountCenterApplicationId,
+    name: 'Account Center',
+    description: 'Placeholder application for Account Center.',
+  });
+
+const buildNativeApplicationData = (
+  tenantId: string,
+  {
+    id,
+    name,
+    description,
+  }: {
+    id: string;
+    name: string;
+    description: string;
+  }
+): Application => ({
+  tenantId,
+  id,
+  name,
+  secret: 'N/A',
+  description,
+  type: ApplicationType.Native,
+  oidcClientMetadata: { redirectUris: [], postLogoutRedirectUris: [] },
+  customClientMetadata: { isDeviceFlow: true },
+  protectedAppMetadata: null,
+  isThirdParty: false,
+  appLevelAccessControlEnabled: false,
+  createdAt: 0,
+  customData: {},
+});
+
+export const buildDeviceDemoAppDataForTenant = (tenantId: string): Application =>
+  buildNativeApplicationData(tenantId, {
+    id: deviceDemoAppApplicationId,
+    name: 'Device Flow Preview',
+    description: 'Preview for Device Authorization Flow.',
+  });
+
+export type BuiltInApplicationId =
+  | typeof demoAppApplicationId
+  | typeof accountCenterApplicationId
+  | typeof deviceDemoAppApplicationId;
+
+export const isBuiltInApplicationId = (
+  applicationId: string
+): applicationId is BuiltInApplicationId =>
+  applicationId === demoAppApplicationId ||
+  applicationId === accountCenterApplicationId ||
+  applicationId === deviceDemoAppApplicationId;
+
+export const isBuiltInClientId = isBuiltInApplicationId;
+
+export const buildBuiltInApplicationDataForTenant = (
+  tenantId: string,
+  applicationId: BuiltInApplicationId
+): Application => {
+  if (applicationId === demoAppApplicationId) {
+    return buildDemoAppDataForTenant(tenantId);
+  }
+
+  if (applicationId === deviceDemoAppApplicationId) {
+    return buildDeviceDemoAppDataForTenant(tenantId);
+  }
+
+  return buildAccountCenterAppDataForTenant(tenantId);
+};
 
 export const createDefaultAdminConsoleApplication = (): Readonly<CreateApplication> =>
   Object.freeze({

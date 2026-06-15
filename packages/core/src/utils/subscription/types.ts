@@ -17,7 +17,14 @@ type RouteRequestBodyType<T extends { search?: unknown; body?: ZodType; response
  */
 export type Subscription = Omit<
   RouteResponseType<GetRoutes['/api/tenants/my/subscription']>,
-  'currentPeriodStart' | 'currentPeriodEnd'
+  | 'currentPeriodStart'
+  | 'currentPeriodEnd'
+  /**
+   * Temporarily omit `quotaScope` for backward compatibility.
+   * When we require this field, implement the related logic here.
+   * TODO: @simeng-li
+   */
+  | 'quotaScope'
 > & {
   currentPeriodStart: string;
   currentPeriodEnd: string;
@@ -31,8 +38,9 @@ type CompleteSubscriptionUsage = RouteResponseType<GetRoutes['/api/tenants/my/su
  */
 export type SubscriptionQuota = Omit<
   CompleteSubscriptionUsage['quota'],
+  | 'auditLogsRetentionDays'
   // Since we are deprecation the `organizationsEnabled` key soon (use `organizationsLimit` instead), we exclude it from the usage keys for now to avoid confusion.
-  'auditLogsRetentionDays' | 'organizationsEnabled'
+  | 'organizationsEnabled'
 >;
 
 export type SubscriptionUsage = Omit<
@@ -56,6 +64,12 @@ export const allReportSubscriptionUpdatesUsageKeys = Object.freeze([
   'tenantMembersLimit',
   'enterpriseSsoLimit',
   'hooksLimit',
+  'securityFeaturesEnabled',
+  'thirdPartyApplicationsLimit',
+  'userRolesLimit',
+  'machineToMachineRolesLimit',
+  'samlApplicationsLimit',
+  'customDomainsLimit',
 ]) satisfies readonly ReportSubscriptionUpdatesUsageKey[];
 
 const subscriptionStatusGuard = z.enum([
@@ -90,6 +104,8 @@ const logtoSkuQuotaGuard = z.object({
   customJwtEnabled: z.boolean(),
   subjectTokenEnabled: z.boolean(),
   bringYourUiEnabled: z.boolean(),
+  collectUserProfileEnabled: z.boolean(),
+  passkeySignInEnabled: z.boolean(),
   tokenLimit: z.number().nullable(),
   machineToMachineLimit: z.number().nullable(),
   resourcesLimit: z.number().nullable(),
@@ -100,7 +116,35 @@ const logtoSkuQuotaGuard = z.object({
   organizationsLimit: z.number().nullable(),
   idpInitiatedSsoEnabled: z.boolean(),
   samlApplicationsLimit: z.number().nullable(),
+  securityFeaturesEnabled: z.boolean(),
+  customDomainsLimit: z.number().nullable(),
 }) satisfies ToZodObject<SubscriptionQuota>;
+
+const systemLimitGuard = z
+  .object({
+    applicationsLimit: z.number(),
+    thirdPartyApplicationsLimit: z.number(),
+    scopesPerResourceLimit: z.number(),
+    socialConnectorsLimit: z.number(),
+    userRolesLimit: z.number(),
+    machineToMachineRolesLimit: z.number(),
+    scopesPerRoleLimit: z.number(),
+    hooksLimit: z.number(),
+    machineToMachineLimit: z.number(),
+    resourcesLimit: z.number(),
+    enterpriseSsoLimit: z.number(),
+    tenantMembersLimit: z.number(),
+    organizationsLimit: z.number(),
+    samlApplicationsLimit: z.number(),
+    usersPerOrganizationLimit: z.number(),
+    organizationUserRolesLimit: z.number(),
+    organizationMachineToMachineRolesLimit: z.number(),
+    organizationScopesLimit: z.number(),
+    customDomainsLimit: z.number(),
+  })
+  .partial() satisfies ToZodObject<Subscription['systemLimit']>;
+
+export type SystemLimit = z.infer<typeof systemLimitGuard>;
 
 /**
  * Redis cache guard for the subscription data returned from the Cloud API `/api/tenants/my/subscription`.
@@ -117,4 +161,5 @@ export const subscriptionCacheGuard = z.object({
   status: subscriptionStatusGuard,
   upcomingInvoice: upcomingInvoiceGuard.nullable().optional(),
   quota: logtoSkuQuotaGuard,
+  systemLimit: systemLimitGuard,
 }) satisfies ToZodObject<Subscription>;

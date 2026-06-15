@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'Ara yüzünü getir',
     not_eligible: 'Özel UI varlıklarınızı kaldırın',
   },
+  collect_user_profile_enabled: {
+    name: 'Kullanıcı profili toplama',
+    limited: 'Kullanıcı profili toplama',
+    unlimited: 'Kullanıcı profili toplama',
+    not_eligible: 'Kullanıcı profili toplama alanlarınızı kaldırın',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'IDP başlatılan SSO',
+    limited: 'IDP başlatılan SSO',
+    unlimited: 'IDP başlatılan SSO',
+    not_eligible: "IDP başlatılan SSO'ya izin verilmez",
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'SAML uygulamaları',
+    limited: '{{count, number}} SAML uygulaması',
+    limited_other: '{{count, number}} SAML uygulamaları',
+    unlimited: 'Sınırsız SAML uygulamaları',
+    not_eligible: 'SAML uygulamalarınızı kaldırın',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: "CAPTCHA'yı kaldırın",
+  },
+  security_features_enabled: {
+    name: 'Gelişmiş güvenlik',
+    limited: 'Gelişmiş güvenlik',
+    unlimited: 'Gelişmiş güvenlik',
+    not_eligible: 'Gelişmiş güvenlik ayarlarınızı kaldırın',
+  },
+  custom_domains_limit: {
+    name: 'Özel alan adları',
+    limited: '{{count, number}} özel alan adı',
+    limited_other: '{{count, number}} özel alan adları',
+    unlimited: 'Sınırsız özel alan adları',
+    not_eligible: 'Özel alan adlarınızı kaldırın',
+  },
+  passkey_sign_in_enabled: {
+    name: 'Passkey ile oturum açma',
+    limited: 'Passkey ile oturum açma',
+    unlimited: 'Passkey ile oturum açma',
+    not_eligible: 'Passkey ile oturum açma desteği yok',
   },
 };
 

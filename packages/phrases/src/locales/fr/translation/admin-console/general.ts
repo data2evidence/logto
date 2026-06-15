@@ -9,12 +9,13 @@ const general = {
   search: 'Recherche',
   search_placeholder: 'Recherche...',
   clear_result: 'Effacer les résultats',
+  today: "Aujourd'hui",
+  clear: 'Effacer',
   save: 'Sauvegarder',
   save_changes: 'Sauvegarder les modifications',
   saved: 'Sauvegardé',
   discard: 'Abandonner',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: 'Télécharger',
   loading: 'Chargement...',
   redirecting: 'Redirection...',
   add: 'Ajouter',
@@ -30,10 +31,8 @@ const general = {
   edit: 'Éditer',
   delete: 'Supprimer',
   deleted: 'Supprimé',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  activate: 'Activer',
+  deactivate: 'Désactiver',
   more_options: "PLUS D'OPTIONS",
   close: 'Fermer',
   copy: 'Copier',
@@ -53,9 +52,9 @@ const general = {
   continue: 'Continuez',
   page_info: '{{min, number}}-{{max, number}} de {{total, number}}',
   learn_more: 'En savoir plus',
-  tab_error_one: '{{count, number}} erreur',
+  tab_error: '{{count, number}} erreur',
   tab_error_other: '{{count, number}} erreurs',
-  skip_for_now: 'Passer pour l`instant',
+  skip_for_now: "Passer pour l'instant",
   remove: 'Supprimer',
   visit: 'Visiter',
   join: 'Rejoindre',
@@ -79,6 +78,8 @@ const general = {
   or: 'Ou',
   reset: 'Réinitialiser',
   generate: 'Générer',
+  manage: 'Gérer',
+  live_preview: 'Aperçu en direct',
 };
 
 export default Object.freeze(general);

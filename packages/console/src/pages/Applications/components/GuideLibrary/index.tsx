@@ -1,4 +1,3 @@
-import { cond } from '@silverhand/essentials';
 import classNames from 'classnames';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,19 +5,20 @@ import { useLocation } from 'react-router-dom';
 
 import SearchIcon from '@/assets/icons/search.svg?react';
 import EmptyDataPlaceholder from '@/components/EmptyDataPlaceholder';
-import FeatureTag from '@/components/FeatureTag';
 import { type SelectedGuide } from '@/components/Guide/GuideCard';
 import GuideCardGroup from '@/components/Guide/GuideCardGroup';
 import { useAppGuideMetadata } from '@/components/Guide/hooks';
-import { isDevFeaturesEnabled, isCloud } from '@/consts/env';
-import { latestProPlanId } from '@/consts/subscriptions';
+import { isProtectedAppEnabled } from '@/consts/env';
 import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import { CheckboxGroup } from '@/ds-components/Checkbox';
 import OverlayScrollbar from '@/ds-components/OverlayScrollbar';
 import TextInput from '@/ds-components/TextInput';
 import TextLink from '@/ds-components/TextLink';
-import { allAppGuideCategories, type AppGuideCategory } from '@/types/applications';
-import { thirdPartyAppCategory } from '@/types/applications';
+import {
+  allAppGuideCategories,
+  thirdPartyAppCategory,
+  type AppGuideCategory,
+} from '@/types/applications';
 
 import styles from './index.module.scss';
 
@@ -34,9 +34,13 @@ function GuideLibrary({ className, hasCardBorder, hasCardButton, onSelectGuide }
   const { pathname } = useLocation();
   const [keyword, setKeyword] = useState<string>('');
   const [filterCategories, setFilterCategories] = useState<AppGuideCategory[]>([]);
-  const { getFilteredAppGuideMetadata, getStructuredAppGuideMetadata } = useAppGuideMetadata();
+  const { getFilteredAppGuideMetadata, getStructuredAppGuideMetadata, getCategoryDescription } =
+    useAppGuideMetadata();
   const isApplicationCreateModal = pathname.includes('/applications/create');
-  const { currentSubscriptionQuota } = useContext(SubscriptionDataContext);
+  const {
+    currentSubscriptionQuota,
+    currentSubscription: { isEnterprisePlan },
+  } = useContext(SubscriptionDataContext);
 
   const structuredMetadata = useMemo(
     () => getStructuredAppGuideMetadata({ categories: filterCategories }),
@@ -93,36 +97,10 @@ function GuideLibrary({ className, hasCardBorder, hasCardButton, onSelectGuide }
                   <CheckboxGroup
                     className={styles.checkboxGroup}
                     options={allAppGuideCategories
-                      /**
-                       * Show SAML guides when it is:
-                       * 1. Cloud env
-                       * 2. `isDevFeatureEnabled` is true
-                       * 3. `quota.samlApplicationsLimit` is not 0.
-                       */
-                      .filter(
-                        (category) =>
-                          category !== 'SAML' ||
-                          (isCloud &&
-                            isDevFeaturesEnabled &&
-                            currentSubscriptionQuota.samlApplicationsLimit !== 0)
-                      )
-                      .filter((category) => isCloud || category !== 'Protected')
+                      .filter((category) => isProtectedAppEnabled || category !== 'Protected')
                       .map((category) => ({
                         title: `guide.categories.${category}`,
                         value: category,
-                        ...cond(
-                          isCloud &&
-                            category === 'ThirdParty' && {
-                              tag: (
-                                <FeatureTag
-                                  isVisible={
-                                    currentSubscriptionQuota.thirdPartyApplicationsLimit === 0
-                                  }
-                                  plan={latestProPlanId}
-                                />
-                              ),
-                            }
-                        ),
                       }))}
                     value={filterCategories}
                     onChange={(value) => {
@@ -158,6 +136,7 @@ function GuideLibrary({ className, hasCardBorder, hasCardButton, onSelectGuide }
                     hasCardBorder={hasCardBorder}
                     hasCardButton={hasCardButton}
                     categoryName={t(`guide.categories.${category}`)}
+                    categoryDescription={getCategoryDescription(category)}
                     guides={structuredMetadata[category]}
                     onClickGuide={onClickGuide}
                   />

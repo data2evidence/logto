@@ -1,10 +1,12 @@
 import { generateDarkColor } from '@logto/core-kit';
 import { Theme } from '@logto/schemas';
-import { useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect, useContext } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import LogoAndFavicon from '@/components/ImageInputs/LogoAndFavicon';
+import { isCloud } from '@/consts/env';
+import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import Button from '@/ds-components/Button';
 import Card from '@/ds-components/Card';
 import ColorPicker from '@/ds-components/ColorPicker';
@@ -14,6 +16,7 @@ import Switch from '@/ds-components/Switch';
 import type { SignInExperienceForm } from '../../../types';
 import FormSectionTitle from '../../components/FormSectionTitle';
 
+import HideLogtoBrandingField from './HideLogtoBrandingField';
 import styles from './index.module.scss';
 
 function BrandingForm() {
@@ -21,10 +24,13 @@ function BrandingForm() {
   const {
     watch,
     register,
+    unregister,
     setValue,
     control,
     formState: { errors, isDirty },
   } = useFormContext<SignInExperienceForm>();
+  const { currentSubscriptionQuota } = useContext(SubscriptionDataContext);
+  const isHideLogtoBrandingEnabled = currentSubscriptionQuota.bringYourUiEnabled;
 
   const isDarkModeEnabled = watch('color.isDarkModeEnabled');
   const primaryColor = watch('color.primaryColor');
@@ -48,6 +54,12 @@ function BrandingForm() {
       handleResetColor();
     }
   }, [handleResetColor, isDarkModeEnabled, isDirty]);
+
+  useEffect(() => {
+    if (!isCloud) {
+      unregister('hideLogtoBranding');
+    }
+  }, [unregister]);
 
   return (
     <Card>
@@ -113,6 +125,10 @@ function BrandingForm() {
           />
         </>
       )}
+      <HideLogtoBrandingField
+        variant={isCloud ? 'cloud' : 'oss'}
+        isEnabledInCloud={isHideLogtoBrandingEnabled}
+      />
     </Card>
   );
 }

@@ -17,7 +17,8 @@ import ExternalLinkIcon from '@/assets/icons/external-link.svg?react';
 import DomainStatusTag from '@/components/DomainStatusTag';
 import FormCard from '@/components/FormCard';
 import OpenExternalLink from '@/components/OpenExternalLink';
-import { isCloud } from '@/consts/env';
+import { protectedApp, protectedAppLocalDev, protectOriginServer } from '@/consts';
+import { isProtectedAppEnabled, isProtectedAppLocalDevEnabled } from '@/consts/env';
 import { openIdProviderConfigPath } from '@/consts/oidc';
 import Button from '@/ds-components/Button';
 import CopyToClipboard from '@/ds-components/CopyToClipboard';
@@ -35,6 +36,7 @@ import CustomDomain from '@/pages/TenantSettings/TenantDomainSettings/CustomDoma
 import EndpointsAndCredentials from '../EndpointsAndCredentials';
 import { type ApplicationForm } from '../utils';
 
+import AdditionalScopesForm from './components/AdditionalScopesForm';
 import SessionForm from './components/SessionForm';
 import styles from './index.module.scss';
 
@@ -43,6 +45,9 @@ type Props = {
 };
 
 const routes = Object.freeze(['/register', '/sign-in', '/sign-in-callback', '/sign-out']);
+
+const shouldRejectLocalhostOrigin = (origin: string) =>
+  !isProtectedAppLocalDevEnabled && isLocalhost(origin);
 
 function ProtectedAppSettings({ data }: Props) {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
@@ -58,7 +63,7 @@ function ProtectedAppSettings({ data }: Props) {
     `api/applications/${data.id}/protected-app-metadata/custom-domains`
   );
   const { data: systemDomainData } = useSWRImmutable<ProtectedAppsDomainConfig>(
-    isCloud && 'api/systems/application'
+    isProtectedAppEnabled && 'api/systems/application'
   );
   const api = useApi();
   const [isDeletingCustomDomain, setIsDeletingCustomDomain] = useState(false);
@@ -100,10 +105,7 @@ function ProtectedAppSettings({ data }: Props) {
       <FormCard
         title="application_details.integration"
         description="application_details.integration_description"
-        learnMoreLink={{
-          href: getDocumentationUrl('/docs/references/applications'),
-          targetBlank: 'noopener',
-        }}
+        learnMoreLink={{ href: protectedApp }}
       >
         <div className={styles.launcher}>
           <span>{t('protected_app.success_message')}</span>
@@ -145,7 +147,7 @@ function ProtectedAppSettings({ data }: Props) {
                   return t('protected_app.form.errors.invalid_url');
                 }
 
-                if (isLocalhost(value)) {
+                if (shouldRejectLocalhostOrigin(value)) {
                   return t('protected_app.form.errors.localhost');
                 }
 
@@ -158,7 +160,10 @@ function ProtectedAppSettings({ data }: Props) {
                 <Trans
                   components={{
                     a: (
-                      <TextLink to="https://docs.logto.io/docs/recipes/protected-app/#local-development" />
+                      <TextLink
+                        href={getDocumentationUrl(protectedAppLocalDev)}
+                        targetBlank="noopener"
+                      />
                     ),
                   }}
                 >
@@ -279,9 +284,7 @@ function ProtectedAppSettings({ data }: Props) {
               components={{
                 a: (
                   <TextLink
-                    href={getDocumentationUrl(
-                      '/docs/recipes/protected-app/#protect-your-origin-server'
-                    )}
+                    href={getDocumentationUrl(protectOriginServer)}
                     targetBlank="noopener"
                   />
                 ),
@@ -293,6 +296,7 @@ function ProtectedAppSettings({ data }: Props) {
         </FormField>
       </FormCard>
       <EndpointsAndCredentials app={data} oidcConfig={oidcConfig} onApplicationUpdated={mutate} />
+      <AdditionalScopesForm />
       <SessionForm data={data} />
     </>
   );

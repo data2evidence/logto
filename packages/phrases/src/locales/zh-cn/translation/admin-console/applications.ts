@@ -3,8 +3,11 @@ const applications = {
   title: '全部应用',
   subtitle: '创建一个移动、单页、machine-to-machine 或传统 web 应用程序，并通过 Logto 进行身份验证',
   subtitle_with_app_type: '为你的 {{name}} 应用程序设置 Logto 身份验证',
+  create_device_flow_description:
+    '创建一个使用 OAuth 2.0 设备授权许可的原生应用，适用于输入受限设备或无头应用。',
   create: '创建应用',
-  create_subtitle_third_party: '使用 Logto 作为你的身份提供者（IdP）来轻松集成第三方应用程序',
+  create_third_party: '创建第三方应用',
+  create_thrid_party_modal_title: '创建第三方应用（{{type}}）',
   application_name: '应用名称',
   application_name_placeholder: '我的应用',
   application_description: '应用描述',
@@ -21,7 +24,7 @@ const applications = {
     native: {
       title: '原生应用',
       subtitle: '在原生环境中运行的应用程序',
-      description: '例如 iOS 应用程序，Android 应用程序',
+      description: '例如 iOS 应用程序、Android 应用程序、桌面应用程序、电视、CLI',
     },
     spa: {
       title: '单页应用',
@@ -44,12 +47,9 @@ const applications = {
       description: 'N/A',
     },
     saml: {
-      /** UNTRANSLATED */
-      title: 'SAML App',
-      /** UNTRANSLATED */
-      subtitle: 'An app that is used as an SAML IdP connector',
-      /** UNTRANSLATED */
-      description: 'E.g., SAML',
+      title: 'SAML 应用',
+      subtitle: '用作 SAML IdP 连接器的应用程序',
+      description: '例如，SAML',
     },
     third_party: {
       title: '第三方应用',
@@ -57,9 +57,31 @@ const applications = {
       description: '例如，OIDC，SAML',
     },
   },
+  authorization_flow: {
+    title: '授权流程',
+    tooltip: '选择应用的授权流程。一旦设置，将无法更改。',
+    authorization_code: {
+      title: 'Authorization code',
+      description: '默认且最常见的授权类型。用户将被重定向到登录页面以直接授权访问。',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        '适用于输入受限的设备或无界面应用（如电视、CLI）。用户在另一台设备上通过输入设备码或扫描二维码完成登录。',
+    },
+  },
   placeholder_title: '选择应用程序类型以继续',
   placeholder_description:
     'Logto 使用 OIDC 的应用程序实体来帮助识别你的应用程序、管理登录和创建审计日志等任务。',
+  third_party_application_placeholder_description:
+    '使用 Logto 作为身份提供者为第三方服务提供 OAuth 授权。\n 包括资源访问的预建用户同意屏幕。<a>了解更多</a>',
+  guide: {
+    third_party: {
+      title: '集成第三方应用',
+      description:
+        '使用 Logto 作为身份提供者为第三方服务提供 OAuth 授权。包含用于安全资源访问的预建用户同意屏幕。<a>了解更多</a>',
+    },
+  },
 };
 
 export default Object.freeze(applications);

@@ -10,16 +10,16 @@ const description = {
   sign_in: 'تسجيل الدخول',
   privacy_policy: 'سياسة الخصوصية',
   create_account: 'إنشاء حساب',
+  switch_account: 'تبديل الحساب',
   or: 'أو',
   and: 'و',
   enter_passcode: 'تم إرسال رمز التحقق إلى {{address}} {{target}} الخاص بك',
   passcode_sent: 'تم إعادة إرسال رمز التحقق',
   resend_after_seconds: 'لم تستلمه بعد؟ إعادة إرسال بعد <span>{{seconds}}</span> ثانية',
   resend_passcode: 'لم تستلمه بعد؟ <a>إعادة إرسال رمز التحقق</a>',
-  create_account_id_exists: 'الحساب بنوع {{type}} {{value}} موجود بالفعل، هل ترغب في تسجيل الدخول؟',
+  create_account_id_exists: 'الحساب {{value}} موجود بالفعل. تابع لتسجيل الدخول.',
   link_account_id_exists: 'الحساب بنوع {{type}} {{value}} موجود بالفعل. هل ترغب في ربطه؟',
-  sign_in_id_does_not_exist:
-    'الحساب بنوع {{type}} {{value}} غير موجود، هل ترغب في إنشاء حساب جديد؟',
+  sign_in_id_does_not_exist: 'لم يتم العثور على حساب لـ {{value}}. إنشاء حساب جديد؟',
   sign_in_id_does_not_exist_alert: 'الحساب بنوع {{type}} {{value}} غير موجود.',
   create_account_id_exists_alert:
     'الحساب بنوع {{type}} {{value}} مرتبط بحساب آخر. يرجى المحاولة باستخدام {{type}} آخر.',
@@ -54,15 +54,30 @@ const description = {
   continue_with_more_information: 'لزيادة الأمان، يرجى استكمال تفاصيل الحساب أدناه.',
   create_your_account: 'إنشاء حسابك',
   sign_in_to_your_account: 'تسجيل الدخول إلى حسابك',
+  device_activation: 'تفعيل الجهاز',
+  device_activation_description:
+    'أدخل الرمز المعروض على جهازك. تأكد من تطابقه، ثم تابع لتسجيل الدخول إلى هذا الجهاز.',
+  device_activation_error_description: 'أدخل الرمز المعروض على جهازك.',
+  device_activation_success: 'تم توصيل جهازك!',
+  device_activation_success_description: 'عد إلى جهازك للمتابعة.',
   no_region_code_found: 'لم يتم العثور على رمز المنطقة',
   verify_email: 'تحقق من بريدك الإلكتروني',
   verify_phone: 'تحقق من رقم هاتفك',
   password_requirements: 'متطلبات كلمة المرور {{items, list}}.',
   password_requirement: {
     length_one: 'يتطلب حرف واحد على الأقل',
+    length_two: 'يتطلب {{count}} حرفان على الأقل',
+    length_few: 'يتطلب {{count}} أحرف على الأقل',
+    length_many: 'يتطلب {{count}} حرفًا على الأقل',
     length_other: 'يتطلب {{count}} أحرف على الأقل',
     character_types_one:
       'يجب أن يحتوي على حرف واحد على الأقل من الأحرف الكبيرة والصغيرة والأرقام والرموز',
+    character_types_two:
+      'يجب أن يحتوي على {{count}} أنواع على الأقل من الأحرف الكبيرة والصغيرة والأرقام والرموز',
+    character_types_few:
+      'يجب أن يحتوي على {{count}} أنواع على الأقل من الأحرف الكبيرة والصغيرة والأرقام والرموز',
+    character_types_many:
+      'يجب أن يحتوي على {{count}} أنواع على الأقل من الأحرف الكبيرة والصغيرة والأرقام والرموز',
     character_types_other:
       'يجب أن يحتوي على {{count}} أنواع على الأقل من الأحرف الكبيرة والصغيرة والأرقام والرموز',
   },
@@ -84,21 +99,30 @@ const description = {
   user_id: 'معرف المستخدم: {{id}}',
   redirect_to: 'سيتم توجيهك إلى {{name}}.',
   auto_agreement: 'من خلال المتابعة، فإنك توافق على <link></link>.',
-  /** UNTRANSLATED */
-  identifier_sign_in_description: 'Enter you {{types, list(type: disjunction;)}} to sign in.',
-  /** UNTRANSLATED */
-  all_sign_in_options: 'All sign-in options',
-  /** UNTRANSLATED */
+  identifier_sign_in_description:
+    'أدخل {{types, list(type: disjunction;)}} الخاص بك لتسجيل الدخول.',
+  all_sign_in_options: 'جميع خيارات تسجيل الدخول',
   identifier_register_description:
-    'Enter you {{types, list(type: disjunction;)}} to create a new account.',
-  /** UNTRANSLATED */
-  all_account_creation_options: 'All account creation options',
-  /** UNTRANSLATED */
-  back_to_sign_in: 'Back to sign in',
-  /** UNTRANSLATED */
-  support_email: 'Support email: <link></link>',
-  /** UNTRANSLATED */
-  support_website: 'Support website: <link></link>',
+    'أدخل {{types, list(type: disjunction;)}} الخاص بك لإنشاء حساب جديد.',
+  all_account_creation_options: 'جميع خيارات إنشاء الحساب',
+  back_to_sign_in: 'العودة إلى تسجيل الدخول',
+  support_email: 'البريد الإلكتروني للدعم: <link></link>',
+  support_website: 'موقع الدعم: <link></link>',
+  switch_account_title: 'أنت حاليًا مسجل الدخول كـ {{account}}',
+  switch_account_description:
+    'للمتابعة، سيتم تسجيل الخروج من الحساب الحالي، والتبديل تلقائيًا إلى الحساب الجديد.',
+  about_yourself: 'أخبرنا عن نفسك',
+  verify_identity: 'تحقق من هويتك',
+  choose_verification_method: 'اختر طريقة تسجيل الدخول',
+  verification_method: {
+    passkey: 'مفتاح التحقق',
+    passkey_description: 'تحقق عبر جهازك أو أجهزة USB',
+    password: 'كلمة المرور',
+    password_description: 'أدخل كلمة المرور',
+    email_verification_code: 'رمز التحقق عبر البريد الإلكتروني',
+    phone_verification_code: 'رمز التحقق عبر الهاتف',
+    verification_code_description: 'إرسال إلى {{target}}',
+  },
 };
 
 export default Object.freeze(description);

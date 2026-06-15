@@ -10,24 +10,39 @@ const sign_up_and_sign_in = {
     title: 'REGISTO',
     sign_up_identifier: 'Identificador de registo',
     identifier_description:
-      'O identificador de registo é necessário para a criação de conta e deve ser incluído no ecrã de início de sessão.',
+      'Todos os identificadores de registo selecionados são necessários ao criar uma nova conta.',
     sign_up_authentication: 'Definição de autenticação para registo',
+    verification_tip:
+      'Os usuários devem verificar o email ou número de telefone que configurou inserindo um código de verificação durante o registo.',
     authentication_description:
       'Todas as ações selecionadas serão obrigatórias para os utilizadores concluir o processo de registo.',
     set_a_password_option: 'Criar uma senha',
     verify_at_sign_up_option: 'Verificar durante o registo',
     social_only_creation_description: '(Aplica-se apenas à criação de contas sociais)',
+    collect_user_profile: 'Recolher perfil do utilizador',
+    add_profile_fields: 'Adicionar campos de perfil',
+    profile_fields_hint: {
+      not_in_list: 'Não está na lista?',
+      set_up: 'Configure',
+      go_to: 'outros campos de perfil agora.',
+    },
   },
   sign_in: {
     title: 'INICIAR SESSÃO',
     sign_in_identifier_and_auth: 'Identificador e definições de autenticação para início de sessão',
-    description:
-      'Os utilizadores podem iniciar sessão usando qualquer uma das opções disponíveis. Ajuste a disposição arrastando e soltando as opções abaixo.',
+    description: 'Os utilizadores podem iniciar sessão usando qualquer uma das opções disponíveis.',
     add_sign_in_method: 'Adicionar Método de Início de Sessão',
+    add_sign_up_method: 'Adicionar método de inscrição',
     password_auth: 'Senha',
     verification_code_auth: 'Código de verificação',
     auth_swap_tip: 'Alterne as opções abaixo para determinar qual aparece primeiro no processo.',
     require_auth_factor: 'Tem de selecionar pelo menos um fator de autenticação.',
+    forgot_password: 'Palavra-passe esquecida',
+    forgot_password_description:
+      'Os utilizadores podem redefinir a sua senha usando qualquer método de verificação disponível.',
+    add_verification_method: 'Adicionar método de verificação',
+    email_verification_code: 'Código de verificação de email',
+    phone_verification_code: 'Código de verificação por telefone',
   },
   social_sign_in: {
     title: 'INÍCIO DE SESSÃO SOCIAL',
@@ -40,9 +55,26 @@ const sign_up_and_sign_in = {
       set_up_more: 'Configurar',
       go_to: 'outros conectores sociais agora.',
     },
-    automatic_account_linking: 'Ligação automática de conta',
-    automatic_account_linking_label:
-      'Quando ativado, se um utilizador iniciar sessão com uma identidade social que é nova para o sistema e existir exatamente uma conta existente com o mesmo identificador (por exemplo, email), o Logto irá automaticamente ligar a conta com a identidade social em vez de solicitar ao utilizador a ligação da conta.',
+    settings_title: 'Experiência de início de sessão social',
+    automatic_account_linking: 'Ligar automaticamente contas com o mesmo identificador',
+    automatic_account_linking_tip:
+      'Quando ativado, se um usuário fizer login com uma nova identidade social e houver exatamente uma conta existente com o mesmo identificador (por exemplo, um endereço de email), Logto ligará automaticamente a identidade social a essa conta. O usuário não será solicitado a escolher se deseja conectar contas.',
+    required_sign_up_identifiers:
+      'Exigir que os usuários forneçam um identificador de registo em falta',
+    required_sign_up_identifiers_tip:
+      'Quando habilitado, os usuários que fizerem login através de provedores sociais devem preencher qualquer identificador de registo necessário em falta (como email) antes de concluir o login. \n\nSe desativado, os usuários podem prosseguir sem fornecer identificadores em falta, mesmo que a conta social não os tenha sincronizado.',
+  },
+  passkey_sign_in: {
+    title: 'INÍCIO DE SESSÃO COM PASSKEY',
+    passkey_sign_in: 'Início de sessão com Passkey',
+    enable_passkey_sign_in_description:
+      'Permitir que os utilizadores acedam à aplicação de forma rápida e segura através de Passkey (WebAuthn), utilizando biometria ou chave de segurança, etc.',
+    prompts: 'Prompts de Passkey',
+    show_passkey_button: 'Mostrar o botão "Continuar com Passkey" na página de início de sessão',
+    show_passkey_button_tip:
+      'Desativar o botão "Continuar com Passkey" torna o fluxo de início de sessão baseado em identificador primeiro, mostrando as opções de palavra-passe e Passkey no passo seguinte.',
+    allow_autofill:
+      'Permitir prompts e preenchimento automático de Passkeys registadas nos campos de identificador',
   },
   tip: {
     set_a_password: 'Um conjunto único de uma senha para o seu nome de utilizador é obrigatório.',
@@ -52,8 +84,14 @@ const sign_up_and_sign_in = {
       'Isto é essencial uma vez que ativou a opção de criar uma senha durante o processo de registo.',
     verification_code_auth:
       'Isto é essencial uma vez que apenas ativou a opção de fornecer um código de verificação ao registar-se. É livre de desmarcar a caixa quando a configuração da senha é permitida durante o processo de registo.',
+    email_mfa_enabled:
+      'O código de verificação de email já está ativado para MFA, portanto não pode ser reutilizado como o método principal de início de sessão por razões de segurança.',
+    phone_mfa_enabled:
+      'O código de verificação por telefone já está ativado para MFA, portanto não pode ser reutilizado como o método principal de início de sessão por razões de segurança.',
     delete_sign_in_method:
       'Isto é essencial uma vez que selecionou {{identifier}} como um identificador obrigatório.',
+    password_disabled_notification:
+      'A opção "Criar sua senha" está desativada para registo de nome de utilizador, o que pode impedir os usuários de iniciarem sessão. Confirme para continuar com a gravação.',
   },
   advanced_options: {
     title: 'OPÇÕES AVANÇADAS',
@@ -68,11 +106,9 @@ const sign_up_and_sign_in = {
     enable_user_registration: 'Ativar registo de utilizadores',
     enable_user_registration_description:
       'Ativar ou desativar o registo de utilizadores. Uma vez desativado, os utilizadores ainda podem ser adicionados na consola de administração, mas os utilizadores não podem mais estabelecer contas através da interface de início de sessão.',
-    /** UNTRANSLATED */
-    unknown_session_redirect_url: 'Unknown session redirect URL',
-    /** UNTRANSLATED */
+    unknown_session_redirect_url: 'URL de redirecionamento de sessão desconhecida',
     unknown_session_redirect_url_tip:
-      'Sometimes, Logto may not recognize a user’s session on the sign-in page, like when a session expires or the user bookmarks or shares the sign-in link. By default, an “unknown session” 404 error appears. To enhance user experience, set a fallback URL to redirect users back to your app and restart authentication.',
+      'Às vezes, o Logto pode não reconhecer a sessão de um utilizador na página de início de sessão, como quando uma sessão expira ou o utilizador adiciona aos favoritos ou partilha o link de início de sessão. Por padrão, aparece um erro "sessão desconhecida" 404. Para melhorar a experiência do utilizador, defina um URL de fallback para redirecionar os utilizadores de volta para a sua aplicação e reiniciar a autenticação.',
   },
 };
 

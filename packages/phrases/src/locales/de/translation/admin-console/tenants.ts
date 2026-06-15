@@ -1,12 +1,21 @@
 const tenants = {
   title: 'Einstellungen',
   description: 'Effizientes Verwalten von Mandanteneinstellungen und Anpassen Ihrer Domain.',
+  oss_description:
+    'Ändern Sie hier Ihre Kontoeinstellungen und verwalten Sie Ihre persönlichen Informationen, um die Sicherheit Ihres Kontos zu gewährleisten.',
   tabs: {
     settings: 'Einstellungen',
     members: 'Mitglieder',
     domains: 'Domänen',
+    oidc_configs: 'OIDC-Konfigurationen',
     subscription: 'Plan und Abrechnung',
     billing_history: 'Abrechnungshistorie',
+  },
+  members: {
+    card_title: 'Verwalten Sie Mandanten sicherer mit Logto Cloud',
+    card_description:
+      'Fügen Sie Ihrem Mandanten Admins oder Mitwirkende hinzu, ohne ein einzelnes Admin-Konto gemeinsam zu nutzen.',
+    card_action: 'Logto Cloud entdecken',
   },
   settings: {
     title: 'EINSTELLUNGEN',
@@ -14,6 +23,9 @@ const tenants = {
       'Legen Sie den Mandantennamen fest und überprüfen Sie Ihre gehostete Datenregion und den Mandantentyp.',
     tenant_id: 'Mieter-ID',
     tenant_name: 'Mietername',
+    tenant_instance: 'Wähle deine Instanz aus',
+    tenant_instance_description:
+      'Wählen Sie, wo Ihr Mandant gehostet wird. Wählen Sie Logto Cloud für eine öffentliche geteilte Infrastruktur oder eine private Instanz für dedizierte Ressourcen.',
     tenant_region: 'Gehostete Region der Daten',
     tenant_region_description:
       'Der physische Ort, an dem Ihre Mandantenressourcen (Benutzer, Apps, usw.) gehostet werden. Dies kann nach Erstellung nicht mehr geändert werden.',
@@ -23,10 +35,16 @@ const tenants = {
     environment_tag_production: 'Prod',
     tenant_type: 'Mandantentyp',
     development_description:
-      'Nur für Tests und sollte nicht in der Produktion verwendet werden. Es ist kein Abonnement erforderlich. Es verfügt über alle Pro-Funktionen, hat jedoch Einschränkungen wie ein Anmeldebanner. <a>Mehr erfahren</a>',
+      'Nur für Tests und sollte nicht in der Produktion verwendet werden. Es ist kein Abonnement erforderlich. Es verfügt über alle Pro-Funktionen, hat jedoch Einschränkungen wie ein Anmeldebanner.',
     production_description:
-      'Vorgesehen für Apps, die von Endbenutzern verwendet werden und möglicherweise ein kostenpflichtiges Abonnement erfordern. <a>Mehr erfahren</a>',
+      'Vorgesehen für Apps, die von Endbenutzern verwendet werden und möglicherweise ein kostenpflichtiges Abonnement erfordern.',
     tenant_info_saved: 'Mieterinformationen erfolgreich gespeichert.',
+    tenant_mfa: 'Multi-Faktor-Authentifizierung',
+    tenant_mfa_description:
+      'Verlangen Sie von Ihren Mitgliedern, dass sie die Multi-Faktor-Authentifizierung einrichten, um auf diesen Mandanten zuzugreifen.',
+    enterprise_sso: 'Enterprise SSO',
+    enterprise_sso_description:
+      'Verfügbar in kostenpflichtigen Plänen. Kontaktieren Sie uns, um Enterprise SSO zu aktivieren, damit alle Mitglieder sich mit dem Identitätsanbieter Ihrer Organisation bei der Logto Cloud Console anmelden können.',
   },
   full_env_tag: {
     development: 'Entwicklung',
@@ -50,9 +68,12 @@ const tenants = {
   create_modal: {
     title: 'Mieter erstellen',
     subtitle: 'Erstellen Sie einen neuen Mandanten, der isolierte Ressourcen und Benutzer hat.',
+    tenant_id: 'Mieter-ID',
     tenant_usage_purpose: 'Wofür möchten Sie diesen Mieter verwenden?',
     development_description:
       'Nur für Tests und sollte nicht in der Produktion verwendet werden. Es ist kein Abonnement erforderlich.',
+    development_description_for_private_regions:
+      'Nur für Tests und sollte nicht in der Produktion verwendet werden.',
     development_hint:
       'Es verfügt über alle Pro-Funktionen, hat jedoch Einschränkungen wie ein Anmeldebanner.',
     production_description:
@@ -64,6 +85,11 @@ const tenants = {
     invitation_failed:
       'Einige Einladungen konnten nicht gesendet werden. Bitte versuchen Sie es später erneut unter Einstellungen -> Mitglieder.',
     tenant_type_description: 'Dies kann nach Erstellung nicht geändert werden.',
+    tenant_id_invalid:
+      'Die Mandanten-ID darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten und darf {{max}} Zeichen nicht überschreiten.',
+    tenant_id_placeholder: 'Ihre Mandanten-ID',
+    tenant_id_tip:
+      'Passen Sie die Mandanten-ID an. Wenn leer gelassen, generiert Logto eine Standard-ID. Die Mandanten-ID kann nach der Erstellung nicht geändert werden.',
   },
   dev_tenant_migration: {
     title:
@@ -101,8 +127,7 @@ const tenants = {
   },
   status: {
     mau_exceeded: 'MAU überschritten',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: 'Token überschritten',
     suspended: 'Gesperrt',
     overdue: 'Überfällig',
   },

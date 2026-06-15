@@ -1,18 +1,28 @@
 const jwt_claims = {
   title: '사용자 정의 JWT',
-  description:
-    '액세스 토큰에 포함할 사용자 정의 JWT 클레임을 설정하세요. 이러한 클레임은 추가 정보를 응용 프로그램에 전달하는 데 사용될 수 있습니다.',
+  description: '액세스 토큰 또는 ID 토큰을 커스터마이즈하여 애플리케이션에 추가 정보를 제공합니다.',
+  access_token: {
+    card_title: '액세스 토큰',
+    card_description:
+      '액세스 토큰은 API가 요청을 승인하는 데 사용하는 자격 증명으로, 액세스 결정에 필요한 클레임만 포함합니다.',
+  },
   user_jwt: {
-    card_title: '사용자용',
     card_field: '사용자 액세스 토큰',
     card_description: '액세스 토큰 발급 시 사용자별 데이터 추가.',
     for: '사용자용',
   },
   machine_to_machine_jwt: {
-    card_title: 'M2M용',
-    card_field: '기기 간 토큰',
+    card_field: '기기 간 액세스 토큰',
     card_description: '기기 간 토큰 발급 시 추가 데이터 추가.',
     for: 'M2M용',
+  },
+  id_token: {
+    card_title: 'ID 토큰',
+    card_description:
+      'ID 토큰은 로그인 후 받는 신원 인증으로, 클라이언트가 표시 또는 세션 생성에 사용하는 사용자 식별 클레임을 포함합니다.',
+    card_field: '사용자 ID 토큰',
+    card_field_description:
+      "클레임 'sub', 'email', 'phone', 'profile', 'address'는 항상 사용 가능합니다. 다른 클레임은 먼저 여기서 활성화해야 합니다. 모든 경우에 앱은 통합 시 일치하는 스코프를 요청해야 받을 수 있습니다.",
   },
   code_editor_title: '{{$token}} 클레임을 사용자화',
   custom_jwt_create_button: '사용자 정의 클레임 추가',
@@ -24,6 +34,7 @@ const jwt_claims = {
   restore: '기본값으로 복원',
   restored: '복원됨',
   data_source_tab: '데이터 소스',
+  error_handling_tab: '오류 처리',
   test_tab: '테스트 컨텍스트',
   jwt_claims_description: '기본 클레임은 JWT에 자동으로 추가되며 재정의할 수 없습니다.',
   user_data: {
@@ -35,6 +46,16 @@ const jwt_claims = {
     subtitle:
       '`context.grant` 입력 매개변수를 사용하여 중요한 Grant 정보를 제공하고, 이 정보는 오직 토큰 교환에만 사용할 수 있습니다.',
   },
+  interaction_data: {
+    title: '사용자 상호작용 컨텍스트',
+    subtitle:
+      '`context.interaction` 매개변수를 사용하여 현재 인증 세션에 대한 사용자의 상호작용 세부 정보에 접근합니다.',
+  },
+  application_data: {
+    title: '애플리케이션 컨텍스트',
+    subtitle:
+      '`context.application` 입력 매개변수를 사용하여 토큰과 관련된 애플리케이션 정보를 제공합니다.',
+  },
   token_data: {
     title: '토큰 데이터',
     subtitle: '현재 액세스 토큰 페이로드에 대한 `token` 입력 매개변수 사용.',
@@ -42,6 +63,18 @@ const jwt_claims = {
   api_context: {
     title: 'API 컨텍스트: 접근 제어',
     subtitle: '`api.denyAccess` 메소드를 사용하여 토큰 요청을 거절하세요.',
+  },
+  error_handling: {
+    title: '오류 처리',
+    subtitle: '스크립트 실행에 실패했을 때 토큰 발급을 차단할지 제어해요.',
+    input_field_title: '스크립트 오류 시 토큰 발급 동작',
+    block_issuance_switch: '스크립트 오류가 발생하면 토큰 발급 차단',
+    default_hint_create:
+      '새 커스텀 클레임 스크립트는 스크립트가 실패하면 기본적으로 토큰 발급을 차단합니다. API가 이미 값을 제공하면 저장된 값을 대신 사용합니다.',
+    default_hint_edit:
+      '이 설정이 없는 기존 커스텀 클레임 스크립트는 값을 명시적으로 저장하기 전까지 기존 기본값인 꺼짐 상태를 유지합니다.',
+    warning:
+      '활성화하면 스크립트 런타임 오류로 인해 토큰 요청이 `invalid_request` (400) 및 현지화된 `error_description` 와 함께 거부돼요. `api.denyAccess` 호출은 계속 `access_denied` 를 반환해요.',
   },
   fetch_external_data: {
     title: '외부 데이터 가져오기',

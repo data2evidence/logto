@@ -7,6 +7,7 @@ const user = {
   email_not_exist: 'このメールアドレスは登録されていません。',
   phone_not_exist: 'この電話番号は登録されていません。',
   identity_not_exist: 'このソーシャルアカウントは登録されていません。',
+  sso_identity_not_exist: 'エンタープライズ SSO アカウントはまだ登録されていません。',
   identity_already_in_use: 'このソーシャルアカウントはすでに別のアカウントに関連付けされています。',
   social_account_exists_in_profile: 'このソーシャルアカウントはすでに関連付けられています。',
   cannot_delete_self: '自分自身を削除することはできません。',
@@ -30,25 +31,28 @@ const user = {
   role_exists: 'このユーザーには既に役割ID {{roleId}}が追加されています。',
   invalid_role_type:
     '役割タイプが無効です。ユーザーにはマシン対マシンの役割を割り当てることはできません。',
+  suggest_mfa:
+    'アカウントのセキュリティ向上のため、MFAをアカウントに連携することをおすすめします。',
   missing_mfa: 'MFAを追加してからサインインしてください。',
   totp_already_in_use: 'TOTPはすでに使用されています。',
   backup_code_already_in_use: 'バックアップコードはすでに使用されています。',
   password_algorithm_required: 'Password algorithm is required.',
   password_and_digest: 'You cannot set both plain text password and password digest.',
   personal_access_token_name_exists: '個人用アクセス トークン名は既に存在します。',
-  /** UNTRANSLATED */
-  totp_secret_invalid: 'Invalid TOTP secret supplied.',
-  /** UNTRANSLATED */
-  wrong_backup_code_format: 'Backup code format is invalid.',
-  /** UNTRANSLATED */
-  username_required: 'Username is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
+  totp_secret_invalid: '無効な TOTP シークレットが提供されました。',
+  wrong_backup_code_format: 'バックアップコードの形式が無効です。',
+  username_required: 'ユーザー名は必須の識別子ですので、null に設定することはできません。',
   email_or_phone_required:
-    'Email address or phone number is a required identifier, at least one is required.',
-  /** UNTRANSLATED */
-  email_required: 'Email address is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  phone_required: 'Phone number is a required identifier, you can not set it to null.',
+    'メールアドレスまたは電話番号は必須の識別子であり、少なくとも1つが必要です。',
+  last_sign_in_method_required:
+    'アカウントには少なくとも1つの利用可能なサインイン方法を残す必要があります。',
+  email_required: 'メールアドレスは必須の識別子ですので、null に設定することはできません。',
+  phone_required: '電話番号は必須の識別子ですので、null に設定することはできません。',
+  enterprise_sso_identity_not_exists:
+    'ユーザーは、指定された SSO コネクタ ID: {{ ssoConnectorId }} にリンクされたエンタープライズ ID を持っていません。',
+  identity_not_exists_in_current_user:
+    '指定されたアイデンティティは現在のユーザーアカウントに存在しません。続行する前にアイデンティティをリンクしてください。',
+  passkey_preferred: 'パスキーを作成してサインインを簡単にしましょう。',
 };
 
 export default Object.freeze(user);

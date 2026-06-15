@@ -6,6 +6,8 @@ const input = {
   confirm_password: '确认密码',
   search_region_code: '搜索区域码',
   backup_code: '备用码',
+  code: '代码',
+  label_with_optional: '{{label}}（可选）',
 };
 
 export default Object.freeze(input);

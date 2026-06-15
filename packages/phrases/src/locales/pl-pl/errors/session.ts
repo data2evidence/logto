@@ -44,8 +44,31 @@ const session = {
     invalid_backup_code: 'Nieprawidłowy kod zapasowy.',
     mfa_policy_not_user_controlled: 'Polityka MFA nie jest kontrolowana przez użytkownika.',
     mfa_factor_not_enabled: 'Czynnik MFA nie jest włączony.',
+    suggest_additional_mfa:
+      'Dla lepszej ochrony rozważ dodanie kolejnej metody MFA. Możesz pominąć ten krok i kontynuować.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Nie znaleziono oczekujących informacji logowania passkey. Uruchom ponownie proces logowania.',
+    conflict_rp_id:
+      'Identyfikator Relying Party nie pasuje. Użyj właściwego klienta, aby się zalogować.',
+    sso_users_not_allowed:
+      'Opcja logowania za pomocą passkey nie jest dostępna dla użytkowników SSO.',
   },
   sso_enabled: 'Single sign on jest włączony dla tego adresu e-mail. Zaloguj się za pomocą SSO.',
+  captcha_required: 'Wymagana jest captcha.',
+  captcha_failed: 'Weryfikacja captchy nie powiodła się.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'Weryfikacja adresu email nie powiodła się.',
+    invalid_email: 'Nieprawidłowy adres email.',
+    email_subaddressing_not_allowed: 'Dodawanie subadresów do emaila nie jest dozwolone.',
+    email_not_allowed: 'Adres email "{{email}}" jest zastrzeżony. Proszę wybrać inny.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Nieprawidłowe dopasowanie ciasteczek Google One Tap.',
+    invalid_id_token: 'Nieprawidłowy token ID Google.',
+    unverified_email: 'Niezweryfikowany email.',
+  },
 };
 
 export default Object.freeze(session);

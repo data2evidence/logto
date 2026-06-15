@@ -32,6 +32,35 @@
           }
         }
       }
+    },
+    "/api/experience/preflight/sign-in-passkey/authentication": {
+      "post": {
+        "operationId": "CreateSignInPasskeyAuthentication",
+        "summary": "Create passkey sign-in WebAuthn authentication",
+        "description": "Create WebAuthn authentication options for passkey sign-in. The user will be resolved later by the credential during verification.",
+        "responses": {
+          "200": {
+            "description": "Passkey sign-in WebAuthn authentication options have been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "authenticationOptions": {
+                      "description": "The WebAuthn authentication options for initiating passkey sign-in."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request."
+          },
+          "404": {
+            "description": "Verification session not found."
+          }
+        }
+      }
     }
   }
 }

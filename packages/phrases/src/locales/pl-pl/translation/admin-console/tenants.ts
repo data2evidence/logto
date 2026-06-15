@@ -1,12 +1,21 @@
 const tenants = {
   title: 'Ustawienia',
   description: 'Skuteczne zarządzanie ustawieniami najemcy i dostosowywanie domeny.',
+  oss_description:
+    'Zmień tutaj ustawienia konta i zarządzaj swoimi danymi osobowymi, aby zapewnić bezpieczeństwo konta.',
   tabs: {
     settings: 'Ustawienia',
     members: 'Członkowie',
     domains: 'Domeny',
+    oidc_configs: 'Konfiguracje OIDC',
     subscription: 'Plan i rozliczenia',
     billing_history: 'Historia rozliczeń',
+  },
+  members: {
+    card_title: 'Zarządzaj tenantami bezpieczniej dzięki Logto Cloud',
+    card_description:
+      'Dodawaj administratorów lub współpracowników do swojego tenantu bez współdzielenia jednego konta administratora.',
+    card_action: 'Poznaj Logto Cloud',
   },
   settings: {
     title: 'USTAWIENIA',
@@ -14,6 +23,9 @@ const tenants = {
       'Ustaw nazwę najemcy i wyświetl informacje o regionie hostowania danych oraz typie najemcy.',
     tenant_id: 'ID Najemcy',
     tenant_name: 'Nazwa Najemcy',
+    tenant_instance: 'Wybierz swoją instancję',
+    tenant_instance_description:
+      'Wybierz, gdzie będzie hostowany twój najemca. Wybierz Logto Cloud dla publicznej, współdzielonej infrastruktury, lub prywatną instancję dla dedykowanych zasobów.',
     tenant_region: 'Region hostowania danych',
     tenant_region_description:
       'Fizyczna lokalizacja, w której hostowane są zasoby twojego najemcy (użytkownicy, aplikacje itp.). Tego nie można zmienić po utworzeniu.',
@@ -23,10 +35,16 @@ const tenants = {
     environment_tag_production: 'Prod',
     tenant_type: 'Typ najemcy',
     development_description:
-      'Wyłącznie do testów i nie powinien być używany w produkcji. Nie jest wymagana subskrypcja. Posiada wszystkie funkcje Pro, ale ma ograniczenia, takie jak baner logowania. <a>Uzyskaj więcej informacji</a>',
+      'Wyłącznie do testów i nie powinien być używany w produkcji. Nie jest wymagana subskrypcja. Posiada wszystkie funkcje Pro, ale ma ograniczenia, takie jak baner logowania.',
     production_description:
-      'Przeznaczony dla aplikacji używanych przez użytkowników końcowych i może wymagać płatnej subskrypcji. <a>Uzyskaj więcej informacji</a>',
+      'Przeznaczony dla aplikacji używanych przez użytkowników końcowych i może wymagać płatnej subskrypcji.',
     tenant_info_saved: 'Informacje o najemcy zostały pomyślnie zapisane.',
+    tenant_mfa: 'Uwierzytelnianie wieloskładnikowe',
+    tenant_mfa_description:
+      'Wymagaj od członków skonfigurowania uwierzytelniania wieloskładnikowego, aby uzyskać dostęp do tego najemcy.',
+    enterprise_sso: 'Enterprise SSO',
+    enterprise_sso_description:
+      'Dostępne w płatnych planach. Skontaktuj się z nami, aby włączyć Enterprise SSO, dzięki czemu wszyscy członkowie będą mogli logować się do konsoli Logto Cloud za pomocą dostawcy tożsamości Twojej organizacji.',
   },
   full_env_tag: {
     development: 'Development',
@@ -50,9 +68,12 @@ const tenants = {
   create_modal: {
     title: 'Utwórz nowego najemcę',
     subtitle: 'Utwórz nowego najemcę z izolowanymi zasobami i użytkownikami.',
+    tenant_id: 'ID Najemcy',
     tenant_usage_purpose: 'Co chcesz zrobić z tym najemcą?',
     development_description:
       'Wyłącznie do testów i nie powinien być używany w produkcji. Nie jest wymagana subskrypcja.',
+    development_description_for_private_regions:
+      'Wyłącznie do testów i nie powinien być używany w produkcji.',
     development_hint:
       'Posiada wszystkie funkcje Pro, ale ma ograniczenia, takie jak baner logowania.',
     production_description:
@@ -64,6 +85,11 @@ const tenants = {
     invitation_failed:
       'Niektóre zaproszenia nie udało się wysłać. Spróbuj ponownie później w Ustawienia -> Członkowie.',
     tenant_type_description: 'Tego nie można zmienić po utworzeniu.',
+    tenant_id_invalid:
+      'Identyfikator najemcy może zawierać tylko małe litery, cyfry i myślniki oraz nie może przekraczać {{max}} znaków.',
+    tenant_id_placeholder: 'Identyfikator najemcy',
+    tenant_id_tip:
+      'Dostosuj identyfikator najemcy. Jeśli pozostawisz puste, Logto wygeneruje domyślny identyfikator. Identyfikator najemcy nie może zostać zmieniony po utworzeniu.',
   },
   dev_tenant_migration: {
     title:
@@ -101,8 +127,7 @@ const tenants = {
   },
   status: {
     mau_exceeded: 'Przekroczono limit MAU',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: 'Przekroczono limit tokenów',
     suspended: 'Zawieszony',
     overdue: 'Opóźnienie w płatnościach',
   },

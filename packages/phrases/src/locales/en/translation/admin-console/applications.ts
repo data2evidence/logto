@@ -3,9 +3,11 @@ const applications = {
   title: 'Applications',
   subtitle: 'Create and manage applications for OIDC authentication.',
   subtitle_with_app_type: 'Set up Logto authentication for your {{name}} application',
+  create_device_flow_description:
+    'Create a native application that uses the OAuth 2.0 Device Authorization Grant for input-limited devices or headless apps.',
   create: 'Create application',
-  create_subtitle_third_party:
-    'Use Logto as your identity provider (IdP) to easily integrate with third-party applications',
+  create_third_party: 'Create third-party application',
+  create_thrid_party_modal_title: 'Create a third-party app ({{type}})',
   application_name: 'Application name',
   application_name_placeholder: 'My App',
   application_description: 'Application description',
@@ -22,7 +24,7 @@ const applications = {
     native: {
       title: 'Native App',
       subtitle: 'An app that runs in a native environment',
-      description: 'E.g., iOS app, Android app',
+      description: 'E.g., iOS app, Android app, desktop app, TVs, CLI',
     },
     spa: {
       title: 'Single Page App',
@@ -55,9 +57,33 @@ const applications = {
       description: 'E.g., OIDC',
     },
   },
+  authorization_flow: {
+    title: 'Authorization flow',
+    tooltip:
+      'Select the authorization flow for your application. Once set, this cannot be changed.',
+    authorization_code: {
+      title: 'Authorization code',
+      description:
+        'The default and most common grant type. Users are redirected to a sign-in page to authorize access directly.',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        'For input-limited devices or headless apps (e.g., TVs, CLI). Users complete login on a separate device by entering a device code or scanning a QR code.',
+    },
+  },
   placeholder_title: 'Select an application type to continue',
   placeholder_description:
     'Logto uses an application entity for OIDC to help with tasks such as identifying your apps, managing sign-in, and creating audit logs.',
+  third_party_application_placeholder_description:
+    'Use Logto as an Identity Provider to provide OAuth authorization to third-party services. Includes a prebuilt user consent screen for resource access. <a>Learn more</a>',
+  guide: {
+    third_party: {
+      title: 'Integrate a third-party application',
+      description:
+        'Use Logto as your Identity Provider to provide OAuth authorization to third-party services. Includes a prebuilt user consent screen for secure resource access. <a>Learn more</a>',
+    },
+  },
 };
 
 export default Object.freeze(applications);

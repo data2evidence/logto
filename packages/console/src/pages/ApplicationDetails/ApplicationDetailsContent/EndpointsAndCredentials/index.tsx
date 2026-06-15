@@ -1,5 +1,4 @@
 import {
-  DomainStatus,
   type Application,
   type SnakeCaseOidcConfig,
   internalPrefix,
@@ -14,17 +13,25 @@ import CaretDown from '@/assets/icons/caret-down.svg?react';
 import CaretUp from '@/assets/icons/caret-up.svg?react';
 import CirclePlus from '@/assets/icons/circle-plus.svg?react';
 import Plus from '@/assets/icons/plus.svg?react';
+import DomainSelector from '@/components/DomainSelector';
 import FormCard from '@/components/FormCard';
-import { openIdProviderConfigPath, openIdProviderPath } from '@/consts/oidc';
+import { isCloud } from '@/consts/env';
+import { customDomainFeatureLink } from '@/consts/external-links';
+import {
+  openIdProviderConfigPath,
+  openIdProviderJwksPath,
+  openIdProviderPath,
+} from '@/consts/oidc';
 import { AppDataContext } from '@/contexts/AppDataProvider';
 import Button from '@/ds-components/Button';
 import CopyToClipboard from '@/ds-components/CopyToClipboard';
-import DynamicT from '@/ds-components/DynamicT';
 import FormField from '@/ds-components/FormField';
 import Table from '@/ds-components/Table';
 import TextLink from '@/ds-components/TextLink';
 import { type RequestError } from '@/hooks/use-api';
-import useCustomDomain from '@/hooks/use-custom-domain';
+import useDocumentationUrl from '@/hooks/use-documentation-url';
+import useDomainSelection from '@/hooks/use-domain-selection';
+import { applyDomain } from '@/utils/url';
 
 import CreateSecretModal from '../CreateSecretModal';
 import EditSecretModal from '../EditSecretModal';
@@ -50,7 +57,9 @@ function EndpointsAndCredentials({
   const { tenantEndpoint } = useContext(AppDataContext);
   const [showMoreEndpoints, setShowMoreEndpoints] = useState(false);
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
-  const { data: customDomain, applyDomain: applyCustomDomain } = useCustomDomain();
+  const { getDocumentationUrl } = useDocumentationUrl();
+
+  const [selectedDomain, setSelectedDomain] = useDomainSelection();
   const [showCreateSecretModal, setShowCreateSecretModal] = useState(false);
   const [editSecret, setEditSecret] = useState<ApplicationSecretRow>();
   const secrets = useSWR<ApplicationSecretRow[], RequestError>(`api/applications/${id}/secrets`);
@@ -106,24 +115,60 @@ function EndpointsAndCredentials({
         targetBlank: true,
       }}
     >
+      {isCloud && (
+        <DomainSelector
+          value={selectedDomain}
+          tip={(closeTipHandler) => (
+            <Trans
+              components={{
+                a: (
+                  <TextLink
+                    targetBlank="noopener"
+                    href={getDocumentationUrl(customDomainFeatureLink)}
+                    onClick={closeTipHandler}
+                  />
+                ),
+              }}
+            >
+              {t('domain.switch_custom_domain_tip')}
+            </Trans>
+          )}
+          onChange={setSelectedDomain}
+        />
+      )}
       {/* Hide logto endpoint field in third-party application's form. */}
       {tenantEndpoint && !isThirdParty && (
         <FormField title="application_details.logto_endpoint">
           <CopyToClipboard
             displayType="block"
-            value={applyCustomDomain(tenantEndpoint.href)}
+            value={applyDomain(tenantEndpoint.href, selectedDomain)}
             variant="border"
           />
         </FormField>
       )}
       {tenantEndpoint && (
-        <FormField title="application_details.issuer_endpoint">
-          <CopyToClipboard
-            displayType="block"
-            value={applyCustomDomain(appendPath(tenantEndpoint, openIdProviderPath).href)}
-            variant="border"
-          />
-        </FormField>
+        <>
+          <FormField title="application_details.issuer_endpoint">
+            <CopyToClipboard
+              displayType="block"
+              value={applyDomain(
+                appendPath(tenantEndpoint, openIdProviderPath).href,
+                selectedDomain
+              )}
+              variant="border"
+            />
+          </FormField>
+          <FormField title="application_details.jwks_uri">
+            <CopyToClipboard
+              displayType="block"
+              value={applyDomain(
+                appendPath(tenantEndpoint, openIdProviderJwksPath).href,
+                selectedDomain
+              )}
+              variant="border"
+            />
+          </FormField>
+        </>
       )}
       {showMoreEndpoints && (
         <>
@@ -131,7 +176,10 @@ function EndpointsAndCredentials({
             <FormField title="application_details.config_endpoint">
               <CopyToClipboard
                 displayType="block"
-                value={applyCustomDomain(appendPath(tenantEndpoint, openIdProviderConfigPath).href)}
+                value={applyDomain(
+                  appendPath(tenantEndpoint, openIdProviderConfigPath).href,
+                  selectedDomain
+                )}
                 variant="border"
               />
             </FormField>
@@ -156,21 +204,21 @@ function EndpointsAndCredentials({
           >
             <CopyToClipboard
               displayType="block"
-              value={applyCustomDomain(oidcConfig.authorization_endpoint)}
+              value={applyDomain(oidcConfig.authorization_endpoint, selectedDomain)}
               variant="border"
             />
           </FormField>
           <FormField title="application_details.token_endpoint">
             <CopyToClipboard
               displayType="block"
-              value={applyCustomDomain(oidcConfig.token_endpoint)}
+              value={applyDomain(oidcConfig.token_endpoint, selectedDomain)}
               variant="border"
             />
           </FormField>
           <FormField title="application_details.user_info_endpoint">
             <CopyToClipboard
               displayType="block"
-              value={applyCustomDomain(oidcConfig.userinfo_endpoint)}
+              value={applyDomain(oidcConfig.userinfo_endpoint, selectedDomain)}
               variant="border"
             />
           </FormField>
@@ -190,17 +238,6 @@ function EndpointsAndCredentials({
         />
       </div>
 
-      {customDomain?.status === DomainStatus.Active && tenantEndpoint && (
-        <div className={styles.customEndpointNotes}>
-          <DynamicT
-            forKey="domain.custom_endpoint_note"
-            interpolation={{
-              custom: customDomain.domain,
-              default: new URL(tenantEndpoint).host,
-            }}
-          />
-        </div>
-      )}
       <FormField title="application_details.application_id">
         <CopyToClipboard displayType="block" value={id} variant="border" />
       </FormField>

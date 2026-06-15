@@ -1,12 +1,11 @@
-import { type ToZodObject } from '@logto/connector-kit';
 import {
   type InteractionIdentifier,
-  interactionIdentifierGuard,
-  UsersPasswordEncryptionMethod,
+  type UsersPasswordEncryptionMethod,
   VerificationType,
+  type NewPasswordIdentityVerificationRecordData,
+  type SanitizedNewPasswordIdentityVerificationRecordData,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
-import { z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import type Libraries from '#src/tenants/Libraries.js';
@@ -20,25 +19,12 @@ import { interactionIdentifierToUserProfile } from '../utils.js';
 
 import { type VerificationRecord } from './verification-record.js';
 
-export type NewPasswordIdentityVerificationRecordData = {
-  id: string;
-  type: VerificationType.NewPasswordIdentity;
-  /**
-   * For now we only support username identifier for new password identity registration.
-   * For email and phone new identity registration, a `CodeVerification` record is required.
-   */
-  identifier: InteractionIdentifier;
-  passwordEncrypted?: string;
-  passwordEncryptionMethod?: UsersPasswordEncryptionMethod.Argon2i;
-};
-
-export const newPasswordIdentityVerificationRecordDataGuard = z.object({
-  id: z.string(),
-  type: z.literal(VerificationType.NewPasswordIdentity),
-  identifier: interactionIdentifierGuard,
-  passwordEncrypted: z.string().optional(),
-  passwordEncryptionMethod: z.literal(UsersPasswordEncryptionMethod.Argon2i).optional(),
-}) satisfies ToZodObject<NewPasswordIdentityVerificationRecordData>;
+export {
+  type NewPasswordIdentityVerificationRecordData,
+  type SanitizedNewPasswordIdentityVerificationRecordData,
+  newPasswordIdentityVerificationRecordDataGuard,
+  sanitizedNewPasswordIdentityVerificationRecordDataGuard,
+} from '@logto/schemas';
 
 /**
  * NewPasswordIdentityVerification class is used for creating a new user using password + identifier.
@@ -80,8 +66,8 @@ export class NewPasswordIdentityVerification
     this.identifier = identifier;
     this.passwordEncrypted = passwordEncrypted;
     this.passwordEncryptionMethod = passwordEncryptionMethod;
-    this.profileValidator = new ProfileValidator(queries);
     this.signInExperienceValidator = new SignInExperienceValidator(libraries, queries);
+    this.profileValidator = new ProfileValidator(queries, this.signInExperienceValidator);
   }
 
   get isVerified() {
@@ -140,5 +126,10 @@ export class NewPasswordIdentityVerification
       passwordEncrypted,
       passwordEncryptionMethod,
     };
+  }
+
+  toSanitizedJson(): SanitizedNewPasswordIdentityVerificationRecordData {
+    const { id, type, identifier } = this;
+    return { id, type, identifier };
   }
 }

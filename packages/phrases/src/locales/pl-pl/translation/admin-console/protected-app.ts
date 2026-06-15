@@ -2,8 +2,6 @@ const protected_app = {
   name: 'Aplikacja chroniona',
   title:
     'Stwórz aplikację zabezpieczoną: Dodaj uwierzytelnienie w prosty sposób i z dużą prędkością',
-  description:
-    'Aplikacja chroniona bezpiecznie zarządza sesjami użytkowników i przekierowuje żądania Twojej aplikacji. Dzięki Cloudflare Workers, ciesz się wydajnością najwyższej klasy i zerowym czasem uruchamiania globalnie. <a>Dowiedz się więcej</a>',
   fast_create: 'Szybkie tworzenie',
   modal_title: 'Utwórz aplikację chronioną',
   modal_subtitle:
@@ -37,6 +35,18 @@ const protected_app = {
       localhost:
         'Najpierw wystaw swój lokalny serwer do internetu. Dowiedz się więcej o <a>lokalnym rozwoju</a>.',
     },
+  },
+  id_token_claims: {
+    card_title: 'Claims ID tokena',
+    card_description:
+      'Żądaj dodatkowych scope użytkownika podczas logowania do chronionej aplikacji, aby uwzględnić włączone rozszerzone claims w przesyłanym ID tokenie.',
+    field_title: 'Dodatkowe scope',
+    field_description:
+      'Claims są uwzględniane tylko wtedy, gdy są włączone w <a>Custom JWT > ID token</a> i odpowiadający scope został tutaj zażądany.',
+    table_column_scope: 'Scope',
+    table_column_claims_forwarded: 'Przesyłane claims',
+    disabled_claims_hint:
+      'Wyszarzone claims nie są jeszcze przesyłane. Włącz je w <a>Custom JWT > ID token</a>, aby uwzględnić je w ID tokenie.',
   },
   success_message:
     '🎉 Uwierzytelnienie aplikacji pomyślnie włączone! Odkryj nowe doświadczenia Twojej strony internetowej.',

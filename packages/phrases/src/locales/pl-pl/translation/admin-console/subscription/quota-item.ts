@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'Użyj swojego interfejsu użytkownika',
     not_eligible: 'Usuń swoje niestandardowe zasoby interfejsu użytkownika',
   },
+  collect_user_profile_enabled: {
+    name: 'Zbieranie profilu użytkownika',
+    limited: 'Zbieranie profilu użytkownika',
+    unlimited: 'Zbieranie profilu użytkownika',
+    not_eligible: 'Usuń pola zbierania profilu użytkownika',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'SSO inicjowane przez dostawcę tożsamości',
+    limited: 'SSO inicjowane przez dostawcę tożsamości',
+    unlimited: 'SSO inicjowane przez dostawcę tożsamości',
+    not_eligible: 'SSO inicjowane przez dostawcę tożsamości niedozwolone',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'Aplikacje SAML',
+    limited: '{{count, number}} aplikacja SAML',
+    limited_other: '{{count, number}} aplikacje SAML',
+    unlimited: 'Nieograniczona liczba aplikacji SAML',
+    not_eligible: 'Usuń swoje aplikacje SAML',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'Usuń swoją CAPTCHA',
+  },
+  security_features_enabled: {
+    name: 'Zaawansowane zabezpieczenia',
+    limited: 'Zaawansowane zabezpieczenia',
+    unlimited: 'Zaawansowane zabezpieczenia',
+    not_eligible: 'Usuń swoje ustawienia zaawansowanych zabezpieczeń',
+  },
+  custom_domains_limit: {
+    name: 'Niestandardowe domeny',
+    limited: '{{count, number}} niestandardowa domena',
+    limited_other: '{{count, number}} niestandardowe domeny',
+    unlimited: 'Nieograniczone niestandardowe domeny',
+    not_eligible: 'Usuń swoje niestandardowe domeny',
+  },
+  passkey_sign_in_enabled: {
+    name: 'Logowanie passkey',
+    limited: 'Logowanie passkey',
+    unlimited: 'Logowanie passkey',
+    not_eligible: 'Brak obsługi logowania passkey',
   },
 };
 

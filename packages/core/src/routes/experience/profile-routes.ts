@@ -1,24 +1,43 @@
+/* eslint-disable max-lines */
 import {
   InteractionEvent,
   MfaFactor,
   SignInIdentifier,
   updateProfileApiPayloadGuard,
+  uploadFileGuard,
+  userAssetsGuard,
 } from '@logto/schemas';
+import { addDays, format } from 'date-fns';
 import { type MiddlewareType } from 'koa';
 import type Router from 'koa-router';
-import { z } from 'zod';
+import { object, z } from 'zod';
 
+import { EnvSet } from '#src/env-set/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
 import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import koaGuard from '#src/middleware/koa-guard.js';
+import SystemContext from '#src/tenants/SystemContext.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
+import { getConsoleLogFromContext } from '#src/utils/console.js';
 
-import { identifierCodeVerificationTypeMap } from './classes/verifications/code-verification.js';
+import { uploadAvatar } from '../avatar-upload.js';
+
+import { createNewMfaCodeVerificationRecord } from './classes/verifications/code-verification.js';
 import { experienceRoutes } from './const.js';
 import { type ExperienceInteractionRouterContext } from './types.js';
 
+const pendingAvatarUploadExpiresInDays = 1;
+
+const buildPendingAvatarUploadObjectKeyPrefix = (tenantId: string, jti: string) => {
+  const expiresAt = format(addDays(new Date(), pendingAvatarUploadExpiresInDays), 'yyyy-MM-dd');
+
+  return `${tenantId}/_pending/${expiresAt}/avatar/${jti}`;
+};
+
 /**
+ * This middleware is guards the current interaction status is MFA verified (if MFA is enabled)
+ *
  * @throws {RequestError} with status 400 if current interaction is ForgotPassword
  * @throws {RequestError} with status 404 if current interaction is not identified
  * @throws {RequestError} with status 403 if MFA verification status is not verified
@@ -40,8 +59,9 @@ function verifiedInteractionGuard<
       })
     );
 
-    // Guard MFA verification status
-    await experienceInteraction.guardMfaVerificationStatus();
+    if (experienceInteraction.interactionEvent === InteractionEvent.SignIn) {
+      await experienceInteraction.guardMfaVerificationStatus();
+    }
 
     return next();
   };
@@ -49,7 +69,7 @@ function verifiedInteractionGuard<
 
 export default function interactionProfileRoutes<T extends ExperienceInteractionRouterContext>(
   router: Router<unknown, T>,
-  tenant: TenantContext
+  { id: tenantId, libraries, queries }: TenantContext
 ) {
   router.post(
     `${experienceRoutes.profile}`,
@@ -73,9 +93,18 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
         })
       );
 
-      // Guard MFA verification status for SignIn interaction only
       if (interactionEvent === InteractionEvent.SignIn) {
-        await experienceInteraction.guardMfaVerificationStatus();
+        // Note:
+        // We intentionally allow social profile staging before MFA verification.
+        // This endpoint only writes to the interaction session, while `submit()` is the
+        // DB commit boundary and still enforces MFA for sign-in flows.
+        //
+        // On social linking flows, to simplify the front-end implementation, we allow social profile staging before MFA verification,
+        // and the final submission with `submit()` will enforce MFA verification.
+        // Identified user guard is still applied.
+        await (profilePayload.type === 'social'
+          ? experienceInteraction.guardIdentifiedUser()
+          : experienceInteraction.guardMfaVerificationStatus());
       }
 
       log.append({
@@ -84,10 +113,10 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
 
       switch (profilePayload.type) {
         case SignInIdentifier.Email:
-        case SignInIdentifier.Phone: {
-          const verificationType = identifierCodeVerificationTypeMap[profilePayload.type];
-          await experienceInteraction.profile.setProfileByVerificationRecord(
-            verificationType,
+        case SignInIdentifier.Phone:
+        case 'social': {
+          await experienceInteraction.profile.setProfileByVerificationId(
+            profilePayload.type,
             profilePayload.verificationId,
             log
           );
@@ -103,11 +132,18 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
           await experienceInteraction.profile.setPasswordDigestWithValidation(profilePayload.value);
           break;
         }
-        case 'social': {
-          await experienceInteraction.profile.setProfileBySocialVerificationRecord(
-            profilePayload.verificationId,
-            log
+        /**
+         * Handle non-identifier user profile attributes. The submitted data will be validated and split into
+         * standard user profile attributes and custom user profile attributes. The standard user profile attributes
+         * will be set to the user profile, and the custom user profile attributes will be set to the user custom data.
+         */
+        case 'extraProfile': {
+          const { validateAndParseCustomProfile } = experienceInteraction.profile.profileValidator;
+          await experienceInteraction.profile.setProfileWithValidation(
+            validateAndParseCustomProfile(profilePayload.values)
           );
+          experienceInteraction.profile.markProfileSubmitted();
+          break;
         }
       }
 
@@ -118,6 +154,54 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       return next();
     }
   );
+
+  // TODO: Remove this dev feature gate when avatar upload is ready for production.
+  if (EnvSet.values.isDevFeaturesEnabled) {
+    router.post(
+      `${experienceRoutes.prefix}/user-assets/avatar`,
+      koaGuard({
+        files: object({
+          file: uploadFileGuard.array().min(1),
+        }),
+        response: userAssetsGuard,
+        status: [200, 400, 403, 404, 500],
+      }),
+      async (ctx, next) => {
+        const { experienceInteraction } = ctx;
+        const { interactionEvent } = experienceInteraction;
+
+        assertThat(
+          interactionEvent !== InteractionEvent.ForgotPassword,
+          new RequestError({ code: 'session.not_supported_for_forgot_password', status: 400 })
+        );
+        assertThat(
+          interactionEvent === InteractionEvent.Register,
+          new RequestError({ code: 'session.invalid_interaction_type', status: 400 })
+        );
+
+        const { storageProviderConfig } = SystemContext.shared;
+
+        const objectKeyPrefix = experienceInteraction.identifiedUserId
+          ? `${tenantId}/${experienceInteraction.identifiedUserId}`
+          : buildPendingAvatarUploadObjectKeyPrefix(tenantId, ctx.interactionDetails.jti);
+
+        const [file] = ctx.guard.files.file;
+
+        assertThat(file, 'guard.invalid_input');
+
+        ctx.body = await uploadAvatar({
+          file,
+          storageProviderConfig,
+          objectKeyPrefix,
+          logError: (error) => {
+            getConsoleLogFromContext(ctx).error(error);
+          },
+        });
+
+        return next();
+      }
+    );
+  }
 
   router.put(
     `${experienceRoutes.profile}/password`,
@@ -160,6 +244,22 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
   );
 
   router.post(
+    `${experienceRoutes.mfa}/mfa-enabled`,
+    koaGuard({ status: [204, 400, 403, 404] }),
+    verifiedInteractionGuard(),
+    async (ctx, next) => {
+      const { experienceInteraction } = ctx;
+
+      experienceInteraction.mfa.markMfaEnabled();
+      await experienceInteraction.save();
+
+      ctx.status = 204;
+
+      return next();
+    }
+  );
+
+  router.post(
     `${experienceRoutes.mfa}/mfa-skipped`,
     koaGuard({ status: [204, 400, 403, 404, 422] }),
     verifiedInteractionGuard(),
@@ -167,6 +267,70 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       const { experienceInteraction } = ctx;
 
       await experienceInteraction.mfa.skip();
+      await experienceInteraction.save();
+
+      ctx.status = 204;
+
+      return next();
+    }
+  );
+
+  // Mark optional additional MFA binding suggestion as skipped.
+  router.post(
+    `${experienceRoutes.mfa}/mfa-suggestion-skipped`,
+    koaGuard({ status: [204, 400, 404] }),
+    verifiedInteractionGuard(),
+    async (ctx, next) => {
+      const { experienceInteraction } = ctx;
+
+      experienceInteraction.mfa.skipAdditionalBindingSuggestion();
+      await experienceInteraction.save();
+
+      ctx.status = 204;
+
+      return next();
+    }
+  );
+
+  router.post(
+    `${experienceRoutes.mfa}/passkey-skipped`,
+    koaGuard({ status: [204, 400, 404] }),
+    verifiedInteractionGuard(),
+    async (ctx, next) => {
+      const { experienceInteraction } = ctx;
+
+      experienceInteraction.mfa.skipPasskey();
+      await experienceInteraction.save();
+
+      ctx.status = 204;
+
+      return next();
+    }
+  );
+
+  router.post(
+    `${experienceRoutes.mfa}/passkey`,
+    koaGuard({
+      body: z.object({
+        verificationId: z.string(),
+      }),
+      status: [204, 400, 404],
+    }),
+    verifiedInteractionGuard(),
+    async (ctx, next) => {
+      const { experienceInteraction, guard } = ctx;
+      const { verificationId } = guard.body;
+
+      const log = ctx.createLog(
+        `Interaction.${experienceInteraction.interactionEvent}.SignInPasskey.Submit`
+      );
+
+      log.append({
+        verificationId,
+      });
+
+      await experienceInteraction.mfa.addWebAuthnByVerificationId(verificationId, log);
+
       await experienceInteraction.save();
 
       ctx.status = 204;
@@ -210,7 +374,55 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
           await experienceInteraction.mfa.addBackupCodeByVerificationId(verificationId, log);
           break;
         }
+        case MfaFactor.EmailVerificationCode: {
+          await experienceInteraction.profile.setProfileByVerificationId(
+            SignInIdentifier.Email,
+            verificationId,
+            log
+          );
+          const { primaryEmail } = experienceInteraction.profile.data;
+          // If the primary email is set, create a new MFA code verification record
+          // to bypass the MFA verification step.
+          if (primaryEmail) {
+            const codeVerification = createNewMfaCodeVerificationRecord(
+              libraries,
+              queries,
+              {
+                type: SignInIdentifier.Email,
+                value: primaryEmail,
+              },
+              true
+            );
+            experienceInteraction.setVerificationRecord(codeVerification);
+          }
+          break;
+        }
+        case MfaFactor.PhoneVerificationCode: {
+          await experienceInteraction.profile.setProfileByVerificationId(
+            SignInIdentifier.Phone,
+            verificationId,
+            log
+          );
+          const { primaryPhone } = experienceInteraction.profile.data;
+          // If the primary phone is set, create a new MFA code verification record
+          // to bypass the MFA verification step.
+          if (primaryPhone) {
+            const codeVerification = createNewMfaCodeVerificationRecord(
+              libraries,
+              queries,
+              {
+                type: SignInIdentifier.Phone,
+                value: primaryPhone,
+              },
+              true
+            );
+            experienceInteraction.setVerificationRecord(codeVerification);
+          }
+          break;
+        }
       }
+
+      experienceInteraction.mfa.markMfaEnabled();
 
       await experienceInteraction.save();
 
@@ -220,3 +432,4 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
     }
   );
 }
+/* eslint-enable max-lines */

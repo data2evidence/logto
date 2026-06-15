@@ -8,10 +8,9 @@ import { isObject } from '@silverhand/essentials';
 import i18next from 'i18next';
 
 import { getSignInExperience } from '@/apis/settings';
+import { searchKeys, searchKeysCamelCase } from '@/shared/utils/search-parameters';
 import type { SignInExperienceResponse } from '@/types';
 import { filterSocialConnectors } from '@/utils/social-connectors';
-
-import { searchKeys, searchKeysCamelCase } from './search-parameters';
 
 const parseSignInExperienceResponse = (
   response: SignInExperienceResponse
@@ -35,9 +34,10 @@ export const getSignInExperienceSettings = async (): Promise<SignInExperienceRes
         return (!ssrValue && !storageValue) || ssrValue === storageValue;
       })
     ) {
-      return data;
+      return parseSignInExperienceResponse(data);
     }
   }
+
   const response = await getSignInExperience<SignInExperienceResponse>();
   return parseSignInExperienceResponse(response);
 };

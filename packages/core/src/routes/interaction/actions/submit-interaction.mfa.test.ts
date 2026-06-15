@@ -20,7 +20,7 @@ const getLogtoConnectorById = jest
   .fn()
   .mockResolvedValue({ metadata: { target: 'logto' }, dbEntry: { syncProfile: true } });
 
-const { assignInteractionResults } = mockEsm('#src/libraries/session.js', () => ({
+const { assignInteractionResults } = mockEsm('#src/libraries/session/index.js', () => ({
   assignInteractionResults: jest.fn(),
 }));
 
@@ -47,7 +47,7 @@ const userQueries = {
   updateUserById: jest.fn(),
   hasActiveUsers: jest.fn().mockResolvedValue(true),
   hasUserWithEmail: jest.fn().mockResolvedValue(false),
-  hasUserWithPhone: jest.fn().mockResolvedValue(false),
+  hasUserWithNormalizedPhone: jest.fn().mockResolvedValue(false),
 };
 
 const { hasActiveUsers, updateUserById } = userQueries;
@@ -75,7 +75,7 @@ describe('submit action', () => {
     ...createMockLogContext(),
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     interactionDetails: { params: {} } as Awaited<ReturnType<Provider['interactionDetails']>>,
-    assignInteractionHookResult: jest.fn(),
+    assignReleaseOnSuccessInteractionHookResult: jest.fn(),
     appendDataHookContext: jest.fn(),
   };
   const profile = {
@@ -146,7 +146,7 @@ describe('submit action', () => {
           ],
           ...upsertProfile,
         },
-        ['user']
+        { isInteractive: true, roleNames: ['user'] }
       );
     });
 
@@ -175,7 +175,7 @@ describe('submit action', () => {
           ],
           ...upsertProfile,
         },
-        ['user']
+        { isInteractive: true, roleNames: ['user'] }
       );
     });
 
@@ -204,7 +204,7 @@ describe('submit action', () => {
           ],
           ...upsertProfile,
         },
-        ['user']
+        { isInteractive: true, roleNames: ['user'] }
       );
     });
   });

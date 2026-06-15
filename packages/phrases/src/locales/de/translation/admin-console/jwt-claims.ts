@@ -1,20 +1,31 @@
 const jwt_claims = {
   title: 'Benutzerdefiniertes JWT',
   description:
-    'Legen Sie benutzerdefinierte JWT-Ansprüche fest, die im Zugriffstoken enthalten sein sollen. Diese Ansprüche können verwendet werden, um zusätzliche Informationen an Ihre Anwendung zu übergeben.',
+    'Passen Sie Zugriffstoken oder ID-Token an und stellen Sie Ihrer Anwendung zusätzliche Informationen zur Verfügung.',
+  access_token: {
+    card_title: 'Zugriffstoken',
+    card_description:
+      'Das Zugriffstoken ist die von APIs zur Autorisierung von Anfragen verwendete Berechtigung und enthält nur die für Zugriffsentscheidungen erforderlichen Ansprüche.',
+  },
   user_jwt: {
-    card_title: 'Für Benutzer',
     card_field: 'Benutzerzugriffstoken',
     card_description:
       'Fügen Sie benutzerspezifische Daten während der Ausstellung des Zugriffstokens hinzu.',
     for: 'für Benutzer',
   },
   machine_to_machine_jwt: {
-    card_title: 'Für M2M',
-    card_field: 'Maschine-zu-Maschine-Token',
+    card_field: 'Maschine-zu-Maschine-Zugriffstoken',
     card_description:
       'Fügen Sie zusätzliche Daten während der Ausstellung des Maschine-zu-Maschine-Tokens hinzu.',
     for: 'für M2M',
+  },
+  id_token: {
+    card_title: 'ID-Token',
+    card_description:
+      'Das ID-Token ist eine Identitätsaussage, die nach der Anmeldung empfangen wird und Benutzeridentitätsansprüche enthält, die der Client zur Anzeige oder Sitzungserstellung verwenden kann.',
+    card_field: 'Benutzer-ID-Token',
+    card_field_description:
+      "Die Ansprüche 'sub', 'email', 'phone', 'profile' und 'address' sind immer verfügbar. Andere Ansprüche müssen hier zuerst aktiviert werden. In allen Fällen muss Ihre App die entsprechenden Scopes bei der Integration anfordern, um sie zu erhalten.",
   },
   code_editor_title: 'Passen Sie die {{token}}-Ansprüche an',
   custom_jwt_create_button: 'Benutzerdefinierte Ansprüche hinzufügen',
@@ -27,6 +38,7 @@ const jwt_claims = {
   restore: 'Standard wiederherstellen',
   restored: 'Wiederhergestellt',
   data_source_tab: 'Datenquelle',
+  error_handling_tab: 'Fehlerbehandlung',
   test_tab: 'Testumgebung',
   jwt_claims_description:
     'Standardansprüche werden automatisch im JWT enthalten und können nicht überschrieben werden.',
@@ -40,6 +52,16 @@ const jwt_claims = {
     subtitle:
       'Verwenden Sie den `context.grant` Eingabeparameter, um wichtige Informationen zu gewähren, nur für den Token-Austausch verfügbar.',
   },
+  interaction_data: {
+    title: 'Benutzerinteraktionskontext',
+    subtitle:
+      'Verwenden Sie den Parameter `context.interaction`, um auf die Interaktionsdetails des Benutzers der aktuellen Authentifizierungssitzung zuzugreifen.',
+  },
+  application_data: {
+    title: 'Anwendungskontext',
+    subtitle:
+      'Verwenden Sie den Eingabeparameter `context.application`, um Anwendungsinformationen bereitzustellen, die dem Token zugeordnet sind.',
+  },
   token_data: {
     title: 'Token-Daten',
     subtitle: 'Verwenden Sie den `token` Eingabeparameter für die aktuelle Zugriffstoken-Payload.',
@@ -47,6 +69,19 @@ const jwt_claims = {
   api_context: {
     title: 'API-Kontext: Zugriffskontrolle',
     subtitle: 'Verwenden Sie die Methode `api.denyAccess`, um die Token-Anfrage abzulehnen.',
+  },
+  error_handling: {
+    title: 'Fehlerbehandlung',
+    subtitle:
+      'Steuert, ob die Token-Ausstellung blockiert werden soll, wenn das Skript fehlschlägt.',
+    input_field_title: 'Verhalten bei der Token-Ausstellung bei Skriptfehlern',
+    block_issuance_switch: 'Token-Ausstellung blockieren, wenn das Skript Fehler wirft',
+    default_hint_create:
+      'Neue Skripte für benutzerdefinierte Claims blockieren standardmäßig die Token-Ausgabe, wenn das Skript fehlschlägt. Wenn die API bereits einen Wert liefert, wird stattdessen der gespeicherte Wert verwendet.',
+    default_hint_edit:
+      'Bestehende Skripte für benutzerdefinierte Claims ohne diese Einstellung behalten den bisherigen Standardwert "aus", bis Sie ausdrücklich einen Wert speichern.',
+    warning:
+      'Wenn aktiviert, lehnen Laufzeitfehler im Skript die Token-Anfrage mit `invalid_request` (400) und einer lokalisierten `error_description` ab. Aufrufe von `api.denyAccess` geben weiterhin `access_denied` zurück.',
   },
   fetch_external_data: {
     title: 'Externe Daten abrufen',

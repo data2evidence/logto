@@ -1,8 +1,12 @@
+/* init_order = 1 */
+
 create table connectors (
   tenant_id varchar(21) not null 
     references tenants (id) on update cascade on delete cascade,
   id varchar(128) not null,
   sync_profile boolean not null default FALSE,
+  /** Whether the token storage is enabled for this connector. Only applied for OAuth2/OIDC social connectors. */
+  enable_token_storage boolean not null default FALSE,
   connector_id varchar(128) not null,
   config jsonb /* @use JsonObject */ not null default '{}'::jsonb,
   metadata jsonb /* @use ConfigurableConnectorMetadata */ not null default '{}'::jsonb,

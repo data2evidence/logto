@@ -1,5 +1,7 @@
+/* eslint-disable max-lines */
 import { UserScope } from '@logto/core-kit';
 import { SignInIdentifier } from '@logto/schemas';
+import { PhoneNumberParser } from '@logto/shared';
 
 import { enableAllAccountCenterFields } from '#src/api/account-center.js';
 import { authedAdminApi } from '#src/api/api.js';
@@ -9,7 +11,9 @@ import {
   getUserInfo,
   updatePrimaryEmail,
   updatePrimaryPhone,
+  updateUser,
 } from '#src/api/my-account.js';
+import { updateSignInExperience } from '#src/api/sign-in-experience.js';
 import {
   createAndVerifyVerificationCode,
   createVerificationRecordByPassword,
@@ -22,7 +26,7 @@ import {
   signInAndGetUserApi,
 } from '#src/helpers/profile.js';
 import { enableAllPasswordSignInMethods } from '#src/helpers/sign-in-experience.js';
-import { generateEmail, generatePhone } from '#src/utils.js';
+import { generateEmail, generatePhone, generateNationalPhoneNumber } from '#src/utils.js';
 
 describe('account (email and phone)', () => {
   beforeAll(async () => {
@@ -137,6 +141,36 @@ describe('account (email and phone)', () => {
 
       await deleteDefaultTenantUser(user.id);
     });
+
+    it('should reject the email if the email is in the blocklist', async () => {
+      const email = generateEmail();
+      await updateSignInExperience({
+        emailBlocklistPolicy: {
+          customBlocklist: [email],
+        },
+      });
+
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.Profile, UserScope.Email],
+      });
+
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+      const newVerificationRecordId = await createAndVerifyVerificationCode(api, {
+        type: SignInIdentifier.Email,
+        value: email,
+      });
+
+      await expectRejects(
+        updatePrimaryEmail(api, email, verificationRecordId, newVerificationRecordId),
+        {
+          code: 'session.email_blocklist.email_not_allowed',
+          status: 422,
+        }
+      );
+
+      await deleteDefaultTenantUser(user.id);
+    });
   });
 
   describe('DELETE /my-account/primary-email', () => {
@@ -167,45 +201,78 @@ describe('account (email and phone)', () => {
       await deleteDefaultTenantUser(user.id);
     });
 
-    it('should fail if email is the only sign-up identifier', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
+    it('should reject deleting the last identifier', async () => {
+      const primaryEmail = generateEmail();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryEmail,
+      });
       const api = await signInAndGetUserApi(username, password, {
         scopes: [UserScope.Profile, UserScope.Email],
       });
       const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      await enableAllPasswordSignInMethods({
-        identifiers: [SignInIdentifier.Email],
-        password: true,
-        verify: true,
-      });
+      await updateUser(api, { username: null }, verificationRecordId);
 
       await expectRejects(deletePrimaryEmail(api, verificationRecordId), {
-        code: 'user.email_required',
+        code: 'user.last_sign_in_method_required',
         status: 400,
       });
 
-      await enableAllPasswordSignInMethods();
       await deleteDefaultTenantUser(user.id);
     });
 
-    it('should fail if email or phone is the sign-up identifier', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
+    it('should be able to delete primary email if email is the sign-up identifier and another identifier remains', async () => {
+      const primaryEmail = generateEmail();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryEmail,
+      });
       const api = await signInAndGetUserApi(username, password, {
         scopes: [UserScope.Profile, UserScope.Email],
       });
       const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      await enableAllPasswordSignInMethods({
-        identifiers: [SignInIdentifier.Email, SignInIdentifier.Phone],
-        password: true,
-        verify: true,
-      });
 
-      await expectRejects(deletePrimaryEmail(api, verificationRecordId), {
-        code: 'user.email_or_phone_required',
-        status: 400,
-      });
+      try {
+        await enableAllPasswordSignInMethods({
+          identifiers: [SignInIdentifier.Email],
+          password: true,
+          verify: true,
+        });
 
-      await enableAllPasswordSignInMethods();
+        await deletePrimaryEmail(api, verificationRecordId);
+
+        const userInfo = await getUserInfo(api);
+        expect(userInfo).toHaveProperty('primaryEmail', null);
+      } finally {
+        await enableAllPasswordSignInMethods();
+      }
+
+      await deleteDefaultTenantUser(user.id);
+    });
+
+    it('should be able to delete primary email if email or phone is the sign-up identifier and another identifier remains', async () => {
+      const primaryEmail = generateEmail();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryEmail,
+      });
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.Profile, UserScope.Email],
+      });
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+
+      try {
+        await enableAllPasswordSignInMethods({
+          identifiers: [SignInIdentifier.Email, SignInIdentifier.Phone],
+          password: true,
+          verify: true,
+        });
+
+        await deletePrimaryEmail(api, verificationRecordId);
+
+        const userInfo = await getUserInfo(api);
+        expect(userInfo).toHaveProperty('primaryEmail', null);
+      } finally {
+        await enableAllPasswordSignInMethods();
+      }
+
       await deleteDefaultTenantUser(user.id);
     });
 
@@ -263,71 +330,118 @@ describe('account (email and phone)', () => {
       await deleteDefaultTenantUser(user.id);
     });
 
-    it('should fail if phone is the only sign-up identifier', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
+    it('should be able to update primary phone by verifying existing phone', async () => {
+      const primaryPhone = generatePhone();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryPhone,
+      });
       const api = await signInAndGetUserApi(username, password, {
         scopes: [UserScope.Profile, UserScope.Phone],
       });
-      const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      await enableAllPasswordSignInMethods({
-        identifiers: [SignInIdentifier.Phone],
-        password: true,
-        verify: true,
-      });
-
-      await expectRejects(deletePrimaryPhone(api, verificationRecordId), {
-        code: 'user.phone_required',
-        status: 400,
-      });
-
-      await enableAllPasswordSignInMethods();
-      await deleteDefaultTenantUser(user.id);
-    });
-
-    it('should fail if email or phone is the sign-up identifier', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
-      const api = await signInAndGetUserApi(username, password, {
-        scopes: [UserScope.Profile, UserScope.Phone],
-      });
-      const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      await enableAllPasswordSignInMethods({
-        identifiers: [SignInIdentifier.Email, SignInIdentifier.Phone],
-        password: true,
-        verify: true,
-      });
-
-      await expectRejects(deletePrimaryPhone(api, verificationRecordId), {
-        code: 'user.email_or_phone_required',
-        status: 400,
-      });
-
-      await enableAllPasswordSignInMethods();
-      await deleteDefaultTenantUser(user.id);
-    });
-
-    it('should be able to delete primary phone', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
-      const api = await signInAndGetUserApi(username, password, {
-        scopes: [UserScope.Profile, UserScope.Phone],
-      });
-      const verificationRecordId = await createVerificationRecordByPassword(api, password);
       const newPhone = generatePhone();
+      const verificationRecordId = await createAndVerifyVerificationCode(api, {
+        type: SignInIdentifier.Phone,
+        value: primaryPhone,
+      });
       const newVerificationRecordId = await createAndVerifyVerificationCode(api, {
         type: SignInIdentifier.Phone,
         value: newPhone,
       });
 
       await updatePrimaryPhone(api, newPhone, verificationRecordId, newVerificationRecordId);
-
       const userInfo = await getUserInfo(api);
       expect(userInfo).toHaveProperty('primaryPhone', newPhone);
 
-      await deletePrimaryPhone(api, verificationRecordId);
-
-      const userInfoAfterDelete = await getUserInfo(api);
-      expect(userInfoAfterDelete).toHaveProperty('primaryPhone', null);
-
       await deleteDefaultTenantUser(user.id);
+    });
+  });
+
+  describe('should fail if the new phone already exists', () => {
+    it('new phone with internationNumber format, existing phone with leading zero format', async () => {
+      // We use the country code 64 as New Zealand local phone number cloud have leading zero.
+      const primaryPhone = `64${generateNationalPhoneNumber()}`;
+      const { internationalNumber, internationalNumberWithLeadingZero } = new PhoneNumberParser(
+        primaryPhone
+      );
+
+      if (!internationalNumber || !internationalNumberWithLeadingZero) {
+        throw new Error('Invalid phone number');
+      }
+
+      const { user: userWithExistingPhone } = await createDefaultTenantUserWithPassword({
+        primaryPhone: internationalNumber,
+      });
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.Profile, UserScope.Phone],
+      });
+
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+
+      const newVerificationRecordId = await createAndVerifyVerificationCode(api, {
+        type: SignInIdentifier.Phone,
+        value: internationalNumberWithLeadingZero,
+      });
+
+      await expectRejects(
+        updatePrimaryPhone(
+          api,
+          internationalNumberWithLeadingZero,
+          verificationRecordId,
+          newVerificationRecordId
+        ),
+        {
+          code: 'user.phone_already_in_use',
+          status: 422,
+        }
+      );
+
+      await Promise.all([
+        deleteDefaultTenantUser(user.id),
+        deleteDefaultTenantUser(userWithExistingPhone.id),
+      ]);
+    });
+
+    it('new phone with leading zero format, existing phone uses standard international format', async () => {
+      // We use the country code 64 as New Zealand local phone number cloud have leading zero.
+      const primaryPhone = `64${generateNationalPhoneNumber()}`;
+      const { internationalNumber, internationalNumberWithLeadingZero } = new PhoneNumberParser(
+        primaryPhone
+      );
+
+      if (!internationalNumber || !internationalNumberWithLeadingZero) {
+        throw new Error('Invalid phone number');
+      }
+
+      const { user: userWithExistingPhone } = await createDefaultTenantUserWithPassword({
+        primaryPhone: internationalNumberWithLeadingZero,
+      });
+      const { user, username, password } = await createDefaultTenantUserWithPassword();
+
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.Profile, UserScope.Phone],
+      });
+
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+
+      const newVerificationRecordId = await createAndVerifyVerificationCode(api, {
+        type: SignInIdentifier.Phone,
+        value: internationalNumber,
+      });
+
+      await expectRejects(
+        updatePrimaryPhone(api, internationalNumber, verificationRecordId, newVerificationRecordId),
+        {
+          code: 'user.phone_already_in_use',
+          status: 422,
+        }
+      );
+
+      await Promise.all([
+        deleteDefaultTenantUser(user.id),
+        deleteDefaultTenantUser(userWithExistingPhone.id),
+      ]);
     });
   });
 
@@ -359,45 +473,78 @@ describe('account (email and phone)', () => {
       await deleteDefaultTenantUser(user.id);
     });
 
-    it('should fail if phone is the only sign-up identifier', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
+    it('should reject deleting the last identifier', async () => {
+      const primaryPhone = generatePhone();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryPhone,
+      });
       const api = await signInAndGetUserApi(username, password, {
         scopes: [UserScope.Profile, UserScope.Phone],
       });
       const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      await enableAllPasswordSignInMethods({
-        identifiers: [SignInIdentifier.Phone],
-        password: true,
-        verify: true,
-      });
+      await updateUser(api, { username: null }, verificationRecordId);
 
       await expectRejects(deletePrimaryPhone(api, verificationRecordId), {
-        code: 'user.phone_required',
+        code: 'user.last_sign_in_method_required',
         status: 400,
       });
 
-      await enableAllPasswordSignInMethods();
       await deleteDefaultTenantUser(user.id);
     });
 
-    it('should fail if email or phone is the sign-up identifier', async () => {
-      const { user, username, password } = await createDefaultTenantUserWithPassword();
+    it('should be able to delete primary phone if phone is the sign-up identifier and another identifier remains', async () => {
+      const primaryPhone = generatePhone();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryPhone,
+      });
       const api = await signInAndGetUserApi(username, password, {
         scopes: [UserScope.Profile, UserScope.Phone],
       });
       const verificationRecordId = await createVerificationRecordByPassword(api, password);
-      await enableAllPasswordSignInMethods({
-        identifiers: [SignInIdentifier.Email, SignInIdentifier.Phone],
-        password: true,
-        verify: true,
-      });
 
-      await expectRejects(deletePrimaryPhone(api, verificationRecordId), {
-        code: 'user.email_or_phone_required',
-        status: 400,
-      });
+      try {
+        await enableAllPasswordSignInMethods({
+          identifiers: [SignInIdentifier.Phone],
+          password: true,
+          verify: true,
+        });
 
-      await enableAllPasswordSignInMethods();
+        await deletePrimaryPhone(api, verificationRecordId);
+
+        const userInfo = await getUserInfo(api);
+        expect(userInfo).toHaveProperty('primaryPhone', null);
+      } finally {
+        await enableAllPasswordSignInMethods();
+      }
+
+      await deleteDefaultTenantUser(user.id);
+    });
+
+    it('should be able to delete primary phone if email or phone is the sign-up identifier and another identifier remains', async () => {
+      const primaryPhone = generatePhone();
+      const { user, username, password } = await createDefaultTenantUserWithPassword({
+        primaryPhone,
+      });
+      const api = await signInAndGetUserApi(username, password, {
+        scopes: [UserScope.Profile, UserScope.Phone],
+      });
+      const verificationRecordId = await createVerificationRecordByPassword(api, password);
+
+      try {
+        await enableAllPasswordSignInMethods({
+          identifiers: [SignInIdentifier.Email, SignInIdentifier.Phone],
+          password: true,
+          verify: true,
+        });
+
+        await deletePrimaryPhone(api, verificationRecordId);
+
+        const userInfo = await getUserInfo(api);
+        expect(userInfo).toHaveProperty('primaryPhone', null);
+      } finally {
+        await enableAllPasswordSignInMethods();
+      }
+
       await deleteDefaultTenantUser(user.id);
     });
 
@@ -427,3 +574,4 @@ describe('account (email and phone)', () => {
     });
   });
 });
+/* eslint-enable max-lines */

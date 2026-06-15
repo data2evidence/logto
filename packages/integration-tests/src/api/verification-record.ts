@@ -1,4 +1,8 @@
-import { type SignInIdentifier } from '@logto/schemas';
+import {
+  type WebAuthnRegistrationOptions,
+  type SignInIdentifier,
+  type BindWebAuthnPayload,
+} from '@logto/schemas';
 import { type KyInstance } from 'ky';
 
 import { readConnectorMessage } from '#src/helpers/index.js';
@@ -75,11 +79,12 @@ export const createSocialVerificationRecord = async (
   api: KyInstance,
   connectorId: string,
   state: string,
-  redirectUri: string
+  redirectUri: string,
+  scope?: string
 ) => {
   const { verificationRecordId, authorizationUri, expiresAt } = await api
     .post('api/verifications/social', {
-      json: { connectorId, state, redirectUri },
+      json: { connectorId, state, redirectUri, scope },
     })
     .json<{ verificationRecordId: string; authorizationUri: string; expiresAt: string }>();
 
@@ -96,5 +101,23 @@ export const verifySocialAuthorization = async (
 ) => {
   await api.post('api/verifications/social/verify', {
     json: { verificationRecordId, connectorData },
+  });
+};
+
+export const createWebAuthnRegistrationOptions = async (api: KyInstance) => {
+  const { verificationRecordId, registrationOptions } = await api
+    .post('api/verifications/web-authn/registration', {})
+    .json<{ verificationRecordId: string; registrationOptions: WebAuthnRegistrationOptions }>();
+
+  return { verificationRecordId, registrationOptions };
+};
+
+export const verifyWebAuthnRegistration = async (
+  api: KyInstance,
+  verificationRecordId: string,
+  payload: BindWebAuthnPayload
+) => {
+  await api.post('api/verifications/web-authn/registration/verify', {
+    json: { verificationRecordId, payload },
   });
 };

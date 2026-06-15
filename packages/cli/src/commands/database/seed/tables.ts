@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import {
   createDefaultAdminConsoleConfig,
+  createDefaultIdTokenConfig,
   defaultTenantId,
   adminTenantId,
   defaultManagementApi,
@@ -10,6 +11,7 @@ import {
   createMeApiInAdminTenant,
   createDefaultSignInExperience,
   createAdminTenantSignInExperience,
+  type AdminSignInExperienceSeedOptions,
   createDefaultAdminConsoleApplication,
   createCloudApi,
   createTenantApplicationRole,
@@ -28,7 +30,10 @@ import {
   AccountCenters,
 } from '@logto/schemas';
 import { getTenantRole } from '@logto/schemas';
-import { createDefaultAccountCenter } from '@logto/schemas/lib/seeds/account-center.js';
+import {
+  createDefaultAccountCenter,
+  createAdminTenantAccountCenter,
+} from '@logto/schemas/lib/seeds/account-center.js';
 import { Tenants } from '@logto/schemas/models';
 import { generateStandardId } from '@logto/shared';
 import type { DatabaseTransactionConnection } from '@silverhand/slonik';
@@ -157,7 +162,8 @@ export const createTables = async (
 export const seedTables = async (
   connection: DatabaseTransactionConnection,
   latestTimestamp: number,
-  isCloud: boolean
+  isCloud: boolean,
+  options: AdminSignInExperienceSeedOptions = {}
 ) => {
   await createTenant(connection, defaultTenantId);
   await seedOidcConfigs(connection, defaultTenantId);
@@ -208,16 +214,20 @@ export const seedTables = async (
     connection.query(
       insertInto(createDefaultAdminConsoleConfig(adminTenantId), LogtoConfigs.table)
     ),
+    connection.query(insertInto(createDefaultIdTokenConfig(defaultTenantId), LogtoConfigs.table)),
+    connection.query(insertInto(createDefaultIdTokenConfig(adminTenantId), LogtoConfigs.table)),
     connection.query(
       insertInto(createDefaultSignInExperience(defaultTenantId, isCloud), SignInExperiences.table)
     ),
-    connection.query(insertInto(createAdminTenantSignInExperience(), SignInExperiences.table)),
+    connection.query(
+      insertInto(createAdminTenantSignInExperience(options), SignInExperiences.table)
+    ),
     connection.query(insertInto(createDefaultAdminConsoleApplication(), Applications.table)),
     connection.query(insertInto(createDefaultAccountCenter(defaultTenantId), AccountCenters.table)),
-    connection.query(insertInto(createDefaultAccountCenter(adminTenantId), AccountCenters.table)),
+    connection.query(insertInto(createAdminTenantAccountCenter(), AccountCenters.table)),
   ]);
 
-  // The below seed data is for the Logto Cloud only. We put it here for the sack of simplicity.
+  // The below seed data is for the Logto Cloud only. We put it here for the sake of simplicity.
   // The data is not harmful for OSS, since they are all admin tenant data. OSS will not use them
   // and they cannot be seen by the Console.
   await Promise.all([

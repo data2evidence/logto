@@ -2,7 +2,7 @@ const users = {
   page_title: 'ユーザー管理',
   title: 'ユーザー管理',
   subtitle:
-    'ユーザーのアイデンティティを管理する、ユーザーの作成、情報の編集、ユーザーログの表示、パスワードのリセットおよびユーザーの削除を含む',
+    'ユーザーのアイデンティティを管理する、ユーザーの作成、情報の編集、ユーザーログの表示、パスワードのリセットおよびユーザーの削除を含む。',
   create: 'ユーザーを追加する',
   create_subtitle: '少なくとも1つの以下のフィールドを提供してください。',
   error_missing_identifier:
@@ -23,6 +23,8 @@ const users = {
   placeholder_title: 'ユーザー管理',
   placeholder_description:
     '各ユーザーには、基本データ、ソーシャルアイデンティティ、およびカスタムデータが含まれるプロフィールがあります。',
+  dev_tenant_data_retention_notice:
+    '開発テナントでは、90 日以上経過したユーザーアカウントは自動的に削除されます。<a>詳細はこちら</a>',
 };
 
 export default Object.freeze(users);

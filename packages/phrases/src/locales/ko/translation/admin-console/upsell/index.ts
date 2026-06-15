@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: '플랜 업그레이드',
   compare_plans: '플랜 비교',
+  try_with_product_name: '지금 {{productName}} 사용해 보기',
   view_plans: '플랜 보기',
   create_tenant: {
     title: '테넌트 플랜 선택하기',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: '플랜 업데이트',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: '토큰 사용량이 한도를 초과했습니다. 플랜을 업그레이드하세요.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      '현재 <planName/>의 토큰 사용 한도를 초과했습니다. 사용자들이 Logto 서비스를 제대로 이용할 수 없습니다. 불편을 피하기 위해 즉시 프리미엄으로 플랜을 업그레이드하십시오.',
   },
   payment_overdue_modal: {
     title: '청구서 지불 연체',
@@ -50,6 +49,23 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: '개발 테넌트를 프로덕션 테넌트로 변경하려 합니다',
+    description:
+      '실제로 서비스를 시작할 준비가 되었습니까? 이 개발 테넌트를 프로덕션 테넌트로 변환하면 모든 기능을 잠금 해제합니다',
+    benefits: {
+      stable_environment: '최종 사용자에게: 실제 사용을 위한 안정적인 환경.',
+      keep_pro_features: 'Pro 기능 유지: Pro 플랜을 구독하려고 합니다. <a>Pro 기능 보기.</a>',
+      no_dev_restrictions:
+        '개발 제한 없음: 엔티티 및 리소스 시스템 제한과 로그인 배너를 제거합니다.',
+    },
+    cards: {
+      dev_description: '테스트 목적',
+      prod_description: '실제 프로덕션',
+      convert_label: '변환',
+    },
+    button: '프로덕션 테넌트로 변환',
+  },
 };
 
 export default Object.freeze(upsell);

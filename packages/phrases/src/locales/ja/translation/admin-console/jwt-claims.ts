@@ -1,18 +1,29 @@
 const jwt_claims = {
   title: 'カスタムJWT',
   description:
-    'アクセストークンに含めるカスタムJWTクレームを設定します。これらのクレームを使用して、追加の情報をアプリケーションに渡すことができます。',
+    'アクセストークンまたはIDトークンをカスタマイズして、アプリケーションに追加情報を提供します。',
+  access_token: {
+    card_title: 'アクセストークン',
+    card_description:
+      'アクセストークンは、APIがリクエストを承認するために使用する資格情報であり、アクセス決定に必要なクレームのみを含みます。',
+  },
   user_jwt: {
-    card_title: 'ユーザー向け',
     card_field: 'ユーザーアクセストークン',
     card_description: 'アクセストークン発行時にユーザー固有のデータを追加します。',
     for: 'ユーザー向け',
   },
   machine_to_machine_jwt: {
-    card_title: 'M2M向け',
-    card_field: 'マシン対マシントークン',
+    card_field: 'マシン対マシンアクセストークン',
     card_description: 'マシン対マシントークン発行時に追加データを含めます。',
     for: 'M2M向け',
+  },
+  id_token: {
+    card_title: 'IDトークン',
+    card_description:
+      'IDトークンはサインイン後に受け取る身元証明であり、クライアントが表示またはセッション作成に使用するユーザー識別クレームを含みます。',
+    card_field: 'ユーザーIDトークン',
+    card_field_description:
+      "クレーム 'sub'、'email'、'phone'、'profile'、'address' は常に利用可能です。その他のクレームはここで先に有効にする必要があります。すべての場合において、アプリは統合時に一致するスコープをリクエストして受信する必要があります。",
   },
   code_editor_title: 'カスタマイズ{{token}}クレーム',
   custom_jwt_create_button: 'カスタムクレームを追加',
@@ -24,6 +35,7 @@ const jwt_claims = {
   restore: 'デフォルトに戻す',
   restored: '復元されました',
   data_source_tab: 'データソース',
+  error_handling_tab: 'エラーハンドリング',
   test_tab: 'コンテキストをテスト',
   jwt_claims_description: 'デフォルトクレームはJWTに自動的に含まれ、オーバーライドできません。',
   user_data: {
@@ -35,6 +47,16 @@ const jwt_claims = {
     subtitle:
       '`context.grant`入力パラメータを使用して重要なグラント情報を提供します。これはトークン交換のためにのみ使用できます。',
   },
+  interaction_data: {
+    title: 'ユーザーインタラクションコンテキスト',
+    subtitle:
+      '`context.interaction` パラメーターを使用して、現在の認証セッションにおけるユーザーのインタラクション詳細にアクセスします。',
+  },
+  application_data: {
+    title: 'アプリケーションコンテキスト',
+    subtitle:
+      '`context.application` 入力パラメータを使用して、トークンに関連するアプリケーション情報を提供します。',
+  },
   token_data: {
     title: 'トークンデータ',
     subtitle: '現在のアクセストークンペイロードに対して`token`入力パラメータを使用します。',
@@ -42,6 +64,18 @@ const jwt_claims = {
   api_context: {
     title: 'API コンテキスト：アクセス制御',
     subtitle: '`api.denyAccess` メソッドを使用してトークンリクエストを拒否します。',
+  },
+  error_handling: {
+    title: 'エラーハンドリング',
+    subtitle: 'スクリプトが失敗したときにトークン発行をブロックするかどうかを制御します。',
+    input_field_title: 'スクリプトエラー時のトークン発行動作',
+    block_issuance_switch: 'スクリプトがエラーになった場合はトークン発行をブロックする',
+    default_hint_create:
+      '新しいカスタムクレームスクリプトでは、スクリプトが失敗した場合にトークン発行をブロックする設定がデフォルトで有効になります。API がすでに値を返している場合は、保存済みの値が優先されます。',
+    default_hint_edit:
+      'この設定を持たない既存のカスタムクレームスクリプトでは、明示的に値を保存するまで、従来どおりデフォルトで無効のままになります。',
+    warning:
+      '有効にすると、スクリプト実行時エラーによりトークンリクエストは `invalid_request` (400) とローカライズされた `error_description` で拒否されます。`api.denyAccess` の呼び出しは引き続き `access_denied` を返します。',
   },
   fetch_external_data: {
     title: '外部データを取得',

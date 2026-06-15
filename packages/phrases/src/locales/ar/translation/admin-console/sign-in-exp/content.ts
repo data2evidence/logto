@@ -1,6 +1,7 @@
 const content = {
   terms_of_use: {
     title: 'الشروط',
+    description: 'إضافة الشروط والخصوصية لتلبية متطلبات الامتثال.',
     terms_of_use: 'رابط شروط الاستخدام',
     terms_of_use_placeholder: 'https://your.terms.of.use/',
     privacy_policy: 'رابط سياسة الخصوصية',
@@ -25,17 +26,11 @@ const content = {
       'عند تعطيل الكشف التلقائي، اللغة الافتراضية هي اللغة الوحيدة التي سيعرضها البرنامج الخاص بك. قم بتشغيل الكشف التلقائي لتوسيع اللغة.',
   },
   support: {
-    /** UNTRANSLATED */
-    title: 'SUPPORT',
-    /** UNTRANSLATED */
-    subtitle: 'Display your support channels on error pages for quick user assistance.',
-    /** UNTRANSLATED */
-    support_email: 'Support email',
-    /** UNTRANSLATED */
+    title: 'الدعم',
+    subtitle: 'عرض قنوات الدعم الخاصة بك على صفحات الخطأ لتوفير مساعدة سريعة للمستخدم.',
+    support_email: 'بريد الدعم الإلكتروني',
     support_email_placeholder: 'support@email.com',
-    /** UNTRANSLATED */
-    support_website: 'Support website',
-    /** UNTRANSLATED */
+    support_website: 'موقع الدعم الإلكتروني',
     support_website_placeholder: 'https://your.website/support',
   },
   manage_language: {

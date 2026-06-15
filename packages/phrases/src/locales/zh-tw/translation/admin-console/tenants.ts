@@ -1,18 +1,28 @@
 const tenants = {
   title: '設置',
   description: '高效管理租戶設定並自訂您的網域。',
+  oss_description: '請在此變更帳戶設定並管理您的個人資料，以確保帳戶安全。',
   tabs: {
     settings: '設置',
     members: '成員',
     domains: '網域',
+    oidc_configs: 'OIDC 設定',
     subscription: '方案與計費',
     billing_history: '帳單歷史記錄',
+  },
+  members: {
+    card_title: '透過 Logto Cloud 更安全地管理租戶',
+    card_description: '無需共用單一管理員帳號，也能為你的租戶新增管理員或協作者。',
+    card_action: '探索 Logto Cloud',
   },
   settings: {
     title: '設定',
     description: '設定租戶名稱並查看您的資料托管區域和租戶類型。',
     tenant_id: '租戶 ID',
     tenant_name: '租戶名稱',
+    tenant_instance: '選擇你的實例',
+    tenant_instance_description:
+      '選擇租戶將托管的位置。選擇 Logto Cloud 的公共共享基礎設施，或選擇專用實例以獲得專屬資源。',
     tenant_region: '資料托管地區',
     tenant_region_description: '您的租戶資源（使用者、應用程式等）所在的實體位置。建立後無法更改。',
     tenant_region_tip: '您的租戶資源托管於 {{region}}。 <a>了解更多</a>',
@@ -20,9 +30,14 @@ const tenants = {
     environment_tag_production: '產品',
     tenant_type: '租戶類型',
     development_description:
-      '僅供測試，不應在生產環境中使用。無需訂閱。它擁有所有專業功能，但存在限制，如登入橫幅。 <a>瞭解更多</a>',
-    production_description: '旨在供最終用戶使用，可能需要付費訂閱。 <a>瞭解更多</a>',
+      '僅供測試，不應在生產環境中使用。無需訂閱。它擁有所有專業功能，但存在限制，如登入橫幅。',
+    production_description: '旨在供最終用戶使用，可能需要付費訂閱。',
     tenant_info_saved: '租戶資訊成功儲存。',
+    tenant_mfa: '多因素驗證',
+    tenant_mfa_description: '要求成員設定多因素驗證才能存取此租戶。',
+    enterprise_sso: '企業 SSO',
+    enterprise_sso_description:
+      '僅限付費方案。聯繫我們啟用企業 SSO，讓所有成員可以使用您組織的身分提供者登入 Logto Cloud 控制台。',
   },
   full_env_tag: {
     development: '開發',
@@ -43,8 +58,10 @@ const tenants = {
   create_modal: {
     title: '建立客戶',
     subtitle: '建立一個具有獨立資源和使用者的新租戶。',
+    tenant_id: '租戶 ID',
     tenant_usage_purpose: '您希望將此租戶用於什麼目的？',
     development_description: '僅供測試，不應在生產環境中使用。無需訂閱。',
+    development_description_for_private_regions: '僅供測試，不應在生產環境中使用。',
     development_hint: '它擁有所有專業功能，但存在限制，如登入橫幅。',
     production_description: '供最終用戶使用，可能需要付費訂閱。',
     available_plan: '可用方案：',
@@ -53,6 +70,9 @@ const tenants = {
     tenant_created: '租戶建立成功。',
     invitation_failed: '某些邀請發送失敗。請稍後在設置 -> 成員中再試。',
     tenant_type_description: '這一點在建立後無法更改。',
+    tenant_id_invalid: '租戶 ID 只能包含小寫字母、數字和連字符，且不能超過 {{max}} 個字元。',
+    tenant_id_placeholder: '你的租戶 ID',
+    tenant_id_tip: '自訂租戶 ID。如果留空，Logto 將產生預設 ID。租戶 ID 在建立後無法更改。',
   },
   dev_tenant_migration: {
     title: '您現在可以通過創建新的 "開發租戶" 免費試用我們的專業功能！',
@@ -88,8 +108,7 @@ const tenants = {
   },
   status: {
     mau_exceeded: '超過 MAU 限制',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: '超過 Token 限制',
     suspended: '暫停',
     overdue: '逾期',
   },

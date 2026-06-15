@@ -27,6 +27,11 @@ const whiteListedEndpoint = [
     method: 'GET',
     path: `${experienceRoutes.prefix}/sso-connectors`,
   },
+  // POST /experience/preflight/sign-in-passkey/authentication:  Generate WebAuthn authentication options for passkey sign-in, no interaction needed.
+  {
+    method: 'POST',
+    path: `${experienceRoutes.prefix}/preflight/sign-in-passkey/authentication`,
+  },
 ];
 
 /**

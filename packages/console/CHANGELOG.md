@@ -1,5 +1,527 @@
 # Change Log
 
+## 1.37.0
+
+### Minor Changes
+
+- 8407ecd410: add a time-range picker to the audit logs page with a default of the last 7 days.
+
+  the picker offers preset windows (`Last 1 hour` / `Last 24 hours` / `Last 7 days` / `Last 30 days`) plus a custom date range. it scopes every request to a bounded `start_time` / `end_time` window — reducing latency on tenants with very large log volumes — while keeping older logs reachable by widening the range.
+
+- 42f3969840: add protected app ID token claim scopes and tenant custom domain SDK endpoint support
+
+  Protected App settings in Console let you choose which ID token claims (such as `roles`, `custom_data`, and `organizations`) are forwarded to your origin via the `Logto-ID-Token` header. When a tenant custom domain is active, Protected App remote config uses that domain as the SDK endpoint.
+
+### Patch Changes
+
+- 7b7a5c8f6: the Audit Logs page now opts into the count-cap behavior introduced in `@logto/core` by passing `?enableCap=true` to `GET /api/logs`.
+
+  For tenants with very large log volumes (more than 10,000 matching entries), the page renders a Prev/Next layout when the server reports a capped count instead of hitting `statement_timeout`.
+
+## 1.36.0
+
+### Minor Changes
+
+- ab073bb65f: support blocking token issuance when custom JWT scripts fail
+
+  This update adds configurable JWT customizer error handling for access tokens and client credentials flows.
+
+  - core now preserves `api.denyAccess()` as `access_denied` and converts other blocking-mode script failures into localized `invalid_request` responses
+  - console adds a dedicated `Error handling` tab for configuring the behavior, defaults `blockIssuanceOnError` to enabled for newly created scripts, keeps existing scripts without a saved value on the legacy disabled default, and aligns the related guidance copy
+  - schemas, phrases, and integration coverage are updated to match the new blocking behavior and localized error messages
+
+- d4570beed5: add the account center security page
+
+  End users can now manage their account security from the account center:
+
+  - `@logto/account` ships the `/account/security` route with social account linking and unlinking, MFA 2-step verification, and account deletion.
+  - `@logto/console` exposes the delete-account URL field on the sign-in experience account center settings, and surfaces the account center and social prebuilt UI entries.
+
+- 3350b13ec8: add grace period support to private signing key rotation
+
+  This update adds support for a grace period during private signing key rotation, through the environment variable `PRIVATE_KEY_ROTATION_GRACE_PERIOD`, or CLI `--gracePeriod` option.
+
+  During the grace period, the new signing key is marked as "Next", and the existing signing key remains active. This allows for a smoother transition when rotating keys, as it provides a window of time for clients to refresh cached JWKS without experiencing downtime or authentication failures.
+
+  After the grace period ends, the new private signing key will transition to "Current" state, and the old signing key will be marked as "Previous".
+
+  Check out the [documentation](https://docs.logto.io/logto-oss/using-cli/rotate-signing-keys) for more details.
+
+## 1.35.0
+
+### Minor Changes
+
+- 7cee48bd97: support OAuth 2.0 Device Authorization Grant (device flow)
+
+  Device flow lets users sign in on input-limited devices such as smart TVs, CLI tools, IoT gadgets, and gaming consoles by completing authentication on a separate device like a phone or laptop.
+
+  How it works:
+
+  1. The device displays a short user code and a verification URL.
+  2. The user opens the URL on another device, enters the code, and signs in.
+  3. Once approved, the original device receives tokens and completes authentication.
+
+  To create a device flow application in Console:
+
+  - Select "Input-limited app / CLI" under the Native framework list, or
+  - Create an app without framework, then choose "Device flow" as the authorization flow, or
+  - Create a third-party Native app, then choose "Device flow" as the authorization flow.
+
+  The application settings page shows a device-flow-specific guide and a built-in demo you can try immediately.
+
+- d189d8f5aa: introduce an "Authorized third-party apps" section on the user details page
+
+  - Added a new section under user details to list active third-party application authorizations for a user.
+  - Displayed app name, app ID, and access creation time for each authorized app.
+  - Added revoke action with confirmation modal.
+  - Revoking an app removes all active third-party grants associated with that app for the user.
+
+- a023a97c7c: add a new MFA onboarding page for users to explicitly enable optional MFA
+
+  For users who are not required to set up MFA, we added a new page after credential verification in the sign-in flow to explicitly ask whether they want to enable optional MFA for better account security.
+
+  This is especially important when the passkey sign-in feature is available, since passkeys can be used for both sign-in and MFA verification, and users who set up a passkey for sign-in might not want to enable it as an MFA factor at the same time.
+
+- d2afe7351f: add app-level concurrent device limit configuration in application details
+
+  - Added a new **Concurrent device limit** section to the Application details page.
+  - Developers can configure the max number of concurrent active grants (devices) per user for the current app.
+  - When configured, on each successful authorization, Logto checks the total active grants for the user in the current app and revokes the oldest grants if the limit is exceeded.
+
+- a816cf77cb: support adaptive MFA
+
+  - In Console, the MFA settings page always exposes the adaptive MFA option and saves `adaptiveMfa` configuration in the sign-in experience payload.
+  - In Core, when adaptive MFA is enabled in the sign-in experience config, the sign-in flow evaluates adaptive MFA rules against the current sign-in context and requires MFA verification when those rules are triggered.
+  - The sign-in context is now consistently persisted into interaction data, so custom-claims scripts can read it from `context.interaction.signInContext`.
+  - The `PostSignInAdaptiveMfaTriggered` webhook event is emitted when adaptive MFA forces MFA during sign-in.
+
+- 5b7f1cb794: introduce tenant settings page and migrate signing key configs to oidc settings
+
+  - Added a new tenant-level **Settings** page in OSS, accessible from the left menu: **Tenant -> Settings**.
+  - Deprecated and removed the original **Signing keys** page.
+  - Added a new **OIDC settings** tab under **Tenant -> Settings** for managing tenant-level OIDC configurations.
+  - Migrated signing key configurations from the old page to **Settings -> OIDC settings**.
+  - Added a new **Session maximum time to live** field to configure tenant-level session TTL in days (default: `14`).
+  - Note: this console field uses days for input/display, while the underlying OIDC session TTL config/API uses seconds.
+
+- a023a97c7c: support passkey sign-in authentication method
+
+  ### Summary
+
+  Passkey sign-in provides a faster, passwordless sign-in experience that reduces friction for end users and helps improve account security. It removes repeated password entry for returning users, works with platform authenticators users already trust (for example Face ID, Touch ID, Windows Hello), and offers a smoother path from account creation to subsequent sign-ins.
+
+  #### Bind passkey for sign-in
+
+  After passkey sign-in is enabled, new users are prompted to bind a passkey during registration. Existing users who have not bound a passkey (WebAuthn) factor yet can be guided to bind one in a later sign-in flow. If a user already has a WebAuthn credential from MFA setup, that credential can be reused directly for passkey sign-in without requiring another registration step.
+
+  #### Various sign-in flows to support different user journeys and preferences
+
+  1. **Passkey sign-in button**: When **Show passkey sign-in button** is enabled, users can click **Continue with passkey** on the sign-in page to immediately trigger the browser passkey chooser and complete sign-in.
+  2. **Identifier-first flow (button hidden)**: When **Show passkey sign-in button** is disabled, sign-in follows an identifier-first flow. Users first enter an identifier (for example email or username) on the first screen. On the next step, the flow prioritizes passkey and prompts users to **Verify via passkey** before falling back to password or verification code when needed.
+  3. **Allow autofill**: When **Allow autofill** is enabled, supported browsers can show passkey suggestions directly from the identifier input on the sign-in page. Users can select a previously saved passkey from the autofill popup and sign in with minimal extra input.
+
+  Check out our [documentation](https://docs.logto.io/end-user-flows/sign-up-and-sign-in/passkey-sign-in) for more details.
+
+- 74c993a91e: introduce user session management in Console.
+
+  Account center settings:
+
+  - Added a new `session` permission control for account API access, with `off`, `readOnly`, and `edit` options.
+
+  User sessions page:
+
+  - Added an Active sessions section on the user details page, listing the user's active sessions.
+  - Allow navigation to session details from the `Manage` button or a session entry.
+
+  User session details page:
+
+  - Added a session details page with a revoke action in the top bar.
+  - Revoking the session removes the sign-in session and revokes associated first-party app grants.
+  - Previously issued opaque access tokens and refresh tokens for those apps become invalid, and new auth requests require reauthentication.
+
+## 1.34.0
+
+### Minor Changes
+
+- eced1f02d4: add application context to JWT customizer
+
+  The application context is now available in the JWT customizer script for both access token and client credentials token types. This allows you to access application details (e.g., name, description, custom data) when customizing JWT claims.
+
+- b8ca1a40c7: support ID token claims configuration
+
+  You can now customize which additional claims (e.g., `custom_data`, `identities`, `roles`, `organizations`, `organization_roles`) are included in the ID token via Console or Management API.
+
+## 1.33.0
+
+### Minor Changes
+
+- 7cbe315dde: support token exchange grant type with app-level control
+
+  - Add `allowTokenExchange` field to `customClientMetadata` to control whether an application can initiate token exchange requests
+  - Machine-to-machine applications now support token exchange
+  - All new applications will have token exchange disabled by default, you can enable it in the application settings
+  - For backward compatibility, existing first-party Traditional, Native, and SPA applications will have this enabled
+  - Third-party applications are not allowed to use token exchange
+  - Add UI toggle in Console with risk warning for public clients (single-page application / native application)
+
+- c8b2caec5c: add trust-unverified-email support for OIDC social connector and OIDC-based enterprise SSO connectors
+
+  - Add `trustUnverifiedEmail` to the OIDC social connector config (default `false`) to allow syncing emails when `email_verified` is missing or false
+  - Apply the setting in core OIDC/Azure OIDC SSO connectors and expose it in the Admin Console with new tips and translations
+
+- ce65b07964: support wildcard patterns in redirect URIs
+
+  Added support for wildcard patterns (`*`) in redirect URIs to better support dynamic environments like preview deployments.
+
+  Rules (web only):
+
+  - Wildcards are allowed for http/https redirect URIs in the hostname and/or pathname.
+  - Wildcards are rejected in scheme, port, query, and hash.
+  - Hostname wildcard patterns must contain at least one dot to avoid overly broad patterns.
+
+### Patch Changes
+
+- d65fa52917: remove deprecated interaction log events from the console audit log filter menu
+- d65fa52917: fix console audit log dropdown event key typo that caused empty filter results
+
+  Affected events:
+
+  - `Interaction.SignIn.Verification.WebAuthn.Create`
+  - `Interaction.SignIn.Verification.PhoneVerificationCode.Create`
+  - `Interaction.SignIn.Verification.PhoneVerificationCode.Submit`
+  - `Interaction.Register.Verification.WebAuthn.Create`
+  - `Interaction.Register.Verification.PhoneVerificationCode.Create`
+  - `Interaction.Register.Verification.PhoneVerificationCode.Submit`
+  - `Interaction.Register.Verification.NewPasswordIdentity.Submit`
+  - `Interaction.ForgotPassword.Verification.PhoneVerificationCode.Create`
+  - `Interaction.ForgotPassword.Verification.PhoneVerificationCode.Submit`
+  - `JwtCustomizer.ClientCredentials`
+
+- 10a9e68f1d: allow skipping mandatory sign-up identifier collection for social sign-in and sign-up
+
+  ## Background
+
+  Previously, Logto enforced mandatory user identifier collection during both sign-in and sign-up flows. Users were required to provide all identifiers configured as mandatory in the sign-up settings. This behavior applies to all sign-in methods except for enterprise SSO.
+
+  For example:
+
+  1. A new user signs up via a GitHub social connector
+  2. The IdP does not provide a verified email address
+  3. Email is configured as a mandatory sign-up identifier in Logto
+  4. In this case, the user would be prompted to provide and verify an email address before the account could be successfully created.
+
+  ## Problem
+
+  For iOS mobile app users, Apple App Store guidelines mandate social sign-in options like "Sign in with Apple" should not require additional information collection beyond what is provided by the social IdP. Enforcing additional identifier collection during social sign-in can result in app review rejection.
+
+  ## Solution
+
+  We have updated the sign-in-experience settings with a new option `skipRequiredIdentifiers` for social sign-in and sign-up flows. When enabled, this option allows users to bypass the mandatory identifier collection step during social sign-in and sign-up.
+
+  By default, this option is set to `false` to maintain existing behavior. Administrators can enable this option in the sign-in experience settings if they wish to allow users to skip mandatory identifier collection during social sign-in and sign-up.
+
+  On Logto console, this option is represented as a checkbox labeled "Require users to provide missing sign-up identifier" on the sign-in experience configuration page under the "Social sign-in" section. Checked by default.
+
+## 1.32.0
+
+### Minor Changes
+
+- 116dcf5e7d: support reCaptcha domain customization
+
+  You can now customize the domain for reCaptcha, for example, using reCaptcha with `recaptcha.net` domain.
+
+- d551f5ccc3: support creating third-party SPA and Native applications
+
+  Previously, only traditional web applications could be marked as third-party apps. Now you can also create third-party single-page applications (SPA) and native applications, enabling more flexible OAuth/OIDC integration scenarios.
+
+- 116dcf5e7d: support reCAPTCHA Enterprise checkbox mode
+
+  You can now choose between two verification modes for reCAPTCHA Enterprise:
+
+  - **Invisible**: Score-based verification that runs automatically in the background (default)
+  - **Checkbox**: Displays the "I'm not a robot" widget for user interaction
+
+  Note: The verification mode must match your reCAPTCHA key type configured in Google Cloud Console.
+
+### Patch Changes
+
+- e751e8d5ce: fix SAML app creation API call query params
+
+  The parameter should be named as "types" instead of the current "type" as this may cause the filter to not take effect when requesting the API, potentially leading to incorrect calculations in the paywall during the creation of the SAML app.
+
+## 1.31.0
+
+### Minor Changes
+
+- c3266a917a: add a new webhook event "Identifier.Lockout", which is triggered when a user is locked out due to repeated failed sign-in attempts
+
+## 1.30.0
+
+### Minor Changes
+
+- 7a32a89911: keep the “Third-party applications” tab permanently visible on the Applications page
+- 47dbdd8332: add account center config page
+
+  You can now configure the account center in the Logto Console.
+
+### Patch Changes
+
+- bb495efcae: add body-based personal access token APIs
+
+  introduce PATCH/POST endpoints that accept token names in the request body to support special characters while keeping path-based routes for compatibility:
+
+  - PATCH /api/users/{userId}/personal-access-tokens
+  - POST /api/users/{userId}/personal-access-tokens/delete
+
+## 1.29.0
+
+### Minor Changes
+
+- 1fb8593659: add email/phone MFA via verification codes
+
+  Summary
+
+  - Add two new MFA factors: Email verification code and SMS (phone) verification code.
+  - Support binding these factors during registration or first sign-in when MFA is required.
+  - Support verifying these factors on subsequent sign-ins with dedicated MFA verification pages.
+  - Update Console to configure these factors and surface guidance/conflict warnings.
+  - Support customizing forgot password methods in Sign-in Experience (related).
+
+  To learn more about this feature, please refer to the documentation: https://docs.logto.io/end-user-flows/mfa
+
+- 0ef4260e34: unify branding customization options between applications and organizations
+
+  We are now offering a more unified experience for branding customization options between applications and organizations, including:
+
+  - Branding colors (light and dark mode)
+  - Branding logos and favicons (both light and dark mode)
+  - Custom CSS
+
+  When all branding customization options are set, the precedence of the options are as follows:
+  Organization > Application > Omni sign-in experience settings
+
+## 1.28.0
+
+### Minor Changes
+
+- bb385eb15d: add a new feature for collecting user profile on new user registration
+
+  You can now collect user profile information on the last step of your registration flow.
+
+  ### Getting started
+
+  1. In Console: `Sign-in Experience > Collect user profile`. Add your profile fields:
+
+     - Use built-in basics (Name, Gender, Birthdate, Address, …); or
+     - Create custom fields (choose type, label, validation rules, required, etc.).
+
+  2. Drag & drop to reorder fields in the list; the order reflects in the form.
+  3. Test by signing up a new user in the demo app; a "Tell us about yourself" step will appear with your fields.
+  4. Registration completes only after all required fields are filled.
+
+  Check out our [docs](https://docs.logto.io/end-user-flows/collect-user-profile) for more details.
+
+## 1.27.0
+
+### Minor Changes
+
+- 0343699d7: feat: Add federated token storage support for social and enterprise SSO connectors
+
+  This update introduces the new [Secret Vault](https://docs.logto.io/secret-vault/) feature in Logto.
+
+  The Secret Vault is designed to securely store sensitive user data — such as access tokens, API keys, passcodes, and other confidential information. These secrets are typically used to access third-party services on behalf of users, making secure storage essential.
+
+  With this release, federated token set storage support is added to both social and enterprise SSO connectors. When enabled, Logto will securely store the token set issued by the provider after a successful user authentication. Applications can then retrieve the access token later to access third-party APIs without requiring the user to reauthenticate.
+
+  - **Social connector details page**: For supported connectors (GitHub, Google, Facebook, Standard OAuth 2.0, and Standard OIDC), a new switch has been added to enable token storage.
+  - **Enterprise SSO connector details page**: For all OIDC-based SSO connectors, a new switch has been added to enable token storage.
+  - **User detail page**: Refactored layout. User social and enterprise SSO identities are now organized into a new Connection section. This section lists all of a user’s linked connections, showing third-party identity information and token storage status (if applicable).
+  - **New user identity details page**: Introduced a dedicated page for managing individual third-party identities. Use this page to view identity details and token storage status.
+
+## 1.26.0
+
+### Minor Changes
+
+- db77aad7a: add user interaction context to custom token claims script
+
+  This change introduces the ability to access user interaction details in the custom token claims script within Logto console. The `interaction` context includes information about the user's interaction event, user ID, and verification records, allowing developers to create dynamic and context-aware token claims.
+
+## 1.25.0
+
+### Minor Changes
+
+- 35bbc4399: add phone number validation and parsing to ensure the correct format when updating an existing user’s primary phone number or creating a new user with a phone number
+- e8df19b7e: feat: introduce email blocklist settings page
+
+  Add a new email blocklist settings page to the Logto console under the Security section. This page allows administrators to manage the email blocklist policy for end users. Use this policy to restrict users from signing up or linking their accounts with any email addresses that are against the specified blocklist.
+
+### Patch Changes
+
+- 80112708d: always show enable CAPTCHA toggle
+
+  Even if there is no CAPTCHA provider, the toggle will be shown but disabled.
+
+  Also the back link of the captcha details page is changed to `/security/captcha`.
+
+## 1.24.0
+
+### Minor Changes
+
+- 2961d355d: bump node version to ^22.14.0
+- 0a76f3389: add captcha bot protection
+
+  You can now enable CAPTCHA bot protection for your sign-in experience with providers like Google reCAPTCHA enterprise and Cloudflare Turnstile.
+
+  To enable CAPTCHA bot protection, you need to:
+
+  1. Go to Console > Security > CAPTCHA > Bot protection.
+  2. Select the CAPTCHA provider you want to use.
+  3. Configure the CAPTCHA provider.
+  4. Save the settings.
+  5. Enable CAPTCHA in the Security page.
+
+  Then take a preview of your sign-in experience to see the CAPTCHA in action.
+
+- e69ea0373: feat: introduced new `security` section to Logto console.
+
+  We have introduced a new security section in the Logto console, which includes the following features:
+
+  - Password policy: This feature has been migrated from the signInExperience section to the new security section.
+  - CAPTCHA: Enable CAPTCHA for sign-up, sign-in, and password recovery to mitigate automated threats.
+  - Identifier lockout: Temporarily lock an identifier after multiple failed authentication attempts (e.g., consecutive incorrect passwords or verification codes) to prevent brute force access.
+
+## 1.23.0
+
+### Minor Changes
+
+- 13d04d776: feat: support multiple sign-up identifiers in sign-in experience
+
+  ## New update
+
+  Introduces a new optional field, `secondaryIdentifiers`, to the sign-in experience sign-up settings. This enhancement allows developers to specify multiple required user identifiers during the user sign-up process. Available options include `email`, `phone`, `username` and `emailOrPhone`.
+
+  ### Explanation of the difference between `signUp.identifiers` and new `signUp.secondaryIdentifiers`
+
+  The existing `signUp.identifiers` field represents the sign-up identifiers enabled for user sign-up and is an array type. In this legacy setup, if multiple identifiers are provided, users can complete the sign-up process using any one of them. The only multi-value case allowed is `[email, phone]`, which signifies that users can provide either an email or a phone number.
+
+  To enhance flexibility and support multiple required sign-up identifiers, the existing `signUp.identifiers` field does not suffice. To maintain backward compatibility with existing data, we have introduced this new `secondaryIdentifiers` field.
+
+  Unlike the `signUp.identifiers` field, the `signUp.secondaryIdentifiers` array follows an `AND` logic, meaning that all elements listed in this field are required during the sign-up process, in addition to the primary identifiers. This new field also accommodates the `emailOrPhone` case by defining an exclusive `emailOrPhone` value type, which indicates that either a phone number or an email address must be provided.
+
+  In summary, while `identifiers` allows for optional selection among email and phone, `secondaryIdentifiers` enforces mandatory inclusion of all specified identifiers.
+
+  ### Examples
+
+  1. `username` as the primary identifier. In addition, user will be required to provide a verified `email` and `phone number` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["username"],
+    "secondaryIdentifiers": [
+      {
+        "type": "email",
+        "verify": true
+      },
+      {
+        "type": "phone",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": true
+  }
+  ```
+
+  2. `username` as the primary identifier. In addition, user will be required to provide either a verified `email` or `phone number` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["username"],
+    "secondaryIdentifiers": [
+      {
+        "type": "emailOrPhone",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": true
+  }
+  ```
+
+  3. `email` or `phone number` as the primary identifier. In addition, user will be required to provide a `username` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["email", "phone"],
+    "secondaryIdentifiers": [
+      {
+        "type": "username",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": false
+  }
+  ```
+
+  ### Sign-in experience settings
+
+  - `@logto/core`: Update the `/api/sign-in-experience` endpoint to support the new `secondaryIdentifiers` field in the sign-up settings.
+  - `@logto/console`: Replace the sign-up identifier single selector with a multi-selector to support multiple sign-up identifiers. The order of the identifiers can be rearranged by dragging and dropping the items in the list. The first item in the list will be considered the primary identifier and stored in the `signUp.identifiers` field, while the rest will be stored in the `signUp.secondaryIdentifiers` field.
+
+  ### End-user experience
+
+  The sign-up flow is now split into two stages:
+
+  - Primary identifiers (`signUp.identifiers`) are collected in the first-screen registration screen.
+  - Secondary identifiers (`signUp.secondaryIdentifiers`) are requested in subsequent steps after the primary registration has been submitted.
+
+  ## Other refactors
+
+  We have fully decoupled the sign-up identifier settings from the sign-in methods. Developers can now require as many user identifiers as needed during the sign-up process without impacting the sign-in process.
+
+  The following restrictions on sign-in and sign-up settings have been removed:
+
+  1. Password requirement is now optional when `username` is configured as a sign-up identifier. However, users without passwords cannot sign in using username authentication.
+  2. Removed the constraint requiring sign-up identifiers to be enabled as sign-in methods.
+  3. Removed the requirement for password verification across all sign-in methods when password is enabled for sign-up.
+
+- dc13cc73d: feat(console): add Logto WordPress plugin guide
+
+## 1.22.1
+
+### Patch Changes
+
+- 31adfb6ac: fix docs link
+
+## 1.22.0
+
+### Minor Changes
+
+- 0b785ee0d: feat(console): display jwks uri on application details page
+
+### Patch Changes
+
+- 096367ff5: add missing `/api` segment in SAML application Single-sign-on service URL
+- 5086f4bd2: update documentation links in Console
+- e11e57de8: bump dependencies for security update
+- d44007faa: apply custom domain to SAML SSO and SAML applications
+
+## 1.21.0
+
+### Minor Changes
+
+- 1337669e1: add support on SAML applications
+
+  Logto now supports acting as a SAML identity provider (IdP), enabling enterprise users to achieve secure Single Sign-On (SSO) through the standardized SAML protocol. Key features include:
+
+  - Full support for SAML 2.0 protocol
+  - Flexible attribute mapping configuration
+  - Metadata auto-configuration support
+  - Enterprise-grade encryption and signing
+
+  [View full documentation](https://docs.logto.io/integrate-logto/saml-app) for more details.
+
 ## 1.20.0
 
 ### Minor Changes

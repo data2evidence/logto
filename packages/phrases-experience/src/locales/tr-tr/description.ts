@@ -10,16 +10,16 @@ const description = {
   sign_in: 'Giriş Yap',
   privacy_policy: 'Gizlilik Politikası',
   create_account: 'Hesap Oluştur',
+  switch_account: 'Hesabı değiştir',
   or: 'veya',
   and: 've',
   enter_passcode: 'Doğrulama kodu {{address}} {{target}} adresinize gönderildi',
   passcode_sent: 'Doğrulama kodu yeniden gönderildi',
   resend_after_seconds: 'Henüz almadınız mı? <span>{{seconds}}</span> saniye sonra tekrar gönderin',
   resend_passcode: 'Henüz almadınız mı? <a>Doğrulama kodunu tekrar gönderin</a>',
-  create_account_id_exists: '{{type}} {{value}} ile hesap mevcut, giriş yapmak ister misiniz?',
+  create_account_id_exists: '{{value}} ile bir hesap zaten var. Giriş yapmaya devam edin.',
   link_account_id_exists: '{{type}} {{value}} olan hesap zaten var, bağlamak ister misiniz?',
-  sign_in_id_does_not_exist:
-    '{{type}} {{value}} ile hesap mevcut değil, yeni bir hesap oluşturmak ister misiniz?',
+  sign_in_id_does_not_exist: '{{value}} için hesap bulunamadı. Yeni bir tane oluşturulsun mu?',
   sign_in_id_does_not_exist_alert: '{{type}} {{value}} olan hesap mevcut değil.',
   create_account_id_exists_alert:
     '{{type}} {{value}} olan hesap başka bir hesaba bağlı. Lütfen başka bir {{type}} deneyin.',
@@ -56,14 +56,27 @@ const description = {
     'Daha fazla güvenlik için lütfen aşağıdaki hesap ayrıntılarını tamamlayın.',
   create_your_account: 'Hesabını oluştur',
   sign_in_to_your_account: 'Hesabına giriş yap',
+  device_activation: 'Cihaz etkinleştirme',
+  device_activation_description:
+    'Cihazınızda gösterilen kodu girin. Eşleştiğinden emin olun ve bu cihazda oturum açmaya devam edin.',
+  device_activation_error_description: 'Cihazınızda görüntülenen kodu girin.',
+  device_activation_success: 'Cihazınız bağlandı!',
+  device_activation_success_description: 'Devam etmek için cihazınıza dönün.',
   no_region_code_found: 'Bölge kodu bulunamadı',
   verify_email: 'E-postanızın doğrulanması',
   verify_phone: 'Telefon numaranızın doğrulanması',
   password_requirements: 'Şifre {{items, list}}.',
   password_requirement: {
     length_one: 'en az {{count}} karakter gerektirir',
+    length_two: 'en az {{count}} karakter gerektirir',
+    length_few: 'en az {{count}} karakter gerektirir',
+    length_many: 'en az {{count}} karakter gerektirir',
     length_other: 'en az {{count}} karakter gerektirir',
     character_types_one: 'en az {{count}} tane büyük harf, küçük harf, rakam ve sembol içermelidir',
+    character_types_two: 'en az {{count}} tane büyük harf, küçük harf, rakam ve sembol içermelidir',
+    character_types_few: 'en az {{count}} tane büyük harf, küçük harf, rakam ve sembol içermelidir',
+    character_types_many:
+      'en az {{count}} tane büyük harf, küçük harf, rakam ve sembol içermelidir',
     character_types_other:
       'en az {{count}} tane büyük harf, küçük harf, rakam ve sembol içermelidir',
   },
@@ -72,30 +85,18 @@ const description = {
   single_sign_on_connectors_list:
     'Şirketiniz, {{email}} e-posta hesabı için Tekli Oturum Açmayı (Single Sign-On) etkinleştirdi. Aşağıdaki SSO sağlayıcıları ile oturum açmaya devam edebilirsiniz.',
   single_sign_on_enabled: 'Bu hesapta Tekli Oturum Açma etkinleştirildi.',
-  /** UNTRANSLATED */
-  authorize_title: 'Authorize {{name}}',
-  /** UNTRANSLATED */
-  request_permission: '{{name}} is requesting access to:',
-  /** UNTRANSLATED */
-  grant_organization_access: 'Grant the organization access:',
-  /** UNTRANSLATED */
-  authorize_personal_data_usage: 'Authorize the use of your personal data:',
-  /** UNTRANSLATED */
-  authorize_organization_access: 'Authorize access to the specific organization:',
-  /** UNTRANSLATED */
-  user_scopes: 'Personal user data',
-  /** UNTRANSLATED */
-  organization_scopes: 'Organization access',
-  /** UNTRANSLATED */
-  authorize_agreement: `By authorizing the access, you agree to the {{name}}'s <link></link>.`,
-  /** UNTRANSLATED */
-  authorize_agreement_with_redirect: `By authorizing the access, you agree to the {{name}}'s <link></link>, and will be redirected to {{uri}}.`,
-  /** UNTRANSLATED */
-  not_you: 'Not you?',
-  /** UNTRANSLATED */
-  user_id: 'User ID: {{id}}',
-  /** UNTRANSLATED */
-  redirect_to: 'You will be redirected to {{name}}.',
+  authorize_title: '{{name}} yetkilendir',
+  request_permission: '{{name}} erişim izni istiyor:',
+  grant_organization_access: 'Organizasyon erişimi ver:',
+  authorize_personal_data_usage: 'Kişisel verilerinizin kullanımını yetkilendirin:',
+  authorize_organization_access: 'Belirli organizasyonlara erişim yetkisi verin:',
+  user_scopes: 'Kişisel kullanıcı verileri',
+  organization_scopes: 'Organizasyon erişimi',
+  authorize_agreement: `Erişim yetkisi vererek, {{name}}'nin <link></link> şartlarını kabul etmiş olursunuz.`,
+  authorize_agreement_with_redirect: `Erişim yetkisi vererek, {{name}}'nin <link></link> şartlarını kabul etmiş olursunuz ve {{uri}} adresine yönlendirileceksiniz.`,
+  not_you: 'Sen değil misin?',
+  user_id: 'Kullanıcı ID: {{id}}',
+  redirect_to: '{{name}} adresine yönlendirileceksiniz.',
   auto_agreement: 'Devam ederek <link></link> kabul etmiş oluyorsunuz.',
   identifier_sign_in_description: 'Oturum açmak için {{types, list(type: disjunction;)}} girin.',
   all_sign_in_options: 'Tüm oturum açma seçenekleri',
@@ -105,6 +106,21 @@ const description = {
   back_to_sign_in: 'Girişe dön',
   support_email: 'Destek e-postası: <link></link>',
   support_website: 'Destek web sitesi: <link></link>',
+  switch_account_title: 'Şu anda {{account}} olarak oturum açtınız',
+  switch_account_description:
+    'Devam etmek için, mevcut hesaptan çıkış yapacak ve otomatik olarak yeni hesaba geçeceksiniz.',
+  about_yourself: 'Kendinizden bahsedin',
+  verify_identity: 'Kimliğinizi doğrulayın',
+  choose_verification_method: 'Nasıl giriş yapmak istediğinizi seçin',
+  verification_method: {
+    passkey: 'Passkey',
+    passkey_description: 'Cihazınız veya USB donanımıyla doğrulayın',
+    password: 'Şifre',
+    password_description: 'Şifrenizi girin',
+    email_verification_code: 'E-posta doğrulama kodu',
+    phone_verification_code: 'Telefon doğrulama kodu',
+    verification_code_description: '{{target}} adresine gönder',
+  },
 };
 
 export default Object.freeze(description);

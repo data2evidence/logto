@@ -3,9 +3,12 @@ const routes = Object.freeze({
   register: 'register',
   sso: 'single-sign-on',
   consent: 'consent',
+  device: 'device',
   resetPassword: 'reset-password',
   identifierSignIn: 'identifier-sign-in',
   identifierRegister: 'identifier-register',
+  switchAccount: 'switch-account',
+  oneTimeToken: 'one-time-token',
 } as const);
 
 export const experience = Object.freeze({

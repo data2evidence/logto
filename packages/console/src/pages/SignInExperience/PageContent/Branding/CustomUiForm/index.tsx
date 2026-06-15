@@ -2,21 +2,68 @@ import { useContext } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { Trans, useTranslation } from 'react-i18next';
 
-import InlineUpsell from '@/components/InlineUpsell';
+import CloudUploadIcon from '@/assets/icons/cloud-upload.svg?react';
+import CustomCssEditorField from '@/components/CustomCssEditorField';
+import { CloudTag } from '@/components/FeatureTag';
 import { isCloud } from '@/consts/env';
 import { latestProPlanId } from '@/consts/subscriptions';
 import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import Card from '@/ds-components/Card';
-import CodeEditor from '@/ds-components/CodeEditor';
+import DynamicT from '@/ds-components/DynamicT';
 import FormField from '@/ds-components/FormField';
 import TextLink from '@/ds-components/TextLink';
 import useDocumentationUrl from '@/hooks/use-documentation-url';
 import CustomUiAssetsUploader from '@/pages/SignInExperience/components/CustomUiAssetsUploader';
+import { buildCloudUpsellUrl, ossUpsellEntries } from '@/utils/oss-upsell';
 
 import type { SignInExperienceForm } from '../../../types';
 import FormSectionTitle from '../../components/FormSectionTitle';
 
-import brandingStyles from './index.module.scss';
+import CustomUiCspForm from './CustomUiCspForm';
+import styles from './index.module.scss';
+
+function OssBringYourUiCard() {
+  const cloudUpsellUrl = buildCloudUpsellUrl(ossUpsellEntries.signInExpBringYourUiOssCard);
+
+  return (
+    <FormField
+      title={
+        <div className={styles.titleRow}>
+          <DynamicT forKey="sign_in_exp.custom_ui.bring_your_ui_upload_title" />
+          <CloudTag>
+            <DynamicT forKey="sign_in_exp.custom_ui.cloud_tag" />
+          </CloudTag>
+        </div>
+      }
+      description={
+        <Trans i18nKey="admin_console.sign_in_exp.custom_ui.bring_your_ui_oss_description" />
+      }
+      descriptionPosition="top"
+    >
+      <div className={styles.ossCard}>
+        <div className={styles.ossCardContent}>
+          <div className={styles.ossCardIcon}>
+            <CloudUploadIcon />
+          </div>
+          <div className={styles.ossCardDescription}>
+            <Trans
+              i18nKey="admin_console.sign_in_exp.custom_ui.bring_your_ui_oss_card_description"
+              components={{
+                a: (
+                  <TextLink
+                    href={cloudUpsellUrl}
+                    targetBlank="noopener"
+                    className={styles.highlight}
+                  />
+                ),
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </FormField>
+  );
+}
 
 function CustomUiForm() {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
@@ -24,94 +71,55 @@ function CustomUiForm() {
   const { control } = useFormContext<SignInExperienceForm>();
   const { currentSubscriptionQuota } = useContext(SubscriptionDataContext);
   const isBringYourUiEnabled = currentSubscriptionQuota.bringYourUiEnabled;
+  const shouldShowOssBringYourUi = !isCloud;
 
   return (
-    <Card>
-      <FormSectionTitle title="custom_ui.title" />
-      <FormField
-        title="sign_in_exp.custom_ui.css_code_editor_title"
-        tip={(closeTipHandler) => (
-          <>
-            <div>{t('sign_in_exp.custom_ui.css_code_editor_description1')}</div>
-            <div>
+    <>
+      <Card>
+        <FormSectionTitle title="custom_ui.css_code_editor_title" />
+        <CustomCssEditorField />
+      </Card>
+      <Card>
+        <FormSectionTitle
+          title="custom_ui.bring_your_ui_title"
+          featureTag={{ isVisible: !isBringYourUiEnabled, plan: latestProPlanId }}
+        />
+        {isCloud && (
+          <FormField
+            title="sign_in_exp.custom_ui.bring_your_ui_upload_title"
+            description={
               <Trans
                 components={{
                   a: (
                     <TextLink
                       targetBlank="noopener"
-                      href={getDocumentationUrl('/docs/recipes/customize-sie/custom-css')}
-                      onClick={closeTipHandler}
+                      href={getDocumentationUrl('/docs/recipes/customize-sie/bring-your-ui')}
                     />
                   ),
                 }}
               >
-                {t('sign_in_exp.custom_ui.css_code_editor_description2', {
-                  link: t('sign_in_exp.custom_ui.css_code_editor_description_link_content'),
-                })}
+                {t('sign_in_exp.custom_ui.bring_your_ui_description')}
               </Trans>
-            </div>
-          </>
+            }
+            descriptionPosition="top"
+          >
+            <Controller
+              name="customUiAssets"
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <CustomUiAssetsUploader
+                  disabled={!isBringYourUiEnabled}
+                  value={value}
+                  onChange={onChange}
+                />
+              )}
+            />
+          </FormField>
         )}
-      >
-        <Controller
-          name="customCss"
-          control={control}
-          render={({ field: { onChange, value } }) => (
-            <CodeEditor
-              className={brandingStyles.customCssCodeEditor}
-              language="scss"
-              value={value ?? undefined}
-              placeholder={t('sign_in_exp.custom_ui.css_code_editor_content_placeholder')}
-              onChange={onChange}
-            />
-          )}
-        />
-      </FormField>
-      {isCloud && (
-        <FormField
-          isBeta
-          title="sign_in_exp.custom_ui.bring_your_ui_title"
-          description={
-            <Trans
-              components={{
-                a: (
-                  <TextLink
-                    targetBlank="noopener"
-                    href={getDocumentationUrl('/docs/recipes/customize-sie/bring-your-ui')}
-                  />
-                ),
-              }}
-            >
-              {t('sign_in_exp.custom_ui.bring_your_ui_description')}
-            </Trans>
-          }
-          descriptionPosition="top"
-          featureTag={{
-            isVisible: !isBringYourUiEnabled,
-            plan: latestProPlanId,
-          }}
-        >
-          <Controller
-            name="customUiAssets"
-            control={control}
-            render={({ field: { onChange, value } }) => (
-              <CustomUiAssetsUploader
-                disabled={!isBringYourUiEnabled}
-                value={value}
-                onChange={onChange}
-              />
-            )}
-          />
-          {!isBringYourUiEnabled && (
-            <InlineUpsell
-              className={brandingStyles.upsell}
-              for="bring_your_ui"
-              actionButtonText="upsell.view_plans"
-            />
-          )}
-        </FormField>
-      )}
-    </Card>
+        {isCloud && <CustomUiCspForm isDisabled={!isBringYourUiEnabled} />}
+        {shouldShowOssBringYourUi && <OssBringYourUiCard />}
+      </Card>
+    </>
   );
 }
 

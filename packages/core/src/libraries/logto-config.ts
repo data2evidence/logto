@@ -1,10 +1,25 @@
-import type { CloudConnectionData, JwtCustomizerType, LogtoOidcConfigType } from '@logto/schemas';
+import crypto from 'node:crypto';
+
+import type {
+  CloudConnectionData,
+  IdTokenConfig,
+  JwtCustomizerType,
+  LogtoOidcConfigType,
+  OidcConfigKey,
+  OidcConfigKeysResponse,
+  OidcPrivateKey,
+} from '@logto/schemas';
 import {
   LogtoConfigs,
   LogtoJwtTokenKey,
   LogtoOidcConfigKey,
+  OidcSigningKeyStatus,
   cloudApiIndicator,
   cloudConnectionDataGuard,
+  normalizeOidcPrivateKeys,
+  oidcConfigKeysResponseGuard,
+  rotateOidcPrivateKeyStatuses,
+  idTokenConfigGuard,
   jwtCustomizerConfigGuard,
   logtoOidcConfigGuard,
 } from '@logto/schemas';
@@ -13,7 +28,9 @@ import chalk from 'chalk';
 import { ZodError, z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
+import { createLogtoConfigQueries } from '#src/queries/logto-config.js';
 import type Queries from '#src/tenants/Queries.js';
+import { exportJWK } from '#src/utils/jwks.js';
 
 export type LogtoConfigLibrary = ReturnType<typeof createLogtoConfigLibrary>;
 
@@ -22,15 +39,25 @@ export const createLogtoConfigLibrary = ({
     getRowsByKeys,
     getCloudConnectionData: queryCloudConnectionData,
     upsertJwtCustomizer: queryUpsertJwtCustomizer,
+    upsertIdTokenConfig: queryUpsertIdTokenConfig,
+    getSigningKeyRotationState,
   },
-}: Pick<Queries, 'logtoConfigs'>) => {
+  pool,
+  wellKnownCache,
+}: Pick<Queries, 'logtoConfigs' | 'pool' | 'wellKnownCache'>) => {
   const getOidcConfigs = async (consoleLog: ConsoleLog): Promise<LogtoOidcConfigType> => {
     try {
       const { rows } = await getRowsByKeys(Object.values(LogtoOidcConfigKey));
-
-      return z
+      const configs = z
         .object(logtoOidcConfigGuard)
         .parse(Object.fromEntries(rows.map(({ key, value }) => [key, value])));
+
+      return {
+        ...configs,
+        [LogtoOidcConfigKey.PrivateKeys]: normalizeOidcPrivateKeys(
+          configs[LogtoOidcConfigKey.PrivateKeys]
+        ),
+      };
     } catch (error: unknown) {
       if (error instanceof ZodError) {
         consoleLog.error(
@@ -129,6 +156,78 @@ export const createLogtoConfigLibrary = ({
     return updatedRow.value;
   };
 
+  const upsertIdTokenConfig = async (idTokenConfig: IdTokenConfig) => {
+    const { value } = await queryUpsertIdTokenConfig(idTokenConfig);
+    return idTokenConfigGuard.parse(value);
+  };
+
+  /**
+   * Remove key material before returning OIDC keys through the management API.
+   * For private signing keys, also attach the scheduled effective time from the
+   * persisted rotation state to the staged Next key.
+   */
+  const getRedactedOidcKeyResponse = async (
+    type: LogtoOidcConfigKey,
+    keys: Array<OidcConfigKey | OidcPrivateKey>
+  ): Promise<OidcConfigKeysResponse[]> => {
+    const signingKeyRotationState =
+      type === LogtoOidcConfigKey.PrivateKeys ? await getSigningKeyRotationState() : undefined;
+
+    return Promise.all(
+      keys.map(async ({ id, value, createdAt, ...rest }) => {
+        if (type === LogtoOidcConfigKey.PrivateKeys) {
+          const jwk = await exportJWK(crypto.createPrivateKey(value));
+          const status = 'status' in rest ? rest.status : undefined;
+          const parseResult = oidcConfigKeysResponseGuard.safeParse({
+            id,
+            createdAt,
+            effectiveAt:
+              status === OidcSigningKeyStatus.Next
+                ? signingKeyRotationState?.signingKeyRotationAt
+                : undefined,
+            signingKeyAlgorithm: jwk.kty,
+            status,
+          });
+
+          if (!parseResult.success) {
+            throw new RequestError({ code: 'request.general', status: 422 });
+          }
+
+          return parseResult.data;
+        }
+
+        return { id, createdAt };
+      })
+    );
+  };
+
+  /**
+   * Rotate OIDC private signing key statuses if the scheduled rotation time has come.
+   * This function is intended to be called before accessing OIDC configs to ensure the key statuses are up-to-date.
+   */
+  const promoteScheduledSigningKeyRotation = async () => {
+    await pool.transaction(async (connection) => {
+      const transactionalQueries = createLogtoConfigQueries(connection, wellKnownCache);
+      await transactionalQueries.lockPrivateSigningKeysAndRotationState();
+
+      const rotationState = await transactionalQueries.getSigningKeyRotationState();
+
+      if (!rotationState?.signingKeyRotationAt || rotationState.signingKeyRotationAt > Date.now()) {
+        return;
+      }
+
+      const privateKeys = await transactionalQueries.getPrivateSigningKeys();
+      const updatedPrivateKeys = rotateOidcPrivateKeyStatuses(privateKeys);
+
+      // Skip rewriting the row when there is no staged Next key to promote.
+      if (updatedPrivateKeys === privateKeys) {
+        return;
+      }
+
+      await transactionalQueries.upsertPrivateSigningKeys(updatedPrivateKeys);
+    });
+  };
+
   return {
     getOidcConfigs,
     getCloudConnectionData,
@@ -136,5 +235,8 @@ export const createLogtoConfigLibrary = ({
     getJwtCustomizer,
     getJwtCustomizers,
     updateJwtCustomizer,
+    upsertIdTokenConfig,
+    getRedactedOidcKeyResponse,
+    promoteScheduledSigningKeyRotation,
   };
 };

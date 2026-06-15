@@ -1,19 +1,30 @@
 const jwt_claims = {
   title: 'Niestandardowe JWT',
   description:
-    'Ustaw niestandardowe roszczenia JWT, które mają być dołączone do tokenu dostępowego. Te roszczenia mogą być wykorzystane do przekazywania dodatkowych informacji do Twojej aplikacji.',
+    'Dostosuj token dostępowy lub token ID, dostarczając dodatkowe informacje do Twojej aplikacji.',
+  access_token: {
+    card_title: 'Token dostępowy',
+    card_description:
+      'Token dostępowy to uprawnienie używane przez interfejsy API do autoryzacji żądań, zawierające tylko roszczenia niezbędne do decyzji o dostępie.',
+  },
   user_jwt: {
-    card_title: 'Dla użytkownika',
     card_field: 'Token dostępowy użytkownika',
     card_description:
       'Dodaj dane specyficzne dla użytkownika podczas wydawania tokenu dostępowego.',
     for: 'dla użytkownika',
   },
   machine_to_machine_jwt: {
-    card_title: 'Dla M2M',
-    card_field: 'Token maszynowy do maszyny',
+    card_field: 'Token dostępowy maszynowy do maszyny',
     card_description: 'Dodaj dodatkowe dane podczas wydawania tokena maszynowego do maszyny.',
     for: 'dla M2M',
+  },
+  id_token: {
+    card_title: 'Token ID',
+    card_description:
+      'Token ID to twierdzenie tożsamości otrzymane po zalogowaniu, zawierające roszczenia tożsamości użytkownika dla klienta do wykorzystania w celu wyświetlenia lub tworzenia sesji.',
+    card_field: 'Token ID użytkownika',
+    card_field_description:
+      "Roszczenia 'sub', 'email', 'phone', 'profile' i 'address' są zawsze dostępne. Inne roszczenia muszą być najpierw włączone tutaj. We wszystkich przypadkach Twoja aplikacja musi zażądać odpowiednich zakresów podczas integracji, aby je otrzymać.",
   },
   code_editor_title: 'Dostosuj roszczenia {{token}}',
   custom_jwt_create_button: 'Dodaj niestandardowe roszczenia',
@@ -25,6 +36,7 @@ const jwt_claims = {
   restore: 'Przywróć domyślne',
   restored: 'Przywrócono',
   data_source_tab: 'Źródło danych',
+  error_handling_tab: 'Obsługa błędów',
   test_tab: 'Kontekst testowy',
   jwt_claims_description:
     'Domyślne roszczenia są automatycznie dołączane do JWT i nie mogą być nadpisane.',
@@ -38,6 +50,16 @@ const jwt_claims = {
     subtitle:
       'Użyj parametru wejściowego `context.grant`, aby dostarczyć istotne informacje dotyczące przyznania, dostępne tylko przy wymianie tokenu.',
   },
+  interaction_data: {
+    title: 'Kontekst interakcji użytkownika',
+    subtitle:
+      'Użyj parametru `context.interaction`, aby uzyskać dostęp do szczegółów interakcji użytkownika dla bieżącej sesji uwierzytelniania.',
+  },
+  application_data: {
+    title: 'Kontekst aplikacji',
+    subtitle:
+      'Użyj parametru wejściowego `context.application`, aby dostarczć informacje o aplikacji powiązanej z tokenem.',
+  },
   token_data: {
     title: 'Dane tokenu',
     subtitle: 'Użyj parametru wejściowego `token`, aby uzyskać bieżący ładunek tokenu dostępu.',
@@ -45,6 +67,18 @@ const jwt_claims = {
   api_context: {
     title: 'Kontekst API: kontrola dostępu',
     subtitle: 'Użyj metody `api.denyAccess`, aby odrzucić żądanie tokenu.',
+  },
+  error_handling: {
+    title: 'Obsługa błędów',
+    subtitle: 'Określa, czy wydanie tokena ma zostać zablokowane, gdy skrypt zakończy się błędem.',
+    input_field_title: 'Zachowanie wydawania tokena przy błędzie skryptu',
+    block_issuance_switch: 'Blokuj wydanie tokena, gdy skrypt zgłasza błędy',
+    default_hint_create:
+      'Nowe skrypty niestandardowych claims domyślnie blokują wydanie tokenu, gdy skrypt zakończy się błędem. Jeśli API zwraca już wartość, zostanie użyta zapisana wartość.',
+    default_hint_edit:
+      'Istniejące skrypty niestandardowych claims bez tego ustawienia zachowują dotychczasowe domyślne wyłączenie tej opcji, dopóki nie zapiszesz jej jawnie.',
+    warning:
+      'Po włączeniu błędy wykonania skryptu odrzucają żądanie tokena z `invalid_request` (400) i zlokalizowanym `error_description`. Wywołania `api.denyAccess` nadal zwracają `access_denied`.',
   },
   fetch_external_data: {
     title: 'Pobierz zewnętrzne dane',

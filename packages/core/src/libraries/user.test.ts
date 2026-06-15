@@ -1,4 +1,4 @@
-import { MfaFactor, UsersPasswordEncryptionMethod } from '@logto/schemas';
+import { defaultTenantId, MfaFactor, UsersPasswordEncryptionMethod } from '@logto/schemas';
 import { createMockUtils } from '@logto/shared/esm';
 
 import { mockResource, mockAdminUserRole, mockScope } from '#src/__mocks__/index.js';
@@ -30,10 +30,14 @@ mockEsm('hash-wasm', () => ({
 
 mockEsm('#src/utils/password.js', () => ({
   encryptPassword: jest.fn().mockResolvedValue('argon2:xxx'),
+  legacyVerify: jest.fn().mockResolvedValue(true),
 }));
+
+const { argon2Verify } = await import('hash-wasm');
 
 const { MockQueries } = await import('#src/test-utils/tenant.js');
 const { createUserLibrary } = await import('./user.js');
+const { decoyArgon2Hash } = await import('./user-password-verification.js');
 const { encryptUserPassword } = await import('./user.utils.js');
 
 const hasUserWithId = jest.fn();
@@ -47,7 +51,7 @@ const queries = new MockQueries({
 });
 
 describe('generateUserId()', () => {
-  const { generateUserId } = createUserLibrary(queries);
+  const { generateUserId } = createUserLibrary(defaultTenantId, queries);
 
   afterEach(() => {
     hasUserWithId.mockClear();
@@ -97,7 +101,39 @@ describe('encryptUserPassword()', () => {
 });
 
 describe('verifyUserPassword()', () => {
-  const { verifyUserPassword } = createUserLibrary(queries);
+  const { verifyUserPassword } = createUserLibrary(defaultTenantId, queries);
+
+  afterEach(() => {
+    jest.mocked(argon2Verify).mockClear();
+  });
+
+  describe('missing user or password', () => {
+    it('rejects with invalid credentials when user is null', async () => {
+      await expect(verifyUserPassword(null, 'password')).rejects.toThrowError(
+        new RequestError({ code: 'session.invalid_credentials', status: 422 })
+      );
+      expect(argon2Verify).toHaveBeenCalledWith({
+        password: 'password',
+        hash: decoyArgon2Hash,
+      });
+    });
+
+    it('rejects with invalid credentials when user has no password configured', async () => {
+      const userWithoutPassword = {
+        ...mockUser,
+        passwordEncrypted: null,
+        passwordEncryptionMethod: null,
+      };
+
+      await expect(verifyUserPassword(userWithoutPassword, 'password')).rejects.toThrowError(
+        new RequestError({ code: 'session.invalid_credentials', status: 422 })
+      );
+      expect(argon2Verify).toHaveBeenCalledWith({
+        password: 'password',
+        hash: decoyArgon2Hash,
+      });
+    });
+  });
 
   describe('Argon2i', () => {
     it('resolves when password is correct', async () => {
@@ -107,6 +143,10 @@ describe('verifyUserPassword()', () => {
     it('rejects when password is incorrect', async () => {
       await expect(verifyUserPassword(mockUser, 'wrong')).rejects.toThrowError(
         new RequestError({ code: 'session.invalid_credentials', status: 422 })
+      );
+      expect(argon2Verify).toHaveBeenCalledTimes(1);
+      expect(argon2Verify).not.toHaveBeenCalledWith(
+        expect.objectContaining({ hash: decoyArgon2Hash })
       );
     });
   });
@@ -145,6 +185,10 @@ describe('verifyUserPassword()', () => {
       await expect(verifyUserPassword(user, 'wrong')).rejects.toThrowError(
         new RequestError({ code: 'session.invalid_credentials', status: 422 })
       );
+      expect(argon2Verify).toHaveBeenCalledTimes(1);
+      expect(argon2Verify).not.toHaveBeenCalledWith(
+        expect.objectContaining({ hash: decoyArgon2Hash })
+      );
     });
   });
 
@@ -162,6 +206,10 @@ describe('verifyUserPassword()', () => {
       await expect(verifyUserPassword(user, 'wrong')).rejects.toThrowError(
         new RequestError({ code: 'session.invalid_credentials', status: 422 })
       );
+      expect(argon2Verify).toHaveBeenCalledWith({
+        password: 'wrong',
+        hash: decoyArgon2Hash,
+      });
     });
   });
 
@@ -179,6 +227,10 @@ describe('verifyUserPassword()', () => {
       await expect(verifyUserPassword(user, 'wrong')).rejects.toThrowError(
         new RequestError({ code: 'session.invalid_credentials', status: 422 })
       );
+      expect(argon2Verify).toHaveBeenCalledWith({
+        password: 'wrong',
+        hash: decoyArgon2Hash,
+      });
     });
   });
 
@@ -196,6 +248,10 @@ describe('verifyUserPassword()', () => {
       await expect(verifyUserPassword(user, 'wrong')).rejects.toThrowError(
         new RequestError({ code: 'session.invalid_credentials', status: 422 })
       );
+      expect(argon2Verify).toHaveBeenCalledWith({
+        password: 'wrong',
+        hash: decoyArgon2Hash,
+      });
     });
   });
 
@@ -234,7 +290,7 @@ describe('verifyUserPassword()', () => {
 });
 
 describe('findUserScopesForResourceId()', () => {
-  const { findUserScopesForResourceIndicator } = createUserLibrary(queries);
+  const { findUserScopesForResourceIndicator } = createUserLibrary(defaultTenantId, queries);
 
   it('returns scopes that the user has access', async () => {
     await expect(
@@ -244,7 +300,7 @@ describe('findUserScopesForResourceId()', () => {
 });
 
 describe('findUserRoles()', () => {
-  const { findUserRoles } = createUserLibrary(queries);
+  const { findUserRoles } = createUserLibrary(defaultTenantId, queries);
 
   it('returns user roles', async () => {
     await expect(findUserRoles(mockUser.id)).resolves.toEqual([mockAdminUserRole]);
@@ -253,7 +309,7 @@ describe('findUserRoles()', () => {
 
 describe('addUserMfaVerification()', () => {
   const createdAt = new Date().toISOString();
-  const { addUserMfaVerification } = createUserLibrary(queries);
+  const { addUserMfaVerification } = createUserLibrary(defaultTenantId, queries);
 
   beforeAll(() => {
     jest.useFakeTimers();

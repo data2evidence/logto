@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'Повысить план',
   compare_plans: 'Сравнить планы',
+  try_with_product_name: 'Попробуйте {{productName}} сейчас',
   view_plans: 'Просмотреть планы',
   create_tenant: {
     title: 'Выберите план арендатора',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'Обновить план',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'Превышено использование токенов. Обновите свой план.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      'Вы превысили лимит использования токенов <planName/>. Пользователи не смогут должным образом получить доступ к сервису Logto. Пожалуйста, обновите свой план до премиум-версии, чтобы избежать каких-либо неудобств.',
   },
   payment_overdue_modal: {
     title: 'Просрочен платеж за счет',
@@ -50,6 +49,25 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'Вы собираетесь изменить свой арендатор разработки на арендатор производства',
+    description:
+      'Готовы запустить в работу? Перевод этого dev-арендатора в арендатор производства разблокирует все функции',
+    benefits: {
+      stable_environment:
+        'Для конечных пользователей: стабильная среда для реального использования.',
+      keep_pro_features:
+        'Сохраните функции Pro: Вы собираетесь подписаться на Pro план. <a>Просмотр функций Pro.</a>',
+      no_dev_restrictions:
+        'Нет ограничений для разработчиков: снимает лимиты системы сущностей и ресурсов и баннер входа в систему.',
+    },
+    cards: {
+      dev_description: 'Для тестирования',
+      prod_description: 'Реальная продукция',
+      convert_label: 'преобразовать',
+    },
+    button: 'Конвертировать в производственный арендатор',
+  },
 };
 
 export default Object.freeze(upsell);

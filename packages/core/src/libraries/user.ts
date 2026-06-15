@@ -1,11 +1,15 @@
 import type { BindMfa, CreateUser, Scope, User } from '@logto/schemas';
-import { RoleType, Users, UsersPasswordEncryptionMethod } from '@logto/schemas';
-import { generateStandardId, generateStandardShortId } from '@logto/shared';
-import { condArray, deduplicateByKey, type Nullable } from '@silverhand/essentials';
-import { argon2Verify, bcryptVerify, md5, sha1, sha256 } from 'hash-wasm';
+import {
+  adminTenantId,
+  ProductEvent,
+  RoleType,
+  UsersPasswordEncryptionMethod,
+} from '@logto/schemas';
+import { generateStandardShortId, generateStandardId } from '@logto/shared';
+import type { Nullable } from '@silverhand/essentials';
+import { deduplicateByKey, condArray } from '@silverhand/essentials';
 import pRetry from 'p-retry';
 
-import { buildInsertIntoWithPool } from '#src/database/insert-into.js';
 import { EnvSet } from '#src/env-set/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
 import { type JitOrganization } from '#src/queries/organization/email-domains.js';
@@ -14,13 +18,16 @@ import type Queries from '#src/tenants/Queries.js';
 import assertThat from '#src/utils/assert-that.js';
 import type { OmitAutoSetFields } from '#src/utils/sql.js';
 
+import { captureDeveloperEvent } from '../utils/posthog.js';
+
+import { isPasswordValid, rejectInvalidCredentials } from './user-password-verification.js';
 import { convertBindMfaToMfaVerification, encryptUserPassword } from './user.utils.js';
 
 export type InsertUserResult = [User];
 
 export type UserLibrary = ReturnType<typeof createUserLibrary>;
 
-export const createUserLibrary = (queries: Queries) => {
+export const createUserLibrary = (tenantId: string, queries: Queries) => {
   const {
     pool,
     roles: { findDefaultRoles, findRolesByRoleNames, findRoleByRoleName, findRolesByRoleIds },
@@ -28,10 +35,11 @@ export const createUserLibrary = (queries: Queries) => {
       hasUser,
       hasUserWithEmail,
       hasUserWithId,
-      hasUserWithPhone,
+      hasUserWithNormalizedPhone,
       hasUserWithIdentity,
       findUsersByIds,
       updateUserById,
+      insertUser: insertUserQuery,
       findUserById,
     },
     usersRoles: { findUsersRolesByRoleId, findUsersRolesByUserId },
@@ -40,6 +48,7 @@ export const createUserLibrary = (queries: Queries) => {
     organizations,
     oidcModelInstances: { revokeInstanceByUserId },
     userSsoIdentities,
+    oidcSessionExtensions,
   } = queries;
 
   const generateUserId = async (retries = 500) =>
@@ -56,11 +65,22 @@ export const createUserLibrary = (queries: Queries) => {
       { retries, factor: 0 } // No need for exponential backoff
     );
 
+  type InsertUserOptions = {
+    /** Additional role names to assign to the user upon creation. */
+    roleNames?: string[];
+    /**
+     * Whether the user is created via an interactive flow (e.g. sign up).
+     * @default false
+     */
+    isInteractive?: boolean;
+  };
+
   const insertUser = async (
     data: OmitAutoSetFields<CreateUser>,
-    additionalRoleNames: string[]
+    options?: InsertUserOptions
   ): Promise<InsertUserResult> => {
-    const roleNames = [...EnvSet.values.userDefaultRoleNames, ...additionalRoleNames];
+    const { isInteractive = false } = options ?? {};
+    const roleNames = [...EnvSet.values.userDefaultRoleNames, ...(options?.roleNames ?? [])];
     const [parameterRoles, defaultRoles] = await Promise.all([
       findRolesByRoleNames(roleNames),
       findDefaultRoles(RoleType.User),
@@ -68,11 +88,7 @@ export const createUserLibrary = (queries: Queries) => {
 
     assertThat(parameterRoles.length === roleNames.length, 'role.default_role_missing');
 
-    return pool.transaction(async (connection) => {
-      const insertUserQuery = buildInsertIntoWithPool(connection)(Users, {
-        returning: true,
-      });
-
+    const result = await pool.transaction<[User]>(async (connection) => {
       const user = await insertUserQuery(data);
       const roles = deduplicateByKey([...parameterRoles, ...defaultRoles], 'id');
 
@@ -85,6 +101,12 @@ export const createUserLibrary = (queries: Queries) => {
 
       return [user];
     });
+
+    if (tenantId === adminTenantId) {
+      captureDeveloperEvent(result[0].id, ProductEvent.DeveloperCreated, { isInteractive });
+    }
+
+    return result;
   };
 
   const checkIdentifierCollision = async (
@@ -102,7 +124,7 @@ export const createUserLibrary = (queries: Queries) => {
       throw new RequestError({ code: 'user.email_already_in_use', status: 422 });
     }
 
-    if (primaryPhone && (await hasUserWithPhone(primaryPhone, excludeUserId))) {
+    if (primaryPhone && (await hasUserWithNormalizedPhone(primaryPhone, excludeUserId))) {
       throw new RequestError({ code: 'user.phone_already_in_use', status: 422 });
     }
 
@@ -175,52 +197,19 @@ export const createUserLibrary = (queries: Queries) => {
   };
 
   const verifyUserPassword = async (user: Nullable<User>, password: string): Promise<User> => {
-    assertThat(user, new RequestError({ code: 'session.invalid_credentials', status: 422 }));
+    if (!user?.passwordEncrypted || !user.passwordEncryptionMethod) {
+      return rejectInvalidCredentials(password);
+    }
+
     const { passwordEncrypted, passwordEncryptionMethod, id } = user;
+    const isValid = await isPasswordValid({
+      password,
+      passwordEncrypted,
+      passwordEncryptionMethod,
+    });
 
-    assertThat(
-      passwordEncrypted && passwordEncryptionMethod,
-      new RequestError({ code: 'session.invalid_credentials', status: 422 })
-    );
-
-    switch (passwordEncryptionMethod) {
-      // Argon2i, Argon2id, Argon2d shares the same verify function
-      case UsersPasswordEncryptionMethod.Argon2i:
-      case UsersPasswordEncryptionMethod.Argon2id:
-      case UsersPasswordEncryptionMethod.Argon2d: {
-        const result = await argon2Verify({ password, hash: passwordEncrypted });
-        assertThat(result, new RequestError({ code: 'session.invalid_credentials', status: 422 }));
-        break;
-      }
-      case UsersPasswordEncryptionMethod.MD5: {
-        const expectedEncrypted = await md5(password);
-        assertThat(
-          expectedEncrypted === passwordEncrypted,
-          new RequestError({ code: 'session.invalid_credentials', status: 422 })
-        );
-        break;
-      }
-      case UsersPasswordEncryptionMethod.SHA1: {
-        const expectedEncrypted = await sha1(password);
-        assertThat(
-          expectedEncrypted === passwordEncrypted,
-          new RequestError({ code: 'session.invalid_credentials', status: 422 })
-        );
-        break;
-      }
-      case UsersPasswordEncryptionMethod.SHA256: {
-        const expectedEncrypted = await sha256(password);
-        assertThat(
-          expectedEncrypted === passwordEncrypted,
-          new RequestError({ code: 'session.invalid_credentials', status: 422 })
-        );
-        break;
-      }
-      case UsersPasswordEncryptionMethod.Bcrypt: {
-        const result = await bcryptVerify({ password, hash: passwordEncrypted });
-        assertThat(result, new RequestError({ code: 'session.invalid_credentials', status: 422 }));
-        break;
-      }
+    if (!isValid) {
+      return rejectInvalidCredentials(password, passwordEncryptionMethod);
     }
 
     // Migrate password to default algorithm: argon2i
@@ -241,6 +230,7 @@ export const createUserLibrary = (queries: Queries) => {
       revokeInstanceByUserId('AccessToken', userId),
       revokeInstanceByUserId('RefreshToken', userId),
       revokeInstanceByUserId('Session', userId),
+      oidcSessionExtensions.deleteByAccountId(userId),
     ]);
   };
 
@@ -258,6 +248,7 @@ export const createUserLibrary = (queries: Queries) => {
         email: string;
         /** The SSO connector ID to determine JIT organizations. */
         ssoConnectorId?: undefined;
+        organizationIds?: undefined;
       }
     | {
         /** The user ID to provision organizations for. */
@@ -266,34 +257,49 @@ export const createUserLibrary = (queries: Queries) => {
         email?: undefined;
         /** The SSO connector ID to determine JIT organizations. */
         ssoConnectorId: string;
+        organizationIds?: undefined;
+      }
+    | {
+        userId: string;
+        email?: undefined;
+        ssoConnectorId?: undefined;
+        organizationIds: string[];
       };
 
   // TODO: If the user's email is not verified, we should not provision the user into any organization.
   /**
    * Provision the user with JIT organizations and roles based on the user's email domain and the
-   * enterprise SSO connector.
+   * enterprise SSO connector. Returns only the JIT orgs the user was newly added to (i.e. orgs
+   * the user was not already a member of) so callers can decide whether to emit
+   * `Organization.Membership.Updated` for each org and what `addedUserIds` to include.
    */
   const provisionOrganizations = async ({
     userId,
     email,
     ssoConnectorId,
+    organizationIds,
   }: ProvisionOrganizationsParams): Promise<readonly JitOrganization[]> => {
     const userEmailDomain = email?.split('@')[1];
     const jitOrganizations = condArray(
       userEmailDomain &&
         (await organizations.jit.emailDomains.getJitOrganizations(userEmailDomain)),
-      ssoConnectorId && (await organizations.jit.ssoConnectors.getJitOrganizations(ssoConnectorId))
+      ssoConnectorId && (await organizations.jit.ssoConnectors.getJitOrganizations(ssoConnectorId)),
+      organizationIds && (await organizations.jit.getJitOrganizationsByIds(organizationIds))
     );
 
     if (jitOrganizations.length === 0) {
       return [];
     }
 
+    // Snapshot pre-existing memberships before the insert; afterwards
+    // `getExistingOrganizationIds` cannot distinguish pre-existing from newly-added rows.
+    const jitOrganizationIds = jitOrganizations.map(({ organizationId }) => organizationId);
+    const existingOrganizationIds = new Set(
+      await organizations.relations.users.getExistingOrganizationIds(userId, jitOrganizationIds)
+    );
+
     await organizations.relations.users.insert(
-      ...jitOrganizations.map(({ organizationId }) => ({
-        organizationId,
-        userId,
-      }))
+      ...jitOrganizationIds.map((organizationId) => ({ organizationId, userId }))
     );
 
     const data = jitOrganizations.flatMap(({ organizationId, organizationRoleIds }) =>
@@ -307,7 +313,9 @@ export const createUserLibrary = (queries: Queries) => {
       await organizations.relations.usersRoles.insert(...data);
     }
 
-    return jitOrganizations;
+    return jitOrganizations.filter(
+      ({ organizationId }) => !existingOrganizationIds.has(organizationId)
+    );
   };
 
   return {

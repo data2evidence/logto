@@ -5,7 +5,7 @@ import { type IRouterParamContext } from 'koa-router';
 import { z } from 'zod';
 
 import {
-  DataHookContextManager,
+  HookContextManager,
   InteractionHookContextManager,
 } from '#src/libraries/hook/context-manager.js';
 import { type WithInteractionDetailsContext } from '#src/middleware/koa-interaction-details.js';
@@ -19,8 +19,10 @@ const interactionEventGuard = z.object({
 export type WithExperienceInteractionHooksContext<
   ContextT extends IRouterParamContext = IRouterParamContext,
 > = ContextT & {
-  assignInteractionHookResult: InteractionHookContextManager['assignInteractionHookResult'];
-  appendDataHookContext: DataHookContextManager['appendContext'];
+  assignReleaseOnSuccessInteractionHookResult: InteractionHookContextManager['assignReleaseOnSuccessInteractionHookResult'];
+  assignReleaseAnywayInteractionHookResult: InteractionHookContextManager['assignReleaseAnywayInteractionHookResult'];
+  appendDataHookContext: HookContextManager['appendDataHookContext'];
+  appendExceptionHookContext: HookContextManager['appendExceptionHookContext'];
 };
 
 export function koaExperienceInteractionHooks<
@@ -28,7 +30,7 @@ export function koaExperienceInteractionHooks<
   ContextT extends WithInteractionDetailsContext,
   ResponseT,
 >({
-  hooks: { triggerInteractionHooks, triggerDataHooks },
+  hooks: { triggerInteractionHooks, triggerDataHooks, triggerExceptionHooks },
 }: Libraries): MiddlewareType<StateT, WithExperienceInteractionHooksContext<ContextT>, ResponseT> {
   return async (ctx, next) => {
     const {
@@ -41,8 +43,10 @@ export function koaExperienceInteractionHooks<
     const result = interactionEventGuard.safeParse(interactionDetails.result ?? {});
 
     if (!result.success) {
-      ctx.assignInteractionHookResult = noop;
+      ctx.assignReleaseOnSuccessInteractionHookResult = noop;
+      ctx.assignReleaseAnywayInteractionHookResult = noop;
       ctx.appendDataHookContext = noop;
+      ctx.appendExceptionHookContext = noop;
       return next();
     }
 
@@ -58,26 +62,58 @@ export function koaExperienceInteractionHooks<
       userIp: ip,
     });
 
-    ctx.assignInteractionHookResult =
-      interactionHookContext.assignInteractionHookResult.bind(interactionHookContext);
+    ctx.assignReleaseOnSuccessInteractionHookResult =
+      interactionHookContext.assignReleaseOnSuccessInteractionHookResult.bind(
+        interactionHookContext
+      );
+    ctx.assignReleaseAnywayInteractionHookResult =
+      interactionHookContext.assignReleaseAnywayInteractionHookResult.bind(interactionHookContext);
 
-    const dataHookContext = new DataHookContextManager({
+    const dataHookContext = new HookContextManager({
       ...interactionApiMetadata,
       ip,
     });
 
-    ctx.appendDataHookContext = dataHookContext.appendContext.bind(dataHookContext);
+    ctx.appendDataHookContext = dataHookContext.appendDataHookContext.bind(dataHookContext);
+    ctx.appendExceptionHookContext =
+      dataHookContext.appendExceptionHookContext.bind(dataHookContext);
 
-    await next();
+    try {
+      await next();
 
-    if (interactionHookContext.interactionHookResult) {
-      // Hooks should not crash the app
-      void trySafe(triggerInteractionHooks(getConsoleLogFromContext(ctx), interactionHookContext));
-    }
+      if (interactionHookContext.releaseOnSuccessInteractionHookResults.length > 0) {
+        // Hooks should not crash the app
+        void trySafe(
+          triggerInteractionHooks(
+            getConsoleLogFromContext(ctx),
+            interactionHookContext.getReleaseOnSuccessDispatchContext()
+          )
+        );
+      }
 
-    if (dataHookContext.contextArray.length > 0) {
-      // Hooks should not crash the app
-      void trySafe(triggerDataHooks(getConsoleLogFromContext(ctx), dataHookContext));
+      if (dataHookContext.dataHookContextArray.length > 0) {
+        // Data hooks represent successful data mutations and should only be dispatched
+        // after the interaction flow completes without throwing.
+        // Hooks should not crash the app
+        void trySafe(triggerDataHooks(getConsoleLogFromContext(ctx), dataHookContext));
+      }
+    } finally {
+      if (interactionHookContext.releaseAnywayInteractionHookResults.length > 0) {
+        // Release-anyway hooks are queued when the corresponding interaction event is known to
+        // have happened, even if the current request later throws.
+        // Hooks should not crash the app
+        void trySafe(
+          triggerInteractionHooks(
+            getConsoleLogFromContext(ctx),
+            interactionHookContext.getReleaseAnywayDispatchContext()
+          )
+        );
+      }
+
+      if (dataHookContext.exceptionHookContextArray.length > 0) {
+        // Hooks should not crash the app
+        void trySafe(triggerExceptionHooks(getConsoleLogFromContext(ctx), dataHookContext));
+      }
     }
   };
 }

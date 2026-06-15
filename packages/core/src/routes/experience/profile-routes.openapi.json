@@ -11,10 +11,13 @@
               "schema": {
                 "properties": {
                   "type": {
-                    "description": "The type of profile data to add. `email`, `phone`, `username`, `password`, etc."
+                    "description": "The type of profile data to add. Available options: `email`, `phone`, `username`, `password`, `social`, or `extraProfile`."
                   },
                   "value": {
                     "description": "The plain text value of the profile data. Only supported for profile data types that does not require verification, such as `username` and `password`."
+                  },
+                  "values": {
+                    "description": "The extra profile data to add. Only supported for `extraProfile` type. The data will be validated and split into standard user profile attributes and custom user profile attributes. The standard user profile attributes will be set to the user profile, whereas the custom user profile attributes will be set to the user custom data."
                   },
                   "verificationId": {
                     "description": "The ID of the verification record used to verify the profile data. Required for profile data types that require verification, such as `email`, `phone` and `social`."
@@ -35,10 +38,48 @@
             "description": "Entity not found. <br/> - `session.identifier_not_found:` (`SignIn` interaction only) The current interaction is not identified yet. All profile data must be associated with a identified user. <br/>- `session.verification_session_not_found:` The verification record is not found."
           },
           "403": {
-            "description": "`SignIn` interaction only: MFA is enabled for the user but has not been verified. The user must verify the MFA before updating the profile data."
+            "description": "`SignIn` interaction only: MFA is enabled for the user but has not been verified. The user must verify MFA before updating non-social profile data."
           },
           "422": {
             "description": "The user profile can not been processed, check error message for more details. <br/>- The profile data is invalid or conflicts with existing user data. <br/>- The profile data is already in use by another user account. <br/>- The email address is enterprise SSO enabled, can only be linked through the SSO connector."
+          }
+        }
+      }
+    },
+    "/api/experience/user-assets/avatar": {
+      "post": {
+        "tags": ["Dev feature"],
+        "operationId": "UploadExperienceAvatar",
+        "summary": "Upload avatar during register interaction",
+        "description": "Upload an image (e.g. avatar) during the `Register` experience interaction and return the public URL of the uploaded asset. The user account may not have been created yet at this point; the upload is scoped to the current interaction session. The returned URL can then be submitted as a profile field value via `POST /api/experience/profile`.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "description": "The avatar image file to upload. Must be an allowed image type and not exceed the maximum upload file size."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The asset was uploaded successfully."
+          },
+          "400": {
+            "description": "Invalid request. <br/>- The current interaction event is not `Register`. <br/>- The file is invalid, exceeds the maximum size, has a disallowed image type, or storage is not configured."
+          },
+          "403": {
+            "description": "Permission denied for the current interaction state."
+          },
+          "404": {
+            "description": "Entity not found related to the current interaction."
+          },
+          "500": {
+            "description": "Failed to upload the file to the storage provider."
           }
         }
       }
@@ -77,6 +118,27 @@
         }
       }
     },
+    "/api/experience/profile/mfa/mfa-enabled": {
+      "post": {
+        "operationId": "MarkMfaEnabled",
+        "summary": "Mark MFA as enabled",
+        "description": "Mark the user's MFA as enabled for the current interaction and persist in DB user configs upon successful submission.",
+        "responses": {
+          "204": {
+            "description": "The MFA has been successfully marked as enabled. This is typically useful for optional MFA scenarios as the client can prompt an MFA enrollment flow if the user has not enabled MFA yet, for added security."
+          },
+          "400": {
+            "description": "Not supported for the current interaction event. The MFA profile API can only be used in the `SignIn` or `Register` interaction."
+          },
+          "403": {
+            "description": "MFA verification is required but has not been completed. The user must verify the existing MFA before updating MFA settings."
+          },
+          "404": {
+            "description": "The user has not been identified yet. The `mfa-enabled` configuration must be associated with an identified user."
+          }
+        }
+      }
+    },
     "/api/experience/profile/mfa/mfa-skipped": {
       "post": {
         "operationId": "SkipMfaBindingFlow",
@@ -93,10 +155,34 @@
             "description": "Some MFA factors has already been enabled for the user. The user must verify the MFA before updating the MFA settings."
           },
           "404": {
-            "description": "The user has not been identified yet. The `mfa-skipped` configuration must be associated with a identified user."
+            "description": "The user has not been identified yet. The `mfa-skipped` configuration must be associated with an identified user."
           },
           "422": {
             "description": "The MFA verification binding is `Mandatory`, user can not skip the MFA verification binding flow."
+          }
+        }
+      }
+    },
+    "/api/experience/profile/mfa/mfa-suggestion-skipped": {
+      "post": {
+        "operationId": "SkipMfaSuggestion",
+        "summary": "Skip additional MFA suggestion",
+        "description": "Mark the optional additional MFA binding suggestion as skipped for the current interaction. When multiple MFA factors are enabled and only an email/phone factor is configured, a suggestion to add another factor may be shown; this endpoint records the choice to skip.",
+        "responses": {
+          "204": {
+            "description": "The suggestion was successfully skipped."
+          },
+          "400": {
+            "description": "Not supported for the current interaction event. The MFA profile API can only be used in the `SignIn` or `Register` interaction."
+          },
+          "403": {
+            "description": "Some MFA factors have already been enabled for the user. The user must verify MFA before updating related settings."
+          },
+          "404": {
+            "description": "The user has not been identified yet. The suggestion state must be associated with an identified user."
+          },
+          "422": {
+            "description": "The suggestion is not skippable under current policy."
           }
         }
       }
@@ -134,6 +220,55 @@
           },
           "422": {
             "description": "The MFA verification can not been processed, check error message for more details. <br/>- `user.totp_already_in_use`: A TOTP MFA secret is already in use in the current user profile. <br/>- `session.mfa.backup_code_can_not_be_alone`: The backup code can not be the only MFA factor in the user profile."
+          }
+        }
+      }
+    },
+    "/api/experience/profile/mfa/passkey-skipped": {
+      "post": {
+        "operationId": "SkipPasskeyBinding",
+        "summary": "Skip passkey binding",
+        "description": "Skip passkey binding flow. The users can temporarily skip the passkey binding flow by calling this API during sign-up. On sign-in, the skip flag will be persisted to user config.",
+        "responses": {
+          "204": {
+            "description": "The passkey binding flow has been permanently skipped."
+          },
+          "400": {
+            "description": "Not supported for the current interaction event. This API can only be used in the `SignIn` or `Register` interaction."
+          },
+          "404": {
+            "description": "The user has not been identified yet. The `passkey-skipped` configuration must be associated with a identified user."
+          }
+        }
+      }
+    },
+    "/api/experience/profile/mfa/passkey": {
+      "post": {
+        "operationId": "BindPasskey",
+        "summary": "Bind passkey for sign-in",
+        "description": "Bind a WebAuthn credential as a passkey for sign-in purposes. Unlike `POST /api/experience/profile/mfa` with `type: WebAuthn`, this endpoint is exclusively for adding a passkey as a sign-in method and does NOT mark the user's optional MFA as enabled.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "verificationId": {
+                    "description": "The ID of the WebAuthn verification record to bind as a passkey."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The passkey has been successfully bound to the user profile."
+          },
+          "400": {
+            "description": "Invalid request. <br/>- `session.verification_failed:` The WebAuthn verification record is invalid or not verified. <br/>- `session.mfa.pending_info_not_found:` The verification record does not have the required registration data."
+          },
+          "404": {
+            "description": "Entity not found. <br/>- `session.identifier_not_found:` The user has not been identified yet. <br/>- `session.verification_session_not_found:` The WebAuthn verification record is not found."
           }
         }
       }

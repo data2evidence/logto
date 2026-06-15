@@ -1,5 +1,11 @@
-import { SignInIdentifier } from '@logto/schemas';
+import {
+  AlternativeSignUpIdentifier,
+  SignInIdentifier,
+  MfaFactor,
+  type SignInExperience,
+} from '@logto/schemas';
 import { conditional } from '@silverhand/essentials';
+import { useCallback } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -7,15 +13,19 @@ import { DragDropProvider, DraggableItem } from '@/ds-components/DragDrop';
 import useEnabledConnectorTypes from '@/hooks/use-enabled-connector-types';
 
 import type { SignInExperienceForm } from '../../../../types';
-import { signInIdentifiers, signUpIdentifiersMapping } from '../../../constants';
+import { signInIdentifiers } from '../../../constants';
 import { identifierRequiredConnectorMapping } from '../../constants';
-import { getSignUpRequiredConnectorTypes, createSignInMethod } from '../../utils';
+import { createSignInMethod, getSignUpIdentifiersRequiredConnectors } from '../../utils';
 
 import AddButton from './AddButton';
 import SignInMethodItem from './SignInMethodItem';
 import styles from './index.module.scss';
 
-function SignInMethodEditBox() {
+type Props = {
+  readonly signInExperience: SignInExperience;
+};
+
+function SignInMethodEditBox({ signInExperience }: Props) {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
   const {
     control,
@@ -41,17 +51,78 @@ function SignInMethodEditBox() {
 
   const { isConnectorTypeEnabled } = useEnabledConnectorTypes();
 
-  const {
-    identifier: signUpIdentifier,
-    password: isSignUpPasswordRequired,
-    verify: isSignUpVerificationRequired,
-  } = signUp;
+  const { identifiers, password: isSignUpPasswordRequired } = signUp;
 
-  const requiredSignInIdentifiers = signUpIdentifiersMapping[signUpIdentifier];
-  const ignoredWarningConnectors = getSignUpRequiredConnectorTypes(signUpIdentifier);
+  const signUpIdentifiers = identifiers.map(({ identifier }) => identifier);
+
+  const ignoredWarningConnectors = getSignUpIdentifiersRequiredConnectors(signUpIdentifiers);
 
   const signInIdentifierOptions = signInIdentifiers.filter((candidateIdentifier) =>
     fields.every(({ identifier }) => identifier !== candidateIdentifier)
+  );
+
+  const isVerificationCodeCheckable = useCallback(
+    (identifier: SignInIdentifier) => {
+      if (identifier === SignInIdentifier.Username) {
+        return false;
+      }
+
+      // Check if the identifier is already used in MFA factors
+      const mfaFactors = signInExperience.mfa.factors;
+      if (
+        (identifier === SignInIdentifier.Email &&
+          mfaFactors.includes(MfaFactor.EmailVerificationCode)) ||
+        (identifier === SignInIdentifier.Phone &&
+          mfaFactors.includes(MfaFactor.PhoneVerificationCode))
+      ) {
+        return false;
+      }
+
+      if (isSignUpPasswordRequired) {
+        return true;
+      }
+
+      // If the email or phone sign-in method is enabled as one of the sign-up identifiers
+      // and password is not required for sign-up, then verification code is required and uncheckable.
+      // This is to ensure new users can sign in without password.
+      const signUpVerificationRequired = signUpIdentifiers.some(
+        (signUpIdentifier) =>
+          signUpIdentifier === identifier ||
+          signUpIdentifier === AlternativeSignUpIdentifier.EmailOrPhone
+      );
+
+      return !signUpVerificationRequired;
+    },
+    [isSignUpPasswordRequired, signUpIdentifiers, signInExperience.mfa.factors]
+  );
+
+  const getVerificationCodeTooltip = useCallback(
+    (identifier: SignInIdentifier) => {
+      // Return the existing tooltip for sign-up required case
+      if (isVerificationCodeCheckable(identifier)) {
+        return;
+      }
+
+      if (!isSignUpPasswordRequired) {
+        return t('sign_in_exp.sign_up_and_sign_in.tip.verification_code_auth');
+      }
+
+      // Check if the identifier is already used in MFA factors
+      const mfaFactors = signInExperience.mfa.factors;
+      if (
+        identifier === SignInIdentifier.Email &&
+        mfaFactors.includes(MfaFactor.EmailVerificationCode)
+      ) {
+        return t('sign_in_exp.sign_up_and_sign_in.tip.email_mfa_enabled');
+      }
+      if (
+        identifier === SignInIdentifier.Phone &&
+        mfaFactors.includes(MfaFactor.PhoneVerificationCode)
+      ) {
+        return t('sign_in_exp.sign_up_and_sign_in.tip.phone_mfa_enabled');
+      }
+    },
+    [isVerificationCodeCheckable, isSignUpPasswordRequired, signInExperience.mfa.factors, t]
   );
 
   return (
@@ -101,14 +172,11 @@ function SignInMethodEditBox() {
                 }}
                 render={({ field: { value }, fieldState: { error } }) => (
                   <SignInMethodItem
+                    isDeletable
                     signInMethod={value}
-                    isPasswordCheckable={
-                      identifier !== SignInIdentifier.Username && !isSignUpPasswordRequired
-                    }
-                    isVerificationCodeCheckable={
-                      !(isSignUpVerificationRequired && !isSignUpPasswordRequired)
-                    }
-                    isDeletable={!requiredSignInIdentifiers.includes(identifier)}
+                    isPasswordCheckable={identifier !== SignInIdentifier.Username}
+                    isVerificationCodeCheckable={isVerificationCodeCheckable(value.identifier)}
+                    verificationCodeTooltip={getVerificationCodeTooltip(value.identifier)}
                     requiredConnectors={requiredConnectors}
                     hasError={Boolean(error)}
                     errorMessage={error?.message}
@@ -135,7 +203,7 @@ function SignInMethodEditBox() {
         options={signInIdentifierOptions}
         hasSelectedIdentifiers={fields.length > 0}
         onSelected={(identifier) => {
-          append(createSignInMethod(identifier));
+          append(createSignInMethod(identifier, signInExperience.mfa.factors));
           revalidate();
         }}
       />

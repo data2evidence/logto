@@ -3,6 +3,7 @@ import {
   type ApplicationResponse,
   type SnakeCaseOidcConfig,
 } from '@logto/schemas';
+import { condArray } from '@silverhand/essentials';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
@@ -18,7 +19,7 @@ import Drawer from '@/components/Drawer';
 import EmptyDataPlaceholder from '@/components/EmptyDataPlaceholder';
 import OrganizationList from '@/components/OrganizationList';
 import UnsavedChangesAlertModal from '@/components/UnsavedChangesAlertModal';
-import { ApplicationDetailsTabs, logtoThirdPartyGuideLink, protectedAppLink } from '@/consts';
+import { ApplicationDetailsTabs, logtoThirdPartyGuideLink, protectedApp } from '@/consts';
 import DeleteConfirmModal from '@/ds-components/DeleteConfirmModal';
 import TabNav, { TabNavItem } from '@/ds-components/TabNav';
 import TabWrapper from '@/ds-components/TabWrapper';
@@ -34,12 +35,14 @@ import Branding from '../components/Branding';
 import Permissions from '../components/Permissions';
 
 import BackchannelLogout from './BackchannelLogout';
+import ConcurrentDeviceLimit from './ConcurrentDeviceLimit';
 import EndpointsAndCredentials, { type ApplicationSecretRow } from './EndpointsAndCredentials';
 import GuideDrawer from './GuideDrawer';
 import MachineLogs from './MachineLogs';
 import MachineToMachineApplicationRoles from './MachineToMachineApplicationRoles';
 import RefreshTokenSettings from './RefreshTokenSettings';
 import Settings from './Settings';
+import TokenExchangeSettings from './TokenExchangeSettings';
 import styles from './index.module.scss';
 import { applicationFormDataParser, type ApplicationForm } from './utils';
 
@@ -106,7 +109,7 @@ function ApplicationDetailsContent({ data, secrets, oidcConfig, onApplicationUpd
       setIsDeleted(true);
       setIsDeleteFormOpen(false);
       toast.success(t('application_details.application_deleted', { name: data.name }));
-      navigate(`/applications`);
+      navigate(`/applications${data.isThirdParty ? '/third-party-applications' : ''}`);
     } finally {
       setIsDeleting(false);
     }
@@ -121,15 +124,19 @@ function ApplicationDetailsContent({ data, secrets, oidcConfig, onApplicationUpd
   return (
     <>
       <DetailsPageHeader
-        icon={<ApplicationIcon type={data.type} isThirdParty={data.isThirdParty} />}
-        title={data.name}
-        primaryTag={
-          // We have ensured that SAML applications are always third party in DB schema, we use `||` here to make TypeScript happy.
-          // TODO: @darcy fix this when we add SAML apps details page
-          data.isThirdParty || data.type === ApplicationType.SAML
-            ? t(`${applicationTypeI18nKey.thirdParty}.title`)
-            : t(`${applicationTypeI18nKey[data.type]}.title`)
+        icon={
+          <ApplicationIcon
+            type={data.type}
+            isThirdParty={data.isThirdParty}
+            isDeviceFlow={data.customClientMetadata.isDeviceFlow}
+          />
         }
+        title={data.name}
+        primaryTag={condArray(
+          data.isThirdParty && t(`${applicationTypeI18nKey.thirdParty}.title`),
+          t(`${applicationTypeI18nKey[data.type]}.title`),
+          data.customClientMetadata.isDeviceFlow && t('application_details.device_flow_tag')
+        )}
         identifier={{ name: 'App ID', value: data.id }}
         additionalActionButton={{
           title: 'application_details.check_guide',
@@ -142,7 +149,7 @@ function ApplicationDetailsContent({ data, secrets, oidcConfig, onApplicationUpd
             }
             // Open protected app docs link in new tab
             if (data.type === ApplicationType.Protected) {
-              window.open(getDocumentationUrl(protectedAppLink), '_blank');
+              window.open(getDocumentationUrl(protectedApp), '_blank');
               return;
             }
 
@@ -232,6 +239,10 @@ function ApplicationDetailsContent({ data, secrets, oidcConfig, onApplicationUpd
               <RefreshTokenSettings data={data} />
             )}
             {data.type !== ApplicationType.MachineToMachine && <BackchannelLogout />}
+            {data.type !== ApplicationType.Protected && <TokenExchangeSettings data={data} />}
+            {![ApplicationType.MachineToMachine, ApplicationType.Protected].includes(data.type) && (
+              <ConcurrentDeviceLimit />
+            )}
           </DetailsForm>
         </FormProvider>
         {tab === ApplicationDetailsTabs.Settings && (

@@ -10,7 +10,7 @@ import { isDevFeaturesEnabled } from './constants.js';
 export const generateName = () => crypto.randomUUID();
 export const generateUserId = () => crypto.randomUUID();
 export const generateUsername = () => `usr_${crypto.randomUUID().replaceAll('-', '_')}`;
-export const generatePassword = () => `pwd_${crypto.randomUUID()}`;
+export const generatePassword = () => `pwd_${crypto.randomUUID().slice(0, 12)}`;
 
 export const generateResourceName = () => `res_${crypto.randomUUID()}`;
 export const generateResourceIndicator = () => `https://${crypto.randomUUID()}.logto.io`;
@@ -41,6 +41,17 @@ export const generatePhone = (isE164?: boolean) => {
   const phoneNumber = randomInt(0, 10_000).toString().padStart(4, '0');
 
   return plus + countryAndAreaCode + centralOfficeCode + phoneNumber;
+};
+
+/**
+ * This method only generates a local phone number without a country code.
+ */
+export const generateNationalPhoneNumber = () => {
+  const areaCode = randomInt(100, 999).toString();
+  const centralOfficeCode = randomInt(100, 999).toString();
+  const phoneNumber = randomInt(0, 10_000).toString().padStart(4, '0');
+
+  return areaCode + centralOfficeCode + phoneNumber;
 };
 
 export const formatPhoneNumberToInternational = (phoneNumber: string) =>
@@ -132,3 +143,17 @@ export const devFeatureTest = Object.freeze({
   it: isDevFeaturesEnabled ? it : it.skip,
   describe: isDevFeaturesEnabled ? describe : describe.skip,
 });
+
+export const devFeatureDisabledTest = Object.freeze({
+  it: isDevFeaturesEnabled ? it.skip : it,
+  describe: isDevFeaturesEnabled ? describe.skip : describe,
+});
+
+export const parseInteractionCookie = (cookie: string): Record<string, string> => {
+  try {
+    // eslint-disable-next-line no-restricted-syntax
+    return JSON.parse(cookie) as Record<string, string>;
+  } catch {
+    return {};
+  }
+};

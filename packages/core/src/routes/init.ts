@@ -12,6 +12,7 @@ import type TenantContext from '#src/tenants/TenantContext.js';
 import koaAuth from '../middleware/koa-auth/index.js';
 import koaOidcAuth from '../middleware/koa-auth/koa-oidc-auth.js';
 import koaCors from '../middleware/koa-cors.js';
+import koaEmailI18n from '../middleware/koa-email-i18n.js';
 
 import { accountApiPrefix } from './account/constants.js';
 import accountRoutes from './account/index.js';
@@ -26,22 +27,29 @@ import applicationUserConsentOrganizationRoutes from './applications/application
 import applicationUserConsentScopeRoutes from './applications/application-user-consent-scope.js';
 import applicationRoutes from './applications/application.js';
 import authnRoutes from './authn.js';
+import captchaProviderRoutes from './captcha-provider/index.js';
 import connectorRoutes from './connector/index.js';
 import customPhraseRoutes from './custom-phrase.js';
+import customProfileFieldsRoutes from './custom-profile-fields.js';
 import dashboardRoutes from './dashboard.js';
 import domainRoutes from './domain.js';
+import emailTemplateRoutes from './email-template/index.js';
 import experienceApiRoutes from './experience/index.js';
 import hookRoutes from './hook.js';
 import interactionRoutes from './interaction/index.js';
 import logRoutes from './log.js';
 import logtoConfigRoutes from './logto-config/index.js';
+import oneTimeTokenRoutes from './one-time-tokens.js';
 import organizationRoutes from './organization/index.js';
+import publicWellKnownRoutes from './public-wellknown.js';
 import resourceRoutes from './resource.js';
 import resourceScopeRoutes from './resource.scope.js';
 import roleRoutes from './role.js';
 import roleScopeRoutes from './role.scope.js';
 import samlApplicationAnonymousRoutes from './saml-application/anonymous.js';
 import samlApplicationRoutes from './saml-application/index.js';
+import secretsRoutes from './secret.js';
+import sentinelActivitiesRoutes from './sentinel-activities.js';
 import signInExperiencesRoutes from './sign-in-experience/index.js';
 import ssoConnectors from './sso-connector/index.js';
 import statusRoutes from './status.js';
@@ -62,6 +70,7 @@ const createRouters = (tenant: TenantContext) => {
 
   const experienceRouter: AnonymousRouter = new Router();
   experienceRouter.use(koaAuditLog(tenant.queries));
+  experienceRouter.use(koaEmailI18n(tenant.queries));
   experienceApiRoutes(experienceRouter, tenant);
 
   const managementRouter: ManagementApiRouter = new Router();
@@ -101,49 +110,39 @@ const createRouters = (tenant: TenantContext) => {
   systemRoutes(managementRouter, tenant);
   subjectTokenRoutes(managementRouter, tenant);
   accountCentersRoutes(managementRouter, tenant);
-  // TODO: @darcy per our design, we will move related routes to Cloud repo and the routes will be loaded from remote.
-  if (
-    (EnvSet.values.isDevFeaturesEnabled && EnvSet.values.isCloud) ||
-    EnvSet.values.isIntegrationTest
-  ) {
-    samlApplicationRoutes(managementRouter, tenant);
-  }
+  samlApplicationRoutes(managementRouter, tenant);
+  emailTemplateRoutes(managementRouter, tenant);
+  oneTimeTokenRoutes(managementRouter, tenant);
+  captchaProviderRoutes(managementRouter, tenant);
+  sentinelActivitiesRoutes(managementRouter, tenant);
+  customProfileFieldsRoutes(managementRouter, tenant);
+  secretsRoutes(managementRouter, tenant);
 
+  // General anonymous router for publicly accessible APIs
   const anonymousRouter: AnonymousRouter = new Router();
 
   const userRouter: UserRouter = new Router();
   userRouter.use(koaOidcAuth(tenant));
+  userRouter.use(koaEmailI18n(tenant.queries));
   // TODO(LOG-10147): Rename to koaApiHooks, this middleware is used for both management API and user API
   userRouter.use(koaManagementApiHooks(tenant.libraries.hooks));
   accountRoutes(userRouter, tenant);
   verificationRoutes(userRouter, tenant);
 
+  // General anonymous APIs - publicly accessible
   wellKnownRoutes(anonymousRouter, tenant);
   statusRoutes(anonymousRouter, tenant);
   authnRoutes(anonymousRouter, tenant);
-  // TODO: @darcy per our design, we will move related routes to Cloud repo and the routes will be loaded from remote.
-  if (
-    (EnvSet.values.isDevFeaturesEnabled && EnvSet.values.isCloud) ||
-    EnvSet.values.isIntegrationTest
-  ) {
-    samlApplicationAnonymousRoutes(anonymousRouter, tenant);
-  }
+  samlApplicationAnonymousRoutes(anonymousRouter, tenant);
 
   wellKnownOpenApiRoutes(anonymousRouter, {
-    experienceRouters: [experienceRouter, interactionRouter],
+    experienceRouters: [experienceRouter],
     managementRouters: [managementRouter, anonymousRouter],
     userRouters: [userRouter],
   });
 
   // The swagger.json should contain all API routers.
-  swaggerRoutes(anonymousRouter, [
-    managementRouter,
-    anonymousRouter,
-    experienceRouter,
-    userRouter,
-    // TODO: interactionRouter should be removed from swagger.json
-    interactionRouter,
-  ]);
+  swaggerRoutes(anonymousRouter, [managementRouter, anonymousRouter, experienceRouter, userRouter]);
 
   return [experienceRouter, interactionRouter, managementRouter, anonymousRouter, userRouter];
 };
@@ -159,4 +158,13 @@ export default function initApis(tenant: TenantContext): Koa {
   }
 
   return apisApp;
+}
+
+export function initPublicWellKnownApis(tenant: TenantContext): Koa {
+  const globalApisApp = new Koa();
+  const anonymousRouter: AnonymousRouter = new Router();
+  publicWellKnownRoutes(anonymousRouter, tenant);
+  globalApisApp.use(anonymousRouter.routes()).use(anonymousRouter.allowedMethods());
+
+  return globalApisApp;
 }

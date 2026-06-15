@@ -16,6 +16,7 @@ create table applications (
   protected_app_metadata jsonb /* @use ProtectedAppMetadata */,
   custom_data jsonb /* @use JsonObject */ not null default '{}'::jsonb,
   is_third_party boolean not null default false,
+  app_level_access_control_enabled boolean not null default false,
   created_at timestamptz not null default(now()),
   primary key (id)
 );
@@ -25,6 +26,9 @@ create index applications__id
 
 create index applications__is_third_party
   on applications (tenant_id, is_third_party);
+
+create index applications__type
+  on applications (tenant_id, type);
 
 create unique index applications__protected_app_metadata_host
   on applications (

@@ -1,5 +1,5 @@
 import { type Domain } from '@logto/schemas';
-import { pickDefault } from '@logto/shared/esm';
+import { createMockUtils, pickDefault } from '@logto/shared/esm';
 
 import { mockDomain, mockDomainResponse } from '#src/__mocks__/domain.js';
 import { createMockQuotaLibrary } from '#src/test-utils/quota.js';
@@ -7,6 +7,15 @@ import { MockTenant } from '#src/test-utils/tenant.js';
 import { createRequester } from '#src/utils/test-utils.js';
 
 const { jest } = import.meta;
+const { mockEsm } = createMockUtils(jest);
+
+const { assertCustomDomainLimit: mockAssertCustomDomainLimit } = mockEsm(
+  '#src/utils/domain.js',
+  () => ({
+    // eslint-disable-next-line unicorn/no-useless-undefined
+    assertCustomDomainLimit: jest.fn(async () => undefined),
+  })
+);
 
 const domains = {
   findAllDomains: jest.fn(async (): Promise<Domain[]> => [mockDomain]),
@@ -17,6 +26,9 @@ const domains = {
     }
     return domain;
   },
+  findDomain: jest.fn(async (domain: string) => {
+    return [mockDomain].find((item) => item.domain === domain) ?? null;
+  }),
 };
 
 const syncDomainStatus = jest.fn(async (domain: Domain): Promise<Domain> => domain);
@@ -27,14 +39,22 @@ const addDomain = jest.fn(
   })
 );
 const deleteDomain = jest.fn();
+const cleanupDomains = jest.fn();
 
 const mockLibraries = {
   domains: {
     syncDomainStatus,
     addDomain,
     deleteDomain,
+    cleanupDomains,
   },
   quota: createMockQuotaLibrary(),
+  samlApplications: {
+    syncCustomDomainsToSamlApplicationRedirectUrls: jest.fn(),
+  },
+  protectedApps: {
+    syncAllAppConfigsToRemote: jest.fn(),
+  },
 };
 
 const tenantContext = new MockTenant(undefined, { domains }, undefined, mockLibraries);
@@ -63,16 +83,51 @@ describe('domain routes', () => {
   it('POST /domains', async () => {
     domains.findAllDomains.mockResolvedValueOnce([]);
     const response = await domainRequest.post('/domains').send({ domain: 'test.com' });
+    expect(mockAssertCustomDomainLimit).toHaveBeenCalledTimes(1);
     expect(addDomain).toBeCalledWith('test.com');
     expect(response.status).toEqual(201);
     expect(response.body.id).toBeTruthy();
     expect(response.body.domain).toEqual('test.com');
   });
 
-  it('POST /domains should fail when there is already a domain', async () => {
+  it('POST /domains should fail when domain already exists (duplicate domain)', async () => {
     await expect(
       domainRequest.post('/domains').send({ domain: mockDomain.domain })
     ).resolves.toHaveProperty('status', 422);
+  });
+
+  it('POST /domains should allow creating multiple different domains', async () => {
+    domains.findAllDomains.mockResolvedValueOnce([mockDomain]);
+    domains.findDomain.mockResolvedValueOnce(null);
+    const response = await domainRequest.post('/domains').send({ domain: 'another.com' });
+    expect(mockAssertCustomDomainLimit).toHaveBeenCalledTimes(1);
+    expect(addDomain).toBeCalledWith('another.com');
+    expect(response.status).toEqual(201);
+    expect(response.body.domain).toEqual('another.com');
+  });
+
+  it('POST /domains/cleanup', async () => {
+    cleanupDomains.mockResolvedValueOnce({
+      scannedCount: 3,
+      deletedCount: 1,
+      skippedActiveCount: 2,
+      failedCount: 0,
+    });
+
+    const response = await domainRequest.post('/domains/cleanup').send({ staleDays: 14 });
+
+    expect(response.status).toEqual(200);
+    expect(cleanupDomains).toHaveBeenCalledWith(14);
+    expect(
+      mockLibraries.samlApplications.syncCustomDomainsToSamlApplicationRedirectUrls
+    ).toHaveBeenCalledTimes(1);
+    expect(mockLibraries.protectedApps.syncAllAppConfigsToRemote).toHaveBeenCalledTimes(1);
+    expect(response.body).toEqual({
+      scannedCount: 3,
+      deletedCount: 1,
+      skippedActiveCount: 2,
+      failedCount: 0,
+    });
   });
 
   it('DELETE /domains/:id', async () => {

@@ -2,8 +2,6 @@ const protected_app = {
   name: 'Application Protégée',
   title:
     "Créez une application protégée : ajoutez l'authentification en toute simplicité et avec une vitesse épique",
-  description:
-    "L'application protégée maintient de manière sécurisée les sessions utilisateur et redirige les requêtes de votre application. Propulsée par Cloudflare Workers, profitez des performances de premier ordre et d'un démarrage instantané de 0 ms dans le monde entier. <a>En savoir plus</a>",
   fast_create: 'Création rapide',
   modal_title: 'Créer une Application Protégée',
   modal_subtitle:
@@ -38,6 +36,18 @@ const protected_app = {
       localhost:
         "Veuillez exposer votre serveur local à Internet d'abord. En savoir plus sur le <a>développement local</a>.",
     },
+  },
+  id_token_claims: {
+    card_title: "Claims de l'ID token",
+    card_description:
+      "Demandez des scopes utilisateur supplémentaires lors de la connexion à l'application protégée pour inclure les claims étendus activés dans l'ID token transmis.",
+    field_title: 'Scopes supplémentaires',
+    field_description:
+      "Les claims ne sont inclus que lorsqu'ils sont activés dans <a>Custom JWT > ID token</a> et que le scope correspondant est demandé ici.",
+    table_column_scope: 'Scope',
+    table_column_claims_forwarded: 'Claims transmis',
+    disabled_claims_hint:
+      "Les claims grisés ne sont pas encore transmis. Activez-les dans <a>Custom JWT > ID token</a> pour les inclure dans l'ID token.",
   },
   success_message:
     "🎉 Authentification de l'application activée avec succès ! Découvrez la nouvelle expérience de votre site web.",
