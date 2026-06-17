@@ -11,7 +11,7 @@ import {
 import { generateStandardId } from '@logto/shared';
 import { conditional } from '@silverhand/essentials';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
-import { type PublicKeyCredentialRequestOptionsJSON } from 'node_modules/@simplewebauthn/server/esm/deps.js';
+import { type PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/server/esm/deps.js';
 import { z } from 'zod';
 
 import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
