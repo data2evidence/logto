@@ -1,10 +1,11 @@
-import { assert } from '@silverhand/essentials';
+import { assert, trySafe } from '@silverhand/essentials';
 import { HTTPError } from 'got';
 
 import type {
   CreateConnector,
   EmailConnector,
   GetConnectorConfig,
+  GetI18nEmailTemplate,
   SendMessageFunction,
 } from '@logto/connector-kit';
 import {
@@ -14,9 +15,10 @@ import {
   validateConfig,
   parseJson,
   replaceSendMessageHandlebars,
+  getConfigTemplateByType,
 } from '@logto/connector-kit';
 
-import { defaultMetadata } from './constant.js';
+import { defaultMetadata, defaultRegionId } from './constant.js';
 import { singleSendMail } from './single-send-mail.js';
 import {
   aliyunDmConfigGuard,
@@ -25,13 +27,25 @@ import {
 } from './types.js';
 
 const sendMessage =
-  (getConfig: GetConnectorConfig): SendMessageFunction =>
+  (
+    getConfig: GetConnectorConfig,
+    getI18nEmailTemplate?: GetI18nEmailTemplate
+  ): SendMessageFunction =>
   async (data, inputConfig) => {
     const { to, type, payload } = data;
     const config = inputConfig ?? (await getConfig(defaultMetadata.id));
     validateConfig(config, aliyunDmConfigGuard);
-    const { accessKeyId, accessKeySecret, accountName, fromAlias, templates } = config;
-    const template = templates.find((template) => template.usageType === type);
+    const {
+      accessKeyId,
+      accessKeySecret,
+      accountName,
+      fromAlias,
+      regionId = defaultRegionId,
+    } = config;
+
+    const customTemplate = await trySafe(async () => getI18nEmailTemplate?.(type, payload.locale));
+
+    const template = customTemplate ?? getConfigTemplateByType(type, config);
 
     assert(
       template,
@@ -45,11 +59,14 @@ const sendMessage =
       const httpResponse = await singleSendMail(
         {
           AccessKeyId: accessKeyId,
+          RegionId: regionId,
           AccountName: accountName,
           ReplyToAddress: 'false',
           AddressType: '1',
           ToAddress: to,
-          FromAlias: fromAlias,
+          FromAlias: customTemplate?.sendFrom
+            ? replaceSendMessageHandlebars(customTemplate.sendFrom, payload)
+            : fromAlias,
           Subject: replaceSendMessageHandlebars(template.subject, payload),
           HtmlBody: replaceSendMessageHandlebars(template.content, payload),
         },
@@ -96,12 +113,15 @@ const errorHandler = (errorResponseBody: string) => {
   throw new ConnectorError(ConnectorErrorCodes.General, { errorDescription, ...rest });
 };
 
-const createAliyunDmConnector: CreateConnector<EmailConnector> = async ({ getConfig }) => {
+const createAliyunDmConnector: CreateConnector<EmailConnector> = async ({
+  getConfig,
+  getI18nEmailTemplate,
+}) => {
   return {
     metadata: defaultMetadata,
     type: ConnectorType.Email,
     configGuard: aliyunDmConfigGuard,
-    sendMessage: sendMessage(getConfig),
+    sendMessage: sendMessage(getConfig, getI18nEmailTemplate),
   };
 };
 

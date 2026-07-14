@@ -1,3 +1,5 @@
+import { type EmailTemplateDetails } from '@logto/connector-kit';
+
 export const mockedParameters = {
   AccessKeyId: 'testid',
   AccountName: "<a%b'>",
@@ -5,7 +7,7 @@ export const mockedParameters = {
   AddressType: '1',
   Format: 'XML',
   HtmlBody: '4',
-  RegionId: 'cn-hangzhou',
+  RegionId: 'cn-hangzhou' as const,
   ReplyToAddress: 'true',
   SignatureMethod: 'HMAC-SHA1',
   SignatureVersion: '1.0',
@@ -59,4 +61,11 @@ export const mockedConfigWithAllRequiredTemplates = {
       subject: 'Organization invitation',
     },
   ],
+};
+
+export const mockGenericI18nEmailTemplate: EmailTemplateDetails = {
+  subject: 'Generic email',
+  content: 'Verification code is {{code}}',
+  replyTo: 'Reply-to {{to}}',
+  sendFrom: 'Foo {{applicationName}}',
 };

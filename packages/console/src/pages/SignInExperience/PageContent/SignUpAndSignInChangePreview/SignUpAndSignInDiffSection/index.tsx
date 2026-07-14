@@ -1,12 +1,13 @@
-import type { SignInExperience } from '@logto/schemas';
+import { type SignInExperiencePageManagedData } from '@/pages/SignInExperience/types';
 
+import ForgotPasswordMethodsDiffSection from './ForgotPasswordMethodsDiffSection';
 import SignInDiffSection from './SignInDiffSection';
 import SignUpDiffSection from './SignUpDiffSection';
 import SocialTargetsDiffSection from './SocialTargetsDiffSection';
 
 type Props = {
-  readonly before: SignInExperience;
-  readonly after: SignInExperience;
+  readonly before: SignInExperiencePageManagedData;
+  readonly after: SignInExperiencePageManagedData;
   readonly isAfter?: boolean;
 };
 
@@ -22,6 +23,11 @@ function SignUpAndSignInDiffSection({ before, after, isAfter = false }: Props) {
       <SocialTargetsDiffSection
         before={before.socialSignInConnectorTargets}
         after={after.socialSignInConnectorTargets}
+        isAfter={isAfter}
+      />
+      <ForgotPasswordMethodsDiffSection
+        before={before.forgotPasswordMethods ?? undefined}
+        after={after.forgotPasswordMethods ?? undefined}
         isAfter={isAfter}
       />
     </>

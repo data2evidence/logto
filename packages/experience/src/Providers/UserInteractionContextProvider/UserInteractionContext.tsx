@@ -2,7 +2,7 @@ import { type SsoConnectorMetadata, type VerificationType } from '@logto/schemas
 import { noop } from '@silverhand/essentials';
 import { createContext } from 'react';
 
-import { type IdentifierInputValue } from '@/components/InputFields/SmartInputField';
+import { type IdentifierInputValue } from '@/shared/components/InputFields/SmartInputField';
 import { type VerificationIdsMap } from '@/types/guard';
 
 export type UserInteractionContextType = {
@@ -45,6 +45,14 @@ export type UserInteractionContextType = {
    * identifier input values.
    */
   clearInteractionContextSessionStorage: () => void;
+  /**
+   * Whether the user has any passkeys bound.
+   */
+  hasBoundPasskey: boolean;
+  /**
+   * Set whether the user has any passkeys bound.
+   */
+  setHasBoundPasskey: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export default createContext<UserInteractionContextType>({
@@ -60,4 +68,6 @@ export default createContext<UserInteractionContextType>({
   verificationIdsMap: {},
   setVerificationId: noop,
   clearInteractionContextSessionStorage: noop,
+  hasBoundPasskey: false,
+  setHasBoundPasskey: noop,
 });

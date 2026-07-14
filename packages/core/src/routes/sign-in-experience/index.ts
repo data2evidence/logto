@@ -1,29 +1,58 @@
+/* eslint-disable max-lines -- This route module already hosts several Sign-in Experience endpoints; keep this API change colocated with the existing update flow. */
 import { DemoConnector } from '@logto/connector-kit';
 import { PasswordPolicyChecker } from '@logto/core-kit';
-import { ConnectorType, SignInExperiences } from '@logto/schemas';
-import { tryThat } from '@silverhand/essentials';
+import {
+  ConnectorType,
+  SignInExperiences,
+  ForgotPasswordMethod,
+  MfaPolicy,
+  ProductEvent,
+  type SignInExperience,
+} from '@logto/schemas';
+import { conditional, type Optional, tryThat } from '@silverhand/essentials';
 import { literal, object, string, z } from 'zod';
 
-import { validateSignUp, validateSignIn } from '#src/libraries/sign-in-experience/index.js';
+import { EnvSet } from '#src/env-set/index.js';
+import {
+  validateSignUp,
+  validateSignIn,
+  parseEmailBlocklistPolicy,
+  isEmailBlocklistPolicyEnabled,
+} from '#src/libraries/sign-in-experience/index.js';
 import { validateMfa } from '#src/libraries/sign-in-experience/mfa.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 
 import RequestError from '../../errors/RequestError/index.js';
+import assertThat from '../../utils/assert-that.js';
 import { checkPasswordPolicyForUser } from '../../utils/password.js';
+import { captureEvent } from '../../utils/posthog.js';
 import type { ManagementApiRouter, RouterInitArgs } from '../types.js';
 
 import customUiAssetsRoutes from './custom-ui-assets/index.js';
+import { hasCustomUiCspSources, normalizeCustomUiCsp } from './custom-ui-csp.js';
+
+const isMfaEnabled = (mfa: Optional<SignInExperience['mfa']>): boolean =>
+  Boolean(mfa?.factors && mfa.factors.length > 0);
+
+const isNonSkippableMfaPromptPolicy = (policy: MfaPolicy) =>
+  [MfaPolicy.PromptAtSignInAndSignUpMandatory, MfaPolicy.PromptOnlyAtSignInMandatory].includes(
+    policy
+  );
+
+const signInExperienceResponseGuard = SignInExperiences.guard;
+const signInExperienceCreateGuard = SignInExperiences.createGuard;
 
 export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
   ...args: RouterInitArgs<T>
 ) {
-  const [router, { queries, libraries, connectors }] = args;
+  const [router, { id: tenantId, queries, libraries, connectors }] = args;
   const { findDefaultSignInExperience, updateDefaultSignInExperience } = queries.signInExperiences;
   const { deleteConnectorById } = queries.connectors;
   const { findUserById } = queries.users;
+  const { normalizeProfileFields } = libraries.customProfileFields;
   const {
     signInExperiences: { validateLanguageInfo },
-    quota: { guardTenantUsageByKey, reportSubscriptionUpdatesUsage },
+    quota,
   } = libraries;
   const { getLogtoConnectors } = connectors;
 
@@ -34,7 +63,7 @@ export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
   router.get(
     '/sign-in-exp',
     koaGuard({
-      response: SignInExperiences.guard,
+      response: signInExperienceResponseGuard,
       status: [200, 404],
     }),
     async (ctx, next) => {
@@ -48,7 +77,7 @@ export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
     '/sign-in-exp',
     koaGuard({
       query: z.object({ removeUnusedDemoSocialConnector: z.string().optional() }),
-      body: SignInExperiences.createGuard
+      body: signInExperienceCreateGuard
         .omit({
           id: true,
           termsOfUseUrl: true,
@@ -67,22 +96,46 @@ export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
           })
         )
         .partial(),
-      response: SignInExperiences.guard,
-      status: [200, 400, 404, 422],
+      response: signInExperienceResponseGuard,
+      status: [200, 400, 404, 422, 403],
     }),
-
+    // eslint-disable-next-line complexity
     async (ctx, next) => {
       const {
         query: { removeUnusedDemoSocialConnector },
-        body: { socialSignInConnectorTargets, ...rest },
+        body: {
+          socialSignInConnectorTargets,
+          emailBlocklistPolicy,
+          signUpProfileFields,
+          customUiCsp,
+          ...rest
+        },
       } = ctx.guard;
-      const { languageInfo, signUp, signIn, mfa } = rest;
+      const {
+        languageInfo,
+        signUp,
+        signIn,
+        mfa,
+        adaptiveMfa,
+        sentinelPolicy,
+        captchaPolicy,
+        forgotPasswordMethods,
+        hideLogtoBranding,
+        passkeySignIn,
+      } = rest;
+
+      const normalizedSignUpProfileFields = await normalizeProfileFields(signUpProfileFields);
+      const normalizedCustomUiCsp = conditional(customUiCsp && normalizeCustomUiCsp(customUiCsp));
+      const hasCustomUiCsp = hasCustomUiCspSources(normalizedCustomUiCsp);
 
       if (languageInfo) {
         await validateLanguageInfo(languageInfo);
       }
 
-      const connectors = await getLogtoConnectors();
+      const [connectors, currentSettings] = await Promise.all([
+        getLogtoConnectors(),
+        findDefaultSignInExperience(),
+      ]);
 
       // Remove unavailable connectors
       const filteredSocialSignInConnectorTargets = socialSignInConnectorTargets?.filter((target) =>
@@ -96,22 +149,105 @@ export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
         validateSignUp(signUp, connectors);
       }
 
-      if (signIn && signUp) {
-        validateSignIn(signIn, signUp, connectors);
-      } else if (signIn) {
-        const signInExperience = await findDefaultSignInExperience();
-        validateSignIn(signIn, signInExperience.signUp, connectors);
+      if (signIn) {
+        const { signUp: signUpSettings } = signUp ? { signUp } : currentSettings;
+        const { mfa: currentMfa } = mfa ? { mfa } : currentSettings;
+        validateSignIn(signIn, signUpSettings, connectors, currentMfa);
       }
 
       if (mfa) {
-        if (mfa.factors.length > 0) {
-          await guardTenantUsageByKey('mfaEnabled');
+        if (isMfaEnabled(mfa)) {
+          await quota.guardTenantUsageByKey('mfaEnabled');
         }
-        validateMfa(mfa);
+        // Get the current sign-in configuration
+        const { signIn: currentSignIn } = signIn ? { signIn } : currentSettings;
+        validateMfa(mfa, currentSignIn);
       }
 
-      // Remove unused demo social connectors, those that are not selected in onboarding SIE config.
+      // Adaptive MFA requires MFA to be enabled when it is being enabled.
+      if (adaptiveMfa?.enabled) {
+        const effectiveMfa = mfa ?? currentSettings.mfa;
+
+        assertThat(
+          isMfaEnabled(effectiveMfa),
+          'sign_in_experiences.adaptive_mfa_requires_mfa',
+          422
+        );
+
+        assertThat(
+          isNonSkippableMfaPromptPolicy(effectiveMfa.policy),
+          'sign_in_experiences.adaptive_mfa_requires_non_skippable_policy',
+          422
+        );
+      }
+
+      if (adaptiveMfa?.enabled === false) {
+        const effectiveMfa = mfa ?? currentSettings.mfa;
+        assertThat(
+          !isNonSkippableMfaPromptPolicy(effectiveMfa.policy),
+          'sign_in_experiences.non_adaptive_mfa_requires_skippable_policy',
+          422
+        );
+      }
+
+      if (adaptiveMfa === undefined && mfa && isMfaEnabled(mfa)) {
+        const { adaptiveMfa: currentAdaptiveMfa } = currentSettings;
+        if (currentAdaptiveMfa.enabled) {
+          assertThat(
+            isNonSkippableMfaPromptPolicy(mfa.policy),
+            'sign_in_experiences.adaptive_mfa_requires_non_skippable_policy',
+            422
+          );
+        } else {
+          assertThat(
+            !isNonSkippableMfaPromptPolicy(mfa.policy),
+            'sign_in_experiences.non_adaptive_mfa_requires_skippable_policy',
+            422
+          );
+        }
+      }
+
+      // Keep backend state aligned with console semantics:
+      // if MFA is disabled and adaptive MFA is omitted in request, reset adaptive MFA to false.
+      const normalizedAdaptiveMfa =
+        mfa && !isMfaEnabled(mfa) && adaptiveMfa === undefined ? { enabled: false } : adaptiveMfa;
+
+      if (forgotPasswordMethods) {
+        const hasEmailConnector = connectors.some(({ type }) => type === ConnectorType.Email);
+        const hasSmsConnector = connectors.some(({ type }) => type === ConnectorType.Sms);
+
+        for (const method of forgotPasswordMethods) {
+          if (method === ForgotPasswordMethod.EmailVerificationCode && !hasEmailConnector) {
+            throw new RequestError({
+              code: 'sign_in_experiences.forgot_password_method_requires_connector',
+              method: 'email',
+            });
+          }
+          if (method === ForgotPasswordMethod.PhoneVerificationCode && !hasSmsConnector) {
+            throw new RequestError({
+              code: 'sign_in_experiences.forgot_password_method_requires_connector',
+              method: 'sms',
+            });
+          }
+        }
+      }
+
+      /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+      // Guard the quota for the security features enabled. Guarded properties are:
+      // - sentinelPolicy: if sentinelPolicy is not empty object, security features are guarded
+      // - captchaPolicy: if captchaPolicy is enabled, security features are guarded
+      // - emailBlocklistPolicy: if any of the blocklist policies are enabled, security features are guarded
+      if (
+        (sentinelPolicy && Object.keys(sentinelPolicy).length > 0) ||
+        (emailBlocklistPolicy && isEmailBlocklistPolicyEnabled(emailBlocklistPolicy)) ||
+        captchaPolicy?.enabled
+      ) {
+        await quota.guardTenantUsageByKey('securityFeaturesEnabled');
+      }
+      /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
+
       if (removeUnusedDemoSocialConnector && filteredSocialSignInConnectorTargets) {
+        // Remove unused demo social connectors, those that are not selected in onboarding SIE config.
         await Promise.all(
           connectors
             .filter((connector) => {
@@ -125,17 +261,73 @@ export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
         );
       }
 
-      ctx.body = await updateDefaultSignInExperience(
-        filteredSocialSignInConnectorTargets
-          ? {
-              ...rest,
-              socialSignInConnectorTargets: filteredSocialSignInConnectorTargets,
-            }
-          : rest
-      );
+      // Guard the quota for BYUI if the hideLogtoBranding is set to true
+      if (hideLogtoBranding) {
+        // Hide Logto branding is only available for Logto Cloud
+        assertThat(
+          EnvSet.values.isCloud,
+          new RequestError({
+            code: 'request.invalid_input',
+            details: 'Hide Logto branding is not supported in this environment',
+          })
+        );
+      }
+      if (hasCustomUiCsp) {
+        assertThat(
+          EnvSet.values.isCloud,
+          new RequestError({
+            code: 'request.invalid_input',
+            details: 'Custom UI CSP configuration is not available',
+          })
+        );
+      }
+      if (hideLogtoBranding === true || hasCustomUiCsp) {
+        await quota.guardTenantUsageByKey('bringYourUiEnabled');
+      }
+      if (passkeySignIn?.enabled) {
+        await quota.guardTenantUsageByKey('passkeySignInEnabled');
+      }
 
-      await reportSubscriptionUpdatesUsage('mfaEnabled');
+      const payload = {
+        ...rest,
+        ...conditional(normalizedAdaptiveMfa && { adaptiveMfa: normalizedAdaptiveMfa }),
+        ...conditional(
+          filteredSocialSignInConnectorTargets && {
+            socialSignInConnectorTargets: filteredSocialSignInConnectorTargets,
+          }
+        ),
+        ...conditional(
+          emailBlocklistPolicy && {
+            emailBlocklistPolicy: parseEmailBlocklistPolicy(emailBlocklistPolicy),
+          }
+        ),
+        ...conditional(
+          normalizedSignUpProfileFields !== undefined && {
+            signUpProfileFields: normalizedSignUpProfileFields,
+          }
+        ),
+        ...conditional(
+          normalizedCustomUiCsp !== undefined && {
+            customUiCsp: normalizedCustomUiCsp,
+          }
+        ),
+      };
 
+      ctx.body = await updateDefaultSignInExperience(payload);
+
+      void quota.reportSubscriptionUpdatesUsage('mfaEnabled');
+
+      if (sentinelPolicy ?? captchaPolicy ?? emailBlocklistPolicy) {
+        void quota.reportSubscriptionUpdatesUsage('securityFeaturesEnabled');
+      }
+
+      // Only capture the event when MFA status changes
+      if (isMfaEnabled(currentSettings.mfa) !== isMfaEnabled(mfa)) {
+        captureEvent(
+          { tenantId, request: ctx.req },
+          isMfaEnabled(mfa) ? ProductEvent.MfaEnabled : ProductEvent.MfaDisabled
+        );
+      }
       return next();
     }
   );
@@ -188,3 +380,4 @@ export default function signInExperiencesRoutes<T extends ManagementApiRouter>(
 
   customUiAssetsRoutes(...args);
 }
+/* eslint-enable max-lines */

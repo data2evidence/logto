@@ -1,5 +1,6 @@
 import { assert } from '@silverhand/essentials';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 
 import type {
   GetConnectorConfig,
@@ -13,6 +14,7 @@ import {
   validateConfig,
   ConnectorType,
   mockConnectorFilePaths,
+  getConfigTemplateByType,
 } from '@logto/connector-kit';
 
 import { defaultMetadata } from './constant.js';
@@ -24,8 +26,7 @@ const sendMessage =
     const { to, type, payload } = data;
     const config = inputConfig ?? (await getConfig(defaultMetadata.id));
     validateConfig(config, mockSmsConfigGuard);
-    const { templates } = config;
-    const template = templates.find((template) => template.usageType === type);
+    const template = getConfigTemplateByType(type, config);
 
     assert(
       template,
@@ -35,8 +36,10 @@ const sendMessage =
       )
     );
 
+    const filePath = mockConnectorFilePaths.Sms;
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(
-      mockConnectorFilePaths.Sms,
+      filePath,
       JSON.stringify({ phone: to, code: payload.code, type, payload }) + '\n'
     );
 

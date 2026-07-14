@@ -74,6 +74,12 @@ const user_details = {
     deletion_confirmation:
       'Sie entfernen die bestehende <name/> für die Zwei-Faktor-Authentifizierung. Sind Sie sicher, dass Sie fortfahren möchten?',
   },
+  passkey: {
+    field_name: 'Passkeys',
+    field_description_empty: 'Dieser Benutzer hat die Passkey-Anmeldung nicht aktiviert.',
+    deletion_confirmation:
+      'Sie entfernen den vorhandenen <name/> für die Passkey-Anmeldung. Sind Sie sicher, dass Sie fortfahren möchten?',
+  },
   suspended: 'Gesperrt',
   suspend_user: 'Benutzer sperren',
   suspend_user_reminder:
@@ -112,7 +118,7 @@ const user_details = {
     title_short: 'Token',
     empty: 'Der Benutzer hat keine persönlichen Zugriffstokens.',
     create: 'Neues Token erstellen',
-    tip: 'Persönliche Zugriffstokens (PATs) bieten eine sichere Möglichkeit, Nutzern Zugriffstokens zu gewähren, ohne ihre Anmeldedaten und interaktive Anmeldung zu nutzen. Dies ist nützlich für CI/CD, Skripte oder Anwendungen, die programmatisch auf Ressourcen zugreifen müssen. <a>Erfahre mehr</a>',
+    tip: 'Persönliche Zugriffstokens (PATs) bieten eine sichere Möglichkeit, Nutzern Zugriffstokens zu gewähren, ohne ihre Anmeldedaten und interaktive Anmeldung zu nutzen. Dies ist nützlich für CI/CD, Skripte oder Anwendungen, die programmatisch auf Ressourcen zugreifen müssen.',
     value: 'Wert',
     created_at: 'Erstellt am',
     expires_at: 'Läuft ab am',
@@ -135,6 +141,57 @@ const user_details = {
     edit_modal: {
       title: 'Persönliches Zugriffstoken bearbeiten',
       edited: 'Das Token {{name}} wurde erfolgreich bearbeitet.',
+    },
+  },
+  sessions: {
+    title: 'Sitzungen',
+    description:
+      'Verwalte Sitzungen, die vom Logto Authorization Server aufrechterhalten werden. Das Widerrufen einer Logto-Sitzung hier verhindert die automatische Zustimmung bei zukünftigen Autorisierungsanfragen.',
+    field_name: 'Sitzungen',
+    multiple_signed_in: 'Dieser Benutzer hat sich an mehreren Geräten oder Browsern angemeldet.',
+    not_found:
+      'Keine aktiven Logto-Sitzungen gefunden. Der Benutzer ist derzeit auf keinem Gerät angemeldet.',
+    name_column: 'Name',
+    session_id_column: 'Sitzungs-ID',
+    location_column: 'Standort',
+    browser_on_os: '{{browser}} unter {{os}}',
+    user: 'Benutzer',
+    applications: 'Anwendungen',
+    signed_in_at: 'Zuletzt angemeldet',
+    ip: 'IP-Adresse',
+    browser_name: 'Browsername',
+    os_name: 'Betriebssystemname',
+    device_model: 'Gerätemodell',
+    revoke_session: 'Sitzung widerrufen',
+    revoke_session_confirmation:
+      'Wenn Sie diese Sitzung entfernen, müssen sich Benutzer erneut authentifizieren.',
+  },
+  third_party_apps: {
+    title: 'Drittanbieter-Apps',
+    description:
+      'Verwende Logto als Identitätsanbieter, um Drittanbieter-Apps zu autorisieren. Zeige die Apps an und verwalte sie, denen dieser Benutzer Zugriff gewährt hat.',
+    field_name: 'Autorisierte Drittanbieter-Apps',
+    multiple_authorized: 'Dieser Benutzer hat mehrere Drittanbieter-Apps und -Dienste autorisiert.',
+    not_authorized: 'Dieser Benutzer hat noch keine Drittanbieter-Apps oder -Dienste autorisiert.',
+    name_column: 'Name',
+    app_id_column: 'App-ID',
+    access_created_at_column: 'Zugriff erstellt am',
+    revoke_access_title: 'Zugriff widerrufen?',
+    revoke_access_description:
+      'Dadurch wird der Zugriff der App auf das Konto dieses Benutzers auf allen Geräten widerrufen. Der Benutzer muss die App erneut autorisieren, um den Zugriff wiederherzustellen.',
+  },
+  connections: {
+    title: 'Verbindung',
+    description:
+      'Der Benutzer verknüpft Drittanbieterkonten für die Anmeldung über soziale Netzwerke, Enterprise SSO oder den Zugriff auf Ressourcen.',
+    token_status_column: 'Token-Status',
+    token_status: {
+      active: 'Aktiv',
+      expired: 'Abgelaufen',
+      inactive: 'Inaktiv',
+      not_applicable: 'Nicht zutreffend',
+      available: 'Verfügbar',
+      not_available: 'Nicht verfügbar',
     },
   },
 };

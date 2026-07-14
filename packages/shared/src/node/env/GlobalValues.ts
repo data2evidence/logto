@@ -1,7 +1,66 @@
-import { assertEnv, getEnv, getEnvAsStringArray, tryThat, yes } from '@silverhand/essentials';
+import {
+  assertEnv,
+  getEnv,
+  getEnvAsStringArray,
+  tryThat,
+  yes,
+  type Optional,
+} from '@silverhand/essentials';
 
 import UrlSet from './UrlSet.js';
 import { throwErrorWithDsnMessage } from './throw-errors.js';
+
+/**
+ * Parses a timeout value from an environment variable string.
+ *
+ * The input may be:
+ * - a numeric string (milliseconds), or
+ * - the literal `DISABLE_TIMEOUT` to omit the startup parameter.
+ *
+ * Empty/whitespace or invalid values return `undefined`, which lets Slonik apply
+ * its default timeout of 60000 ms.
+ *
+ * @param value - Raw string value from an environment variable.
+ * @returns A finite numeric timeout, `DISABLE_TIMEOUT`, or `undefined`.
+ *
+ * @example
+ * const timeout = parseTimeoutEnv(process.env.DATABASE_STATEMENT_TIMEOUT);
+ * if (timeout === 'DISABLE_TIMEOUT') {
+ *   // omit the startup parameter entirely so server defaults apply
+ * }
+ */
+export const parseTimeoutEnv = (value?: string): Optional<number | 'DISABLE_TIMEOUT'> => {
+  if (value === undefined) {
+    return;
+  }
+
+  const normalized = value.trim();
+
+  if (normalized === '') {
+    return;
+  }
+
+  if (normalized === 'DISABLE_TIMEOUT') {
+    return 'DISABLE_TIMEOUT';
+  }
+
+  const parsed = Number(normalized);
+
+  // Can not use `conditional()` since 0 will be treated as falsy and hence return undefined incorrectly.
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+export const parseNonNegativeIntegerEnv = (value?: string, fallback = 0): number => {
+  const normalized = value?.trim();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  const parsed = Number(normalized);
+
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
 
 export default class GlobalValues {
   public readonly isProduction = getEnv('NODE_ENV') === 'production';
@@ -90,6 +149,20 @@ export default class GlobalValues {
   /** If the env explicitly indicates it's in the cloud environment. */
   public readonly isCloud = yes(getEnv('IS_CLOUD'));
 
+  /** Enables protected app local development without Cloud-only behavior. */
+  public readonly isProtectedAppLocalDevEnabled =
+    !this.isProduction && yes(getEnv('PROTECTED_APP_LOCAL_DEV'));
+
+  /**
+   * Indicates whether this Logto instance supports multiple custom domains.
+   *
+   * **NOTE: Only available to enterprise customers running private instances that need this feature.**
+   *
+   * Controlled by the `MULTIPLE_CUSTOM_DOMAINS_ENABLED` environment variable. When enabled, the instance
+   * can operate with multiple custom domains across both development and production tenants.
+   */
+  public readonly isMultipleCustomDomainsEnabled = yes(getEnv('MULTIPLE_CUSTOM_DOMAINS_ENABLED'));
+
   // eslint-disable-next-line unicorn/consistent-function-scoping
   public readonly databaseUrl = tryThat(() => assertEnv('DB_URL'), throwErrorWithDsnMessage);
   public readonly developmentTenantId = getEnv('DEVELOPMENT_TENANT_ID');
@@ -98,6 +171,8 @@ export default class GlobalValues {
   public readonly developmentUserId = getEnv('DEVELOPMENT_USER_ID');
   public readonly trustProxyHeader = yes(getEnv('TRUST_PROXY_HEADER'));
   public readonly ignoreConnectorVersionCheck = yes(getEnv('IGNORE_CONNECTOR_VERSION_CHECK'));
+  public readonly injectedHeaderMappingJson = getEnv('INJECTED_HEADER_MAPPING_JSON');
+  public readonly debugInjectedHeadersJson = getEnv('DEBUG_INJECTED_HEADERS_JSON');
 
   /** Maximum number of tenants to keep in the tenant pool. */
   public readonly tenantPoolSize = Number(getEnv('TENANT_POOL_SIZE', '100'));
@@ -105,9 +180,31 @@ export default class GlobalValues {
   public readonly databasePoolSize = Number(getEnv('DATABASE_POOL_SIZE', '20'));
 
   public readonly databaseConnectionTimeout = Number(getEnv('DATABASE_CONNECTION_TIMEOUT', '5000'));
+  /**
+   * PostgreSQL statement timeout in milliseconds.
+   *
+   * - Provide a numeric string (for example, `"5000"`) to send that timeout value.
+   * - Use `"DISABLE_TIMEOUT"` to omit the startup parameter so server defaults apply
+   *   (helps with PgBouncer/RDS Proxy).
+   * - If unset or invalid, Slonik uses its default timeout of 60000 ms (1 minute).
+   */
+  public readonly databaseStatementTimeout = parseTimeoutEnv(getEnv('DATABASE_STATEMENT_TIMEOUT'));
 
-  /** Case insensitive username */
+  /** Global switch for enabling/disabling case-sensitive usernames. */
   public readonly isCaseSensitiveUsername = yes(getEnv('CASE_SENSITIVE_USERNAME', 'true'));
+
+  /**
+   * The API key for status endpoint protection. If it's set, requests to the status endpoint may
+   * supply the key in the header for receiving response with additional details.
+   *
+   * @optional
+   */
+  public readonly statusApiKey = getEnv('STATUS_API_KEY');
+
+  /** The write-only key for PostHog integration. */
+  public readonly posthogPublicKey = process.env.POSTHOG_PUBLIC_KEY;
+  /** The PostHog host URL for SDK to send events to. */
+  public readonly posthogPublicHost = process.env.POSTHOG_PUBLIC_HOST;
 
   /**
    * The Redis endpoint (optional). If it's set, the central cache mechanism will be automatically enabled.
@@ -116,12 +213,54 @@ export default class GlobalValues {
    */
   public readonly redisUrl = getEnv('REDIS_URL');
 
+  /**
+   * Default grace period for private signing key rotation, in seconds.
+   * Cloud can configure a safe platform-wide default, while OSS/self-host deployments
+   * may opt in through environment configuration.
+   */
+  public readonly privateKeyRotationGracePeriod = parseNonNegativeIntegerEnv(
+    getEnv('PRIVATE_KEY_ROTATION_GRACE_PERIOD', '0')
+  );
+
   public get dbUrl(): string {
     return this.databaseUrl;
   }
 
   public get endpoint(): URL {
     return this.urlSet.endpoint;
+  }
+
+  /**
+   * For cloud use only.
+   * Define regional Azure function app endpoint and key to enable the Logto Azure Functions integration.
+   * This is the prerequisite of the calling on `@logto/azure-functions`.
+   */
+  public get azureFunctionAppEndpoint() {
+    return getEnv('AZURE_FUNCTION_APP_ENDPOINT');
+  }
+
+  public get azureFunctionAppKey() {
+    return getEnv('AZURE_FUNCTION_APP_KEY');
+  }
+
+  /**
+   * For cloud use only.
+   * Define regional Untrusted Azure function app endpoint and key to enable the Logto Azure Functions integration for untrusted operations.
+   */
+  public get azureFunctionUntrustedAppEndpoint() {
+    return getEnv('AZURE_FUNCTION_UNTRUSTED_APP_ENDPOINT');
+  }
+
+  public get azureFunctionUntrustedAppKey() {
+    return getEnv('AZURE_FUNCTION_UNTRUSTED_APP_KEY');
+  }
+
+  /**
+   * The key encryption key (KEK) for the secret vault.
+   * It is used to encrypt and decrypt secret DEKs (data encryption keys) in the secret vault.
+   */
+  public get secretVaultKek() {
+    return getEnv('SECRET_VAULT_KEK');
   }
 
   constructor() {

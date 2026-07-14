@@ -107,6 +107,7 @@ export const mockSignInExperience: SignInExperience = {
   customContent: {},
   agreeToTermsPolicy: AgreeToTermsPolicy.ManualRegistrationOnly,
   customUiAssets: null,
+  customUiCsp: {},
   passwordPolicy: {},
   mfa: {
     policy: MfaPolicy.PromptAtSignInAndSignUp,
@@ -117,6 +118,14 @@ export const mockSignInExperience: SignInExperience = {
   supportEmail: null,
   supportWebsiteUrl: null,
   unknownSessionRedirectUrl: null,
+  captchaPolicy: {},
+  adaptiveMfa: {},
+  sentinelPolicy: {},
+  emailBlocklistPolicy: {},
+  forgotPasswordMethods: [],
+  hideLogtoBranding: false,
+  passkeySignIn: {},
+  signUpProfileFields: null,
 };
 
 export const mockSignInExperienceSettings: SignInExperienceResponse = {
@@ -127,6 +136,7 @@ export const mockSignInExperienceSettings: SignInExperienceResponse = {
   termsOfUseUrl: mockSignInExperience.termsOfUseUrl,
   privacyPolicyUrl: mockSignInExperience.privacyPolicyUrl,
   languageInfo: mockSignInExperience.languageInfo,
+  hideLogtoBranding: false,
   signIn: mockSignInExperience.signIn,
   signUp: {
     identifiers: [SignInIdentifier.Username],
@@ -144,6 +154,7 @@ export const mockSignInExperienceSettings: SignInExperienceResponse = {
   customContent: {},
   agreeToTermsPolicy: mockSignInExperience.agreeToTermsPolicy,
   customUiAssets: null,
+  customUiCsp: {},
   passwordPolicy: {},
   mfa: {
     policy: MfaPolicy.PromptAtSignInAndSignUp,
@@ -155,6 +166,12 @@ export const mockSignInExperienceSettings: SignInExperienceResponse = {
   supportEmail: null,
   supportWebsiteUrl: null,
   unknownSessionRedirectUrl: null,
+  captchaPolicy: {},
+  adaptiveMfa: {},
+  sentinelPolicy: {},
+  emailBlocklistPolicy: {},
+  passkeySignIn: {},
+  signUpProfileFields: null,
 };
 
 const usernameSettings = {

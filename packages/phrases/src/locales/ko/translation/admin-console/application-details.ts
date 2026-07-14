@@ -1,10 +1,12 @@
+import concurrent_device_limit from './concurrent-device-limit.js';
+
 const application_details = {
   page_title: '애플리케이션 세부 정보',
   back_to_applications: '어플리케이션으로 돌아가기',
   check_guide: '가이드 확인',
   settings: '설정',
   settings_description:
-    'An "Application" is a registered software or service that can access user info or act for a user. Applications help recognize who’s asking for what from Logto and handle the sign-in and permission. Fill in the required fields for authentication.',
+    '애플리케이션은 사용자 정보를 조회하거나 사용자를 대신해 동작할 수 있도록 등록된 소프트웨어나 서비스입니다. 애플리케이션은 Logto가 누가 무엇을 요청하는지 파악하고, 로그인과 권한 부여를 처리하도록 돕습니다. 인증을 위해 필수 필드를 모두 입력하세요.',
   integration: '통합',
   integration_description:
     '로그토에서 클라우드플레어의 엣지 네트워크로 구동되는 안전한 워커를 사용하여 세계적인 최고 수준의 성능 및 전 세계 0ms의 차가운 시작을 구동합니다.',
@@ -23,6 +25,7 @@ const application_details = {
   description_placeholder: '어플리케이션 설명을 적어주세요.',
   config_endpoint: 'OpenID Provider 구성 엔드포인트',
   issuer_endpoint: '발급자 엔드포인트',
+  jwks_uri: 'JWKS URI',
   authorization_endpoint: '인증 엔드포인트',
   authorization_endpoint_tip:
     '인증 및 권한 부여를 진행할 엔드포인트입니다. OpenID Connect <a>인증</a>에서 사용되었던 값입니다.',
@@ -40,9 +43,10 @@ const application_details = {
   redirect_uri_placeholder_native: 'io.logto://callback',
   redirect_uri_tip:
     '사용자 로그인 후 리디렉트될 URI 경로입니다. 더 자세한 정보는 OpenID Connect <a>인증 요청</a>을 참조하세요.',
-  /** UNTRANSLATED */
   mixed_redirect_uri_warning:
-    'Your application type is not compatible with at least one of the redirect URIs. It does not follow best practices and we strongly recommend keeping the redirect URIs consistent.',
+    '어플리케이션 유형이 적어도 하나의 리디렉트 URI 와 호환되지 않습니다. 이는 모범 사례를 따르지 않으며, 리디렉트 URI 들을 일관되게 유지할 것을 강력히 권장합니다.',
+  wildcard_redirect_uri_warning:
+    '와일드카드 리디렉트 URI는 표준 OIDC가 아니며 공격 표면을 증가시킬 수 있습니다. 주의하여 사용하고 가능하면 정확한 리디렉트 URI를 사용하세요.',
   post_sign_out_redirect_uri: '로그아웃 후 리디렉트 URI',
   post_sign_out_redirect_uris: '로그아웃 후 리디렉트 URIs',
   post_sign_out_redirect_uri_placeholder: 'https://your.website.com/home',
@@ -66,9 +70,8 @@ const application_details = {
   rotate_refresh_token: 'Refresh 토큰 회전',
   rotate_refresh_token_label:
     '활성화하면, 원래 TTL 중 70%가 지난 후 또는 특정 조건이 충족되면 Refresh 토큰 요청에 대해 새로운 Refresh 토큰을 발행합니다. <a>자세히 보기</a>',
-  /** UNTRANSLATED */
   rotate_refresh_token_label_for_public_clients:
-    'When enabled, Logto will issue a new refresh token for each token request. <a>Learn more</a>',
+    '활성화되면, Logto 는 각 토큰 요청에 대해 새로운 refresh 토큰을 발행합니다. <a>자세히 보기</a>',
   backchannel_logout: '백채널 로그아웃',
   backchannel_logout_description:
     '애플리케이션에 세션이 필요한 경우 OpenID Connect 백채널 로그아웃 엔드포인트를 구성하세요.',
@@ -76,6 +79,17 @@ const application_details = {
   backchannel_logout_uri_session_required: '세션이 필요합니까?',
   backchannel_logout_uri_session_required_description:
     '활성화되면, RP는 `sid` (세션 ID) 클레임이 로그아웃 토큰에 포함되어 `backchannel_logout_uri` 사용 시 OP와 RP 세션을 식별하도록 요구합니다.',
+  token_exchange: '토큰 교환',
+  token_exchange_description: '이 애플리케이션의 토큰 교환 설정을 관리합니다.',
+  allow_token_exchange: '토큰 교환 허용',
+  allow_token_exchange_description:
+    '이 애플리케이션이 토큰 교환 요청을 시작할 수 있도록 허용합니다. 이는 <impersonationLink>사용자 가장</impersonationLink> 및 <patLink>개인 액세스 토큰</patLink>에 필요합니다.',
+  allow_token_exchange_public_client_warning:
+    '공개 클라이언트(단일 페이지 앱/네이티브 앱)에서 토큰 교환을 활성화하는 것은 권장되지 않습니다. 공개 클라이언트는 자격 증명을 안전하게 저장할 수 없으므로 애플리케이션이 토큰 가장 위험에 노출될 수 있습니다.',
+  device_flow_tag: '디바이스 플로우',
+  device_flow_notification:
+    '이 앱은 입력이 제한된 장치나 헤드리스 앱(예: TV, CLI)을 위한 OAuth 2.0 Device Authorization Flow를 활성화합니다. 사용자는 디바이스 코드를 입력하거나 QR 코드를 스캔하여 별도의 장치에서 로그인을 완료합니다. <a>자세히 알아보기</a>',
+  device_flow_try_demo: '데모 체험',
   delete_description:
     '이 행동은 취소할 수 없습니다. 애플리케이션을 영구적으로 삭제할 것입니다. 삭제를 진행하려면 <span>{{name}}</span>를 입력하세요.',
   enter_your_application_name: '어플리케이션 이름을 입력하세요.',
@@ -97,6 +111,8 @@ const application_details = {
   protect_origin_server: '원본 서버 보호',
   protect_origin_server_description:
     '원본 서버를 직접 액세스로부터 보호하세요. 더 많은 <a>자세한 지침</a>을 위해 안내서를 참조하세요.',
+  third_party_settings_description:
+    'OIDC / OAuth 2.0 을 사용하여 Logto 를 당신의 ID 공급자 (IdP) 로 활용하여 제3자 애플리케이션을 통합하고 사용자의 권한 승인을 위한 동의 화면을 제공합니다.',
   session_duration: '세션 기간 (일)',
   try_it: '해보기',
   no_organization_placeholder: '조직을 찾을 수 없습니다. <a>조직으로 이동</a>',
@@ -152,6 +168,18 @@ const application_details = {
     organization_title: '조직',
     organization_description: '제3자 앱에서 특정 조직 데이터에 액세스하려는 권한을 선택하세요.',
     grant_organization_level_permissions: '조직 데이터의 권한 부여',
+    oidc_title: 'OIDC',
+    oidc_description:
+      '핵심 OIDC 권한은 앱에 자동으로 구성됩니다. 이러한 스코프는 인증에 필수이며 사용자 동의 화면에 표시되지 않습니다.',
+    default_oidc_permissions: '기본 OIDC 권한',
+    permission_column: '권한',
+    guide_column: '가이드',
+    openid_permission: 'openid',
+    openid_permission_guide:
+      "OAuth 리소스 접근에는 선택 사항입니다.\nOIDC 인증에는 필수입니다. ID 토큰에 대한 접근을 부여하며 'userinfo_endpoint'에 접근할 수 있습니다.",
+    offline_access_permission: 'offline_access',
+    offline_access_permission_guide:
+      '선택 사항입니다. 장기 접근 또는 백그라운드 작업을 위한 리프레시 토큰을 가져옵니다.',
   },
   roles: {
     assign_button: '머신 간 역할 할당',
@@ -178,12 +206,9 @@ const application_details = {
     never: '만료되지 않음',
     create_new_secret: '새 시크릿 생성',
     delete_confirmation: '이 작업은 되돌릴 수 없습니다. 이 시크릿을 삭제하시겠습니까?',
-    /** UNTRANSLATED */
-    deleted: 'The secret has been successfully deleted.',
-    /** UNTRANSLATED */
-    activated: 'The secret has been successfully activated.',
-    /** UNTRANSLATED */
-    deactivated: 'The secret has been successfully deactivated.',
+    deleted: '시크릿이 성공적으로 삭제되었습니다.',
+    activated: '시크릿이 성공적으로 활성화되었습니다.',
+    deactivated: '시크릿이 성공적으로 비활성화되었습니다.',
     legacy_secret: '레거시 시크릿',
     expired: '만료됨',
     expired_tooltip: '이 시크릿은 {{date}} 에 만료되었습니다.',
@@ -195,10 +220,8 @@ const application_details = {
         '이 시크릿은 만료되지 않을 것입니다. 보안을 강화하기 위해 만료 날짜를 설정하는 것을 권장합니다.',
       days: '{{count}} 일',
       days_other: '{{count}} 일',
-      /** UNTRANSLATED */
-      years: '{{count}} year',
-      /** UNTRANSLATED */
-      years_other: '{{count}} years',
+      years: '{{count}} 년',
+      years_other: '{{count}} 년',
       created: '시크릿 {{name}} 이(가) 성공적으로 생성되었습니다.',
     },
     edit_modal: {
@@ -207,92 +230,57 @@ const application_details = {
     },
   },
   saml_idp_config: {
-    /** UNTRANSLATED */
-    title: 'SAML IdP metadata',
-    /** UNTRANSLATED */
-    description:
-      'Use the following metadata and certificate to configure the SAML IdP in your application.',
-    /** UNTRANSLATED */
-    metadata_url_label: 'IdP metadata URL',
-    /** UNTRANSLATED */
-    single_sign_on_service_url_label: 'Single sign-on service URL',
-    /** UNTRANSLATED */
-    idp_entity_id_label: 'IdP entity ID',
+    title: 'SAML IdP 메타데이터',
+    description: '다음 메타데이터와 인증서를 사용하여 애플리케이션에서 SAML IdP 를 구성하세요.',
+    metadata_url_label: 'IdP 메타데이터 URL',
+    single_sign_on_service_url_label: '단일 로그인 서비스 URL',
+    idp_entity_id_label: 'IdP 엔티티 ID',
   },
   saml_idp_certificates: {
-    /** UNTRANSLATED */
-    title: 'SAML signing certificate',
-    /** UNTRANSLATED */
-    expires_at: 'Expires at',
-    /** UNTRANSLATED */
-    finger_print: 'Fingerprint',
-    /** UNTRANSLATED */
-    status: 'Status',
-    /** UNTRANSLATED */
-    active: 'Active',
-    /** UNTRANSLATED */
-    inactive: 'Inactive',
+    title: 'SAML 서명 인증서',
+    expires_at: '만료 시간',
+    finger_print: '지문',
+    status: '상태',
+    active: '활성',
+    inactive: '비활성',
   },
   saml_idp_name_id_format: {
-    /** UNTRANSLATED */
-    title: 'Name ID format',
-    /** UNTRANSLATED */
-    description: 'Select the name ID format of the SAML IdP.',
-    /** UNTRANSLATED */
-    persistent: 'Persistent',
-    /** UNTRANSLATED */
-    persistent_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    transient: 'Transient',
-    /** UNTRANSLATED */
-    transient_description: 'Use one-time user ID as Name ID',
-    /** UNTRANSLATED */
-    unspecified: 'Unspecified',
-    /** UNTRANSLATED */
-    unspecified_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    email_address: 'Email address',
-    /** UNTRANSLATED */
-    email_address_description: 'Use email address as Name ID',
+    title: '이름 ID 형식',
+    description: 'SAML IdP의 이름 ID 형식을 선택하세요.',
+    persistent: '영구',
+    persistent_description: 'Logto 사용자 ID 를 이름 ID 로 사용',
+    transient: '일시적',
+    transient_description: '일회용 사용자 ID 를 이름 ID 로 사용',
+    unspecified: '지정되지 않음',
+    unspecified_description: 'Logto 사용자 ID 를 이름 ID 로 사용',
+    email_address: '이메일 주소',
+    email_address_description: '이메일 주소를 이름 ID 로 사용',
   },
   saml_encryption_config: {
-    /** UNTRANSLATED */
-    encrypt_assertion: 'Encrypt SAML assertion',
-    /** UNTRANSLATED */
-    encrypt_assertion_description: 'By enabling this option, the SAML assertion will be encrypted.',
-    /** UNTRANSLATED */
-    encrypt_then_sign: 'Encrypt then sign',
-    /** UNTRANSLATED */
+    encrypt_assertion: 'SAML 주장을 암호화',
+    encrypt_assertion_description: '이 옵션을 활성화하면 SAML 주장이 암호화됩니다.',
+    encrypt_then_sign: '먼저 암호화 후 서명',
     encrypt_then_sign_description:
-      'By enabling this option, the SAML assertion will be encrypted and then signed; otherwise, the SAML assertion will be signed and then encrypted.',
-    /** UNTRANSLATED */
-    certificate: 'Certificate',
-    /** UNTRANSLATED */
+      '이 옵션을 활성화하면 SAML 주장을 암호화한 다음 서명합니다; 그렇지 않으면 SAML 주장은 서명한 다음 암호화됩니다.',
+    certificate: '인증서',
     certificate_tooltip:
-      'Copy and paste the x509 certificate you get from your service provider to encrypt the SAML assertion.',
-    /** UNTRANSLATED */
+      'SAML 주장을 암호화하기 위해 서비스 제공자로부터 받은 x509 인증서를 복사하여 붙여넣으세요.',
     certificate_placeholder:
       '-----BEGIN CERTIFICATE-----\nMIICYDCCAcmgAwIBA...\n-----END CERTIFICATE-----\n',
-    /** UNTRANSLATED */
-    certificate_missing_error: 'Certificate is required.',
-    /** UNTRANSLATED */
+    certificate_missing_error: '인증서가 필요합니다.',
     certificate_invalid_format_error:
-      'Invalid certificate format detected. Please check the certificate format and try again.',
+      '잘못된 인증서 형식이 감지되었습니다. 인증서 형식을 확인하고 다시 시도하세요.',
   },
   saml_app_attribute_mapping: {
-    /** UNTRANSLATED */
-    name: 'Attribute mappings',
-    /** UNTRANSLATED */
-    title: 'Base attribute mappings',
-    /** UNTRANSLATED */
-    description: 'Add attribute mappings to sync user profile from Logto to your application.',
-    /** UNTRANSLATED */
-    col_logto_claims: 'Value of Logto',
-    /** UNTRANSLATED */
-    col_sp_claims: 'Value name of your application',
-    /** UNTRANSLATED */
-    add_button: 'Add another',
+    name: '속성 매핑',
+    title: '기본 속성 매핑',
+    description:
+      'Logto에서 애플리케이션으로 사용자 프로필을 동기화하기 위해 속성 매핑을 추가하세요.',
+    col_logto_claims: 'Logto 값',
+    col_sp_claims: '애플리케이션의 값 이름',
+    add_button: '다른 추가',
   },
+  concurrent_device_limit,
 };
 
 export default Object.freeze(application_details);

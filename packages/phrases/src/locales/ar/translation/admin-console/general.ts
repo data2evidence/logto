@@ -9,12 +9,13 @@ const general = {
   search: 'بحث',
   search_placeholder: 'بحث',
   clear_result: 'مسح النتائج',
+  today: 'اليوم',
+  clear: 'مسح',
   save: 'حفظ',
   save_changes: 'حفظ التغييرات',
   saved: 'تم الحفظ',
   discard: 'تجاهل',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: 'تنزيل',
   loading: 'جاري التحميل...',
   redirecting: 'جاري التوجيه...',
   add: 'إضافة',
@@ -30,10 +31,8 @@ const general = {
   edit: 'تعديل',
   delete: 'حذف',
   deleted: 'تم الحذف',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  activate: 'تفعيل',
+  deactivate: 'إلغاء التفعيل',
   more_options: 'المزيد من الخيارات',
   close: 'إغلاق',
   copy: 'نسخ',
@@ -52,7 +51,7 @@ const general = {
   continue: 'متابعة',
   page_info: '{{min, number}}-{{max, number}} من {{total, number}}',
   learn_more: 'معرفة المزيد',
-  tab_error_one: '{{count, number}} خطأ',
+  tab_error: '{{count, number}} خطأ',
   tab_error_other: '{{count, number}} أخطاء',
   skip_for_now: 'تخطي للآن',
   remove: 'إزالة',
@@ -78,6 +77,8 @@ const general = {
   or: 'أو',
   reset: 'إعادة تعيين',
   generate: 'إنشاء',
+  manage: 'إدارة',
+  live_preview: 'معاينة مباشرة',
 };
 
 export default Object.freeze(general);

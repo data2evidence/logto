@@ -41,7 +41,7 @@ const user_details = {
     'Información adicional del usuario no incluida en las propiedades de usuario predefinidas, como el color y el idioma preferidos del usuario.',
   field_profile: 'Perfil',
   field_profile_tip:
-    "Additional OpenID Connect standard claims that are not included in user's properties. Note that all unknown properties will be stripped. Please refer to <a>profile property reference</a> for more information.",
+    'Reclamaciones estándar adicionales de OpenID Connect que no están incluidas en las propiedades del usuario. Tenga en cuenta que todas las propiedades desconocidas serán eliminadas. Consulte la <a>referencia de propiedades del perfil</a> para obtener más información.',
   field_connectors: 'Conexiones sociales',
   field_sso_connectors: 'Conexiones empresariales',
   custom_data_invalid: 'Los datos personalizados deben ser un objeto JSON válido',
@@ -72,6 +72,13 @@ const user_details = {
     field_description_empty: 'Este usuario no ha habilitado factores de autenticación de 2 pasos.',
     deletion_confirmation:
       'Estás eliminando la existente <name/> para la verificación en dos pasos. ¿Estás seguro/a de que deseas continuar?',
+  },
+  passkey: {
+    field_name: 'Claves de acceso',
+    field_description_empty:
+      'Este usuario no ha habilitado el inicio de sesión con clave de acceso.',
+    deletion_confirmation:
+      'Estás eliminando el/la existente <name/> para el inicio de sesión con clave de acceso. ¿Estás seguro/a de que deseas continuar?',
   },
   suspended: 'Suspendido',
   suspend_user: 'Suspender usuario',
@@ -111,7 +118,7 @@ const user_details = {
     title_short: 'token',
     empty: 'El usuario no tiene ningún token de acceso personal.',
     create: 'Crear nuevo token',
-    tip: 'Los tokens de acceso personal (PATs) proporcionan una forma segura para que los usuarios otorguen tokens de acceso sin usar sus credenciales y el inicio de sesión interactivo. Esto es útil para CI/CD, scripts o aplicaciones que necesitan acceder a recursos de forma programática. <a>Aprende más</a>',
+    tip: 'Los tokens de acceso personal (PATs) proporcionan una forma segura para que los usuarios otorguen tokens de acceso sin usar sus credenciales y el inicio de sesión interactivo. Esto es útil para CI/CD, scripts o aplicaciones que necesitan acceder a recursos de forma programática.',
     value: 'Valor',
     created_at: 'Creado el',
     expires_at: 'Expira el',
@@ -134,6 +141,57 @@ const user_details = {
     edit_modal: {
       title: 'Editar token de acceso personal',
       edited: 'El token {{name}} ha sido editado con éxito.',
+    },
+  },
+  sessions: {
+    title: 'Sesiones',
+    description:
+      'Gestiona las sesiones mantenidas por el Servidor de Autorización de Logto. Revocar una sesión de Logto aquí evita el consentimiento automático en futuras solicitudes de autorización.',
+    field_name: 'Sesiones',
+    multiple_signed_in: 'Este usuario ha iniciado sesión en múltiples dispositivos o navegadores.',
+    not_found:
+      'No se encontraron sesiones activas de Logto. El usuario no ha iniciado sesión actualmente en ningún dispositivo.',
+    name_column: 'Nombre',
+    session_id_column: 'ID de sesión',
+    location_column: 'Ubicación',
+    browser_on_os: '{{browser}} en {{os}}',
+    user: 'Usuario',
+    applications: 'Aplicaciones',
+    signed_in_at: 'Último inicio de sesión',
+    ip: 'IP',
+    browser_name: 'Nombre del navegador',
+    os_name: 'Nombre del sistema operativo',
+    device_model: 'Modelo del dispositivo',
+    revoke_session: 'Revocar sesión',
+    revoke_session_confirmation:
+      'Si eliminas esta sesión, los usuarios tendrán que volver a autenticarse.',
+  },
+  third_party_apps: {
+    title: 'Aplicaciones de terceros',
+    description:
+      'Usa Logto como proveedor de identidad para autorizar aplicaciones de terceros. Consulta y gestiona las aplicaciones a las que este usuario ha concedido acceso.',
+    field_name: 'Aplicaciones de terceros autorizadas',
+    multiple_authorized: 'Este usuario ha autorizado varias aplicaciones y servicios de terceros.',
+    not_authorized: 'Este usuario aún no ha autorizado ninguna aplicación o servicio de terceros.',
+    name_column: 'Nombre',
+    app_id_column: 'ID de la aplicación',
+    access_created_at_column: 'Acceso creado el',
+    revoke_access_title: '¿Revocar acceso?',
+    revoke_access_description:
+      'Esto revocará el acceso de la aplicación a la cuenta de este usuario en todos los dispositivos. El usuario deberá volver a autorizarla para recuperar el acceso.',
+  },
+  connections: {
+    title: 'Conexión',
+    description:
+      'El usuario enlaza cuentas de terceros para inicio de sesión social, SSO empresarial o acceso a recursos.',
+    token_status_column: 'Estado del token',
+    token_status: {
+      active: 'Activo',
+      expired: 'Expirado',
+      inactive: 'Inactivo',
+      not_applicable: 'No aplicable',
+      available: 'Disponible',
+      not_available: 'No disponible',
     },
   },
 };

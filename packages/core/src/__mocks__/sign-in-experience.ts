@@ -54,6 +54,7 @@ export const mockSignInExperience: SignInExperience = {
   branding: {
     logoUrl: 'http://logto.png',
   },
+  hideLogtoBranding: false,
   termsOfUseUrl: mockTermsOfUseUrl,
   privacyPolicyUrl: mockPrivacyPolicyUrl,
   languageInfo: {
@@ -93,14 +94,28 @@ export const mockSignInExperience: SignInExperience = {
   customContent: {},
   agreeToTermsPolicy: AgreeToTermsPolicy.Automatic,
   customUiAssets: null,
+  customUiCsp: {},
   passwordPolicy: {},
   mfa: {
     policy: MfaPolicy.PromptAtSignInAndSignUp,
     factors: [],
+  },
+  adaptiveMfa: {
+    enabled: false,
   },
   singleSignOnEnabled: true,
   socialSignIn: {},
   supportEmail: null,
   supportWebsiteUrl: null,
   unknownSessionRedirectUrl: null,
+  captchaPolicy: {},
+  sentinelPolicy: {},
+  emailBlocklistPolicy: {},
+  forgotPasswordMethods: null,
+  passkeySignIn: {
+    enabled: false,
+    showPasskeyButton: false,
+    allowAutofill: false,
+  },
+  signUpProfileFields: null,
 };

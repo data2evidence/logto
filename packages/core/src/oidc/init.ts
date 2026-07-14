@@ -4,45 +4,49 @@ import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 import querystring from 'node:querystring';
 
+import { logtoGoogleOneTapCookieKey } from '@logto/connector-kit';
 import { userClaims } from '@logto/core-kit';
 import type { I18nKey } from '@logto/phrases';
 import {
   customClientMetadataDefault,
   CustomClientMetadataKey,
-  experience,
   extraParamsObjectGuard,
   inSeconds,
   logtoCookieKey,
-  type LogtoUiCookie,
   ExtraParamsKey,
 } from '@logto/schemas';
-import { removeUndefinedKeys, trySafe, tryThat } from '@silverhand/essentials';
-import i18next from 'i18next';
-import { Provider, errors } from 'oidc-provider';
+import { trySafe, tryThat } from '@silverhand/essentials';
+import { type i18n } from 'i18next';
+import { type KoaContextWithOIDC, Provider, type ResourceServer, errors } from 'oidc-provider';
 import getRawBody from 'raw-body';
 import snakecaseKeys from 'snakecase-keys';
 
 import { EnvSet } from '#src/env-set/index.js';
 import { addOidcEventListeners } from '#src/event-listeners/index.js';
-import { type CloudConnectionLibrary } from '#src/libraries/cloud-connection.js';
 import { type LogtoConfigLibrary } from '#src/libraries/logto-config.js';
 import koaAppSecretTranspilation from '#src/middleware/koa-app-secret-transpilation.js';
-import koaAuditLog from '#src/middleware/koa-audit-log.js';
+import koaAuditLog, { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import koaBodyEtag from '#src/middleware/koa-body-etag.js';
+import koaJwksCacheControl from '#src/middleware/koa-jwks-cache-control.js';
 import koaResourceParam from '#src/middleware/koa-resource-param.js';
 import postgresAdapter from '#src/oidc/adapter.js';
 import {
+  buildSharedExperienceCookie,
+  buildConsentPromptUrl,
   buildLoginPromptUrl,
   isOriginAllowed,
+  readOptionalQueryString,
   validateCustomClientMetadata,
 } from '#src/oidc/utils.js';
 import type Libraries from '#src/tenants/Libraries.js';
 import type Queries from '#src/tenants/Queries.js';
+import { i18next } from '#src/utils/i18n.js';
 
 import { type SubscriptionLibrary } from '../libraries/subscription.js';
 import koaTokenUsageGuard from '../middleware/koa-token-usage-guard.js';
 
 import defaults from './defaults.js';
+import { deviceFlowConfig, defaultDeviceCodeTtl } from './device-flow.js';
 import {
   getExtraTokenClaimsForJwtCustomization,
   getExtraTokenClaimsForOrganizationApiResource,
@@ -62,11 +66,11 @@ import { getAcceptedUserClaims, getUserClaimsData } from './scope.js';
 const supportedSigningAlgs = Object.freeze(['RS256', 'PS256', 'ES256', 'ES384', 'ES512'] as const);
 
 export default function initOidc(
+  tenantId: string,
   envSet: EnvSet,
   queries: Queries,
   libraries: Libraries,
   logtoConfigs: LogtoConfigLibrary,
-  cloudConnection: CloudConnectionLibrary,
   subscription: SubscriptionLibrary
 ): Provider {
   const {
@@ -83,6 +87,52 @@ export default function initOidc(
     signed: true,
     overwrite: true,
   } as const);
+
+  const getResourceServerInfoCore = async (
+    indicator: string,
+    clientId: string | undefined,
+    userId: string | undefined,
+    organizationId: string | undefined
+  ): Promise<Pick<ResourceServer, 'accessTokenFormat' | 'jwt' | 'accessTokenTTL' | 'scope'>> => {
+    const resourceServer = await findResource(queries, indicator);
+
+    if (!resourceServer) {
+      throw new errors.InvalidTarget();
+    }
+
+    const { accessTokenTtl: accessTokenTTL } = resourceServer;
+
+    const scopes = await findResourceScopes({
+      queries,
+      libraries,
+      indicator,
+      findFromOrganizations: true,
+      organizationId,
+      applicationId: clientId,
+      userId,
+    });
+
+    if (clientId && (await isThirdPartyApplication(queries, clientId))) {
+      const filteredScopes = await filterResourceScopesForTheThirdPartyApplication(
+        libraries,
+        clientId,
+        indicator,
+        scopes
+      );
+
+      return {
+        ...getSharedResourceServerData(envSet),
+        accessTokenTTL,
+        scope: filteredScopes.map(({ name }) => name).join(' '),
+      };
+    }
+
+    return {
+      ...getSharedResourceServerData(envSet),
+      accessTokenTTL,
+      scope: scopes.map(({ name }) => name).join(' '),
+    };
+  };
 
   // Do NOT deconstruct variables from `envSet` earlier, since we might reload `envSet` on the fly,
   // and keeping the reference of the `envSet` object helps dynamically update oidc provider configs.
@@ -113,6 +163,7 @@ export default function initOidc(
       introspectionSigningAlgValues: [...supportedSigningAlgs],
     },
     conformIdTokenClaims: false,
+    allowWildcardRedirectUris: true,
     features: {
       userinfo: { enabled: true },
       revocation: { enabled: true },
@@ -120,16 +171,20 @@ export default function initOidc(
       devInteractions: { enabled: false },
       clientCredentials: { enabled: true },
       backchannelLogout: { enabled: true },
+      deviceFlow: deviceFlowConfig,
       rpInitiatedLogout: {
         logoutSource: (ctx, form) => {
           // eslint-disable-next-line no-template-curly-in-string
           ctx.body = logoutSource.replace('${form}', form);
         },
         postLogoutSuccessSource(ctx) {
+          // eslint-disable-next-line no-restricted-syntax -- detect if i18n is available in the context @see {koaI18next middleware}
+          const i18n = 'i18n' in ctx ? (ctx.i18n as i18n) : i18next;
+
           ctx.body = logoutSuccessSource.replace(
             // eslint-disable-next-line no-template-curly-in-string
             '${message}',
-            i18next.t<string, I18nKey>('oidc.logout_success')
+            i18n.t<string, I18nKey>('oidc.logout_success')
           );
         },
       },
@@ -145,50 +200,12 @@ export default function initOidc(
         // Disable the auto use of authorization_code granted resource feature
         useGrantedResource: () => false,
         getResourceServerInfo: async (ctx, indicator) => {
-          const resourceServer = await findResource(queries, indicator);
-
-          if (!resourceServer) {
-            throw new errors.InvalidTarget();
-          }
-
-          const { accessTokenTtl: accessTokenTTL } = resourceServer;
-
           const { client, params, session, entities } = ctx.oidc;
           const userId = session?.accountId ?? entities.Account?.accountId;
+          const organizationId =
+            typeof params?.organization_id === 'string' ? params.organization_id : undefined;
 
-          const organizationId = params?.organization_id;
-          const scopes = await findResourceScopes({
-            queries,
-            libraries,
-            indicator,
-            findFromOrganizations: true,
-            organizationId: typeof organizationId === 'string' ? organizationId : undefined,
-            applicationId: client?.clientId,
-            userId,
-          });
-
-          // Need to filter out the unsupported scopes for the third-party application.
-          if (client && (await isThirdPartyApplication(queries, client.clientId))) {
-            // Get application consent resource scopes, from RBAC roles
-            const filteredScopes = await filterResourceScopesForTheThirdPartyApplication(
-              libraries,
-              client.clientId,
-              indicator,
-              scopes
-            );
-
-            return {
-              ...getSharedResourceServerData(envSet),
-              accessTokenTTL,
-              scope: filteredScopes.map(({ name }) => name).join(' '),
-            };
-          }
-
-          return {
-            ...getSharedResourceServerData(envSet),
-            accessTokenTTL,
-            scope: scopes.map(({ name }) => name).join(' '),
-          };
+          return getResourceServerInfoCore(indicator, client?.clientId, userId, organizationId);
         },
       },
     },
@@ -205,26 +222,39 @@ export default function initOidc(
     interactions: {
       url: (ctx, { params: { client_id: appId }, prompt }) => {
         const params = trySafe(() => extraParamsObjectGuard.parse(ctx.oidc.params ?? {})) ?? {};
+        const sharedParams = {
+          appId: readOptionalQueryString(appId),
+          organizationId: params.organization_id,
+          uiLocales: params.ui_locales,
+        };
 
         // Cookies are required to apply the correct server-side rendering
-        ctx.cookies.set(
-          logtoCookieKey,
-          JSON.stringify(
-            removeUndefinedKeys({
-              appId: typeof appId === 'string' ? appId : undefined,
-              organizationId: params.organization_id,
-            }) satisfies LogtoUiCookie
-          ),
-          { sameSite: 'lax', overwrite: true, httpOnly: false }
-        );
+        ctx.cookies.set(logtoCookieKey, JSON.stringify(buildSharedExperienceCookie(sharedParams)), {
+          sameSite: 'lax',
+          overwrite: true,
+          httpOnly: false,
+        });
+
+        if (params[ExtraParamsKey.GoogleOneTapCredential]) {
+          ctx.cookies.set(
+            logtoGoogleOneTapCookieKey,
+            params[ExtraParamsKey.GoogleOneTapCredential],
+            {
+              sameSite: 'lax',
+              overwrite: true,
+              httpOnly: false,
+              maxAge: 10 * 1000, // 10s
+            }
+          );
+        }
 
         switch (prompt.name) {
           case 'login': {
-            return '/' + buildLoginPromptUrl(params, appId);
+            return '/' + buildLoginPromptUrl(params, sharedParams);
           }
 
           case 'consent': {
-            return '/' + experience.routes.consent;
+            return '/' + buildConsentPromptUrl(appId);
           }
 
           default: {
@@ -239,13 +269,17 @@ export default function initOidc(
         await Promise.all([
           getExtraTokenClaimsForTokenExchange(ctx, token),
           getExtraTokenClaimsForOrganizationApiResource(ctx, token),
-          getExtraTokenClaimsForJwtCustomization(ctx, token, {
-            envSet,
-            queries,
-            libraries,
-            logtoConfigs,
-            cloudConnection,
-          }),
+          getExtraTokenClaimsForJwtCustomization(
+            // eslint-disable-next-line no-restricted-syntax -- see `oidc.use(koaAuditLog(queries))` below;
+            ctx as KoaContextWithOIDC & WithLogContext,
+            token,
+            {
+              envSet,
+              queries,
+              libraries,
+              logtoConfigs,
+            }
+          ),
         ]);
 
       if (!organizationApiResourceClaims && !jwtCustomizedClaims && !tokenExchangeClaims) {
@@ -280,12 +314,27 @@ export default function initOidc(
 
       return {
         accountId: sub,
-        claims: async (use, scope, claims, rejected) => {
+        /**
+         * The third argument `_claims` is not used since
+         * [Claims Parameter](https://github.com/panva/node-oidc-provider/tree/main/docs#featuresclaimsparameter)
+         * is not enabled.
+         */
+        claims: async (use, scope, _claims, rejected) => {
           assert(
             use === 'id_token' || use === 'userinfo',
             'use should be either `id_token` or `userinfo`'
           );
-          const acceptedClaims = getAcceptedUserClaims(use, scope, claims, rejected);
+
+          // Get the ID token config to determine which extended claims are enabled
+          const idTokenConfig =
+            use === 'id_token' ? await queries.logtoConfigs.getIdTokenConfig() : undefined;
+
+          const acceptedClaims = getAcceptedUserClaims({
+            use,
+            scope,
+            rejected,
+            enabledExtendedIdTokenClaims: idTokenConfig?.enabledExtendedClaims,
+          });
 
           return snakecaseKeys(
             {
@@ -340,9 +389,11 @@ export default function initOidc(
 
         return 60 * 60; // 1 hour in seconds
       },
+      DeviceCode: defaultDeviceCodeTtl,
       Interaction: 3600 /* 1 hour in seconds */,
-      Session: 1_209_600 /* 14 days in seconds */,
-      Grant: 1_209_600 /* 14 days in seconds */,
+      Session: envSet.oidc.sessionTtl ?? defaults.sessionTtl /* 14 days in seconds */,
+      // Set this to the longest allowed duration of the refresh token
+      Grant: 180 * 3600 * 24 /* 180 days in seconds */,
     },
     rotateRefreshToken: (ctx) => {
       const { Client: client } = ctx.oidc.entities;
@@ -364,7 +415,7 @@ export default function initOidc(
     },
   });
 
-  addOidcEventListeners(oidc, queries);
+  addOidcEventListeners(tenantId, oidc, queries);
   registerGrants(oidc, envSet, queries);
 
   // Provide audit log context for event listeners
@@ -416,6 +467,7 @@ export default function initOidc(
   });
 
   oidc.use(koaAppSecretTranspilation(queries));
+  oidc.use(koaJwksCacheControl());
   oidc.use(koaBodyEtag());
 
   if (EnvSet.values.isCloud) {

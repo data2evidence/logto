@@ -1,24 +1,40 @@
 import type { LogContextPayload, LogKey } from '@logto/schemas';
 import { LogResult } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
-import { pick } from '@silverhand/essentials';
+import { conditional, type Optional, pick } from '@silverhand/essentials';
 import type { Context, MiddlewareType } from 'koa';
 import type { IRouterParamContext } from 'koa-router';
+import { UAParser } from 'ua-parser-js';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import type Queries from '#src/tenants/Queries.js';
+import { getInjectedHeaderValues } from '#src/utils/injected-header-mapping.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const sensitiveDataKeys = Object.freeze(['password', 'secret']);
+
+const sanitise = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((element) => sanitise(element));
+  }
+
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, element]) => {
+        return [key, sensitiveDataKeys.includes(key) ? '******' : sanitise(element)];
+      })
+    );
+  }
+
+  return value;
+};
+
 const filterSensitiveData = (data: Record<string, unknown>): Record<string, unknown> => {
   return Object.fromEntries(
     Object.entries(data).map(([key, value]) => {
-      if (isRecord(value)) {
-        return [key, filterSensitiveData(value)];
-      }
-
-      return [key, key === 'password' ? '******' : value];
+      return [key, sensitiveDataKeys.includes(key) ? '******' : sanitise(value)];
     })
   );
 };
@@ -98,6 +114,7 @@ export type WithLogContext<ContextT extends IRouterParamContext = IRouterParamCo
  * {
  *   ip: 'request-ip-addr',
  *   userAgent: 'request-user-agent',
+ *   userAgentParsed: { ...parsedUserAgent },
  *   ...log.payload,
  * }
  * ```
@@ -147,13 +164,33 @@ export default function koaAuditLog<StateT, ContextT extends IRouterParamContext
         ip,
         headers: { 'user-agent': userAgent },
       } = ctx.request;
+      const signInContext = conditional(getInjectedHeaderValues(ctx.request.headers));
+      const userAgentValue: Optional<string> =
+        typeof userAgent === 'string' ? userAgent : userAgent?.[0];
+      const userAgentParsed: Optional<UAParser.IResult> = conditional(
+        (() => {
+          if (!userAgentValue) {
+            return;
+          }
+
+          try {
+            return new UAParser(userAgentValue).getResult();
+          } catch {}
+        })()
+      );
+      const basePayload = removeUndefinedKeys({
+        ip,
+        userAgent: userAgentValue,
+        ...conditional(userAgentParsed && { userAgentParsed }),
+        ...conditional(signInContext && { signInContext }),
+      });
 
       await Promise.all(
         entries.map(async ({ payload }) => {
           return insertLog({
             id: generateStandardId(),
             key: payload.key,
-            payload: { ip, userAgent, ...payload },
+            payload: { ...basePayload, ...payload },
           });
         })
       );

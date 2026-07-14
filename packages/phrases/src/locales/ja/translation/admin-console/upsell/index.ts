@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'プランをアップグレード',
   compare_plans: 'プラン比較',
+  try_with_product_name: '今すぐ {{productName}} を試す',
   view_plans: 'プランを見る',
   create_tenant: {
     title: 'テナントプランを選択',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'プランを更新',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'トークン使用量が制限を超えました。プランをアップグレードしてください。',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      '<planName/> のトークン使用制限を超えました。ユーザーは Logto サービスに正しくアクセスできません。ご不便をおかけしないよう、すぐにプレミアムプランにアップグレードしてください。',
   },
   payment_overdue_modal: {
     title: '請求書の支払いが期限切れです',
@@ -50,6 +49,24 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: '開発テナントを本番テナントに変更しようとしています',
+    description:
+      '本番環境に移行する準備はできましたか？この開発テナントを本番テナントに変換すると、すべての機能が利用可能になります。',
+    benefits: {
+      stable_environment: 'エンドユーザー向け：実際の使用に安定した環境を提供。',
+      keep_pro_features:
+        'プロ機能を保持：プロプランに加入しようとしています。<a>プロ機能を見る。</a>',
+      no_dev_restrictions:
+        '開発制限なし：エンティティとリソースシステムの制限、およびサインインバナーを削除します。',
+    },
+    cards: {
+      dev_description: 'テスト目的',
+      prod_description: '実際の本番運用',
+      convert_label: '変換',
+    },
+    button: '本番テナントに変換',
+  },
 };
 
 export default Object.freeze(upsell);

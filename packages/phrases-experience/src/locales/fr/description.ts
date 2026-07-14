@@ -10,17 +10,16 @@ const description = {
   sign_in: 'Connexion',
   privacy_policy: 'Politique de confidentialité',
   create_account: 'Créer un compte',
+  switch_account: 'Changer de compte',
   or: 'ou',
   and: 'et',
   enter_passcode: 'Le code a été envoyé à {{address}} {{target}}',
   passcode_sent: 'Le code a été renvoyé',
   resend_after_seconds: 'Pas encore reçu ? Renvoyer après <span>{{seconds}}</span> secondes',
   resend_passcode: 'Pas encore reçu ? <a>Renvoyer le code de vérification</a>',
-  create_account_id_exists:
-    'Le compte avec {{type}} {{value}} existe déjà, voulez-vous vous connecter?',
+  create_account_id_exists: 'Un compte avec {{value}} existe déjà. Continuer à se connecter.',
   link_account_id_exists: 'Le compte avec {{type}} {{value}} existe déjà, voulez-vous le lier?',
-  sign_in_id_does_not_exist:
-    "Le compte avec {{type}} {{value}} n'existe pas, voulez-vous créer un nouveau compte?",
+  sign_in_id_does_not_exist: 'Aucun compte trouvé pour {{value}}. Créer un nouveau?',
   sign_in_id_does_not_exist_alert: 'Nous ne trouvons aucun compte associé à {{type}} {{value}}.',
   create_account_id_exists_alert:
     'Le compte avec {{type}} {{value}} est lié à un autre compte. Veuillez essayer un autre {{type}}.',
@@ -59,16 +58,31 @@ const description = {
   continue_with_more_information:
     'Pour une sécurité accrue, veuillez compléter les détails du compte ci-dessous.',
   create_your_account: 'Créer votre compte',
-  sign_in_to_your_account: 'Connecte-toi à ton compte',
+  sign_in_to_your_account: 'Connectez-vous à votre compte',
+  device_activation: "Activation de l'appareil",
+  device_activation_description:
+    "Entrez le code affiché sur votre appareil. Assurez-vous qu'il correspond, puis continuez pour vous connecter à cet appareil.",
+  device_activation_error_description: 'Entrez le code affiché sur votre appareil.',
+  device_activation_success: 'Votre appareil est maintenant connecté !',
+  device_activation_success_description: 'Retournez sur votre appareil pour continuer.',
   no_region_code_found: 'Aucun code de région trouvé',
   verify_email: 'Vérifiez votre e-mail',
   verify_phone: 'Vérifiez votre numéro de téléphone',
   password_requirements: 'Mot de passe {{items, list}}.',
   password_requirement: {
     length_one: 'doit contenir au minimum {{count}} caractère',
+    length_two: 'doit contenir au minimum {{count}} caractères',
+    length_few: 'doit contenir au minimum {{count}} caractères',
+    length_many: 'doit contenir au minimum {{count}} caractères',
     length_other: 'doit contenir au minimum {{count}} caractères',
     character_types_one:
       'doit contenir au moins {{count}} type de lettres majuscules, lettres minuscules, chiffres et symboles',
+    character_types_two:
+      'doit contenir au moins {{count}} types de lettres majuscules, lettres minuscules, chiffres et symboles',
+    character_types_few:
+      'doit contenir au moins {{count}} types de lettres majuscules, lettres minuscules, chiffres et symboles',
+    character_types_many:
+      'doit contenir au moins {{count}} types de lettres majuscules, lettres minuscules, chiffres et symboles',
     character_types_other:
       'doit contenir au moins {{count}} types de lettres majuscules, lettres minuscules, chiffres et symboles',
   },
@@ -77,30 +91,18 @@ const description = {
   single_sign_on_connectors_list:
     'Votre entreprise a activé la connexion unique (Single Sign-On) pour le compte email {{email}}. Vous pouvez continuer à vous connecter avec les fournisseurs SSO suivants.',
   single_sign_on_enabled: 'La connexion unique (Single Sign-On) est activée pour ce compte',
-  /** UNTRANSLATED */
-  authorize_title: 'Authorize {{name}}',
-  /** UNTRANSLATED */
-  request_permission: '{{name}} is requesting access to:',
-  /** UNTRANSLATED */
-  grant_organization_access: 'Grant the organization access:',
-  /** UNTRANSLATED */
-  authorize_personal_data_usage: 'Authorize the use of your personal data:',
-  /** UNTRANSLATED */
-  authorize_organization_access: 'Authorize access to the specific organization:',
-  /** UNTRANSLATED */
-  user_scopes: 'Personal user data',
-  /** UNTRANSLATED */
-  organization_scopes: 'Organization access',
-  /** UNTRANSLATED */
-  authorize_agreement: `By authorizing the access, you agree to the {{name}}'s <link></link>.`,
-  /** UNTRANSLATED */
-  authorize_agreement_with_redirect: `By authorizing the access, you agree to the {{name}}'s <link></link>, and will be redirected to {{uri}}.`,
-  /** UNTRANSLATED */
-  not_you: 'Not you?',
-  /** UNTRANSLATED */
-  user_id: 'User ID: {{id}}',
-  /** UNTRANSLATED */
-  redirect_to: 'You will be redirected to {{name}}.',
+  authorize_title: 'Autoriser {{name}}',
+  request_permission: "{{name}} demande l'accès à :",
+  grant_organization_access: "Accorder l'accès à l'organisation :",
+  authorize_personal_data_usage: "Autoriser l'utilisation de vos données personnelles :",
+  authorize_organization_access: "Autoriser l'accès à l'organisation spécifique :",
+  user_scopes: 'Données utilisateur personnelles',
+  organization_scopes: "Accès à l'organisation",
+  authorize_agreement: `En autorisant l'accès, vous acceptez les termes de {{name}} <link></link>.`,
+  authorize_agreement_with_redirect: `En autorisant l'accès, vous acceptez les termes de {{name}} <link></link>, et vous serez redirigé vers {{uri}}.`,
+  not_you: 'Pas vous ?',
+  user_id: 'ID utilisateur : {{id}}',
+  redirect_to: 'Vous serez redirigé vers {{name}}.',
   auto_agreement: 'En continuant, vous acceptez les <link></link>.',
   identifier_sign_in_description:
     'Entrez votre {{types, list(type: disjunction;)}} pour vous connecter.',
@@ -111,6 +113,21 @@ const description = {
   back_to_sign_in: 'Retour à la connexion',
   support_email: 'Email de support: <link></link>',
   support_website: 'Site web de support: <link></link>',
+  switch_account_title: 'Vous êtes actuellement connecté en tant que {{account}}',
+  switch_account_description:
+    'Pour continuer, vous serez déconnecté du compte actuel, et le passage au nouveau compte se fera automatiquement.',
+  about_yourself: 'Parlez-nous de vous',
+  verify_identity: 'Vérifiez votre identité',
+  choose_verification_method: 'Choisissez comment vous connecter',
+  verification_method: {
+    passkey: "Clé d'accès",
+    passkey_description: 'Vérifiez via votre appareil ou un matériel USB',
+    password: 'Mot de passe',
+    password_description: 'Entrez votre mot de passe',
+    email_verification_code: 'Code de vérification par e-mail',
+    phone_verification_code: 'Code de vérification par téléphone',
+    verification_code_description: 'Envoyer à {{target}}',
+  },
 };
 
 export default Object.freeze(description);

@@ -1,13 +1,99 @@
-import { type PasswordPolicy } from '@logto/core-kit';
-import { type SignUp, type SignInExperience, type SignInIdentifier } from '@logto/schemas';
+import {
+  AccountCenterControlValue,
+  type AccountCenter as AccountCenterConfig,
+  type AccountCenterProfileFields,
+  type CustomUiCsp,
+  type SignUp,
+  type SignInExperience,
+  type SignInIdentifier,
+  type SignUpIdentifier as SignUpIdentifierMethod,
+  type SignUpProfileFields,
+  type AccountCenterFieldControl,
+} from '@logto/schemas';
+/**
+ * Omit the `mfa`, `adaptiveMfa`, `captchaPolicy`, `passwordPolicy`, `sentinelPolicy` and `emailBlocklistPolicy` fields from the sign-in experience.
+ * Since those fields are not managed by the sign-in experience page.
+ */
+type OmittedSignInExperienceKeys = keyof Pick<
+  SignInExperience,
+  | 'mfa'
+  | 'adaptiveMfa'
+  | 'captchaPolicy'
+  | 'sentinelPolicy'
+  | 'passwordPolicy'
+  | 'emailBlocklistPolicy'
+>;
 
 export enum SignInExperienceTab {
   Branding = 'branding',
   SignUpAndSignIn = 'sign-up-and-sign-in',
+  CollectUserProfile = 'collect-user-profile',
+  AccountCenter = 'account-center',
   Content = 'content',
-  PasswordPolicy = 'password-policy',
 }
 
+const accountCenterFieldKeys: Array<keyof AccountCenterFieldControl> = [
+  'email',
+  'phone',
+  'social',
+  'password',
+  'mfa',
+  'username',
+  'name',
+  'avatar',
+  'profile',
+  'customData',
+  'session',
+] as const;
+
+export type AccountCenterFieldKey = (typeof accountCenterFieldKeys)[number];
+
+export type AccountCenterFormValues = {
+  enabled: boolean;
+  fields: Record<AccountCenterFieldKey, AccountCenterControlValue>;
+  webauthnRelatedOrigins: string[];
+  deleteAccountUrl: string;
+  customCss?: string;
+  /**
+   * `useFieldArray` requires an array, so null from the API is normalized to an empty array when
+   * the form is initialized (see `convertAccountCenterToForm`).
+   */
+  profileFields: AccountCenterProfileFields;
+};
+
+const createDefaultAccountCenterFormValues = (): AccountCenterFormValues => ({
+  enabled: false,
+  // eslint-disable-next-line no-restricted-syntax
+  fields: Object.fromEntries(
+    accountCenterFieldKeys.map((key) => [key, AccountCenterControlValue.Off])
+  ) as Record<AccountCenterFieldKey, AccountCenterControlValue>,
+  webauthnRelatedOrigins: [],
+  deleteAccountUrl: '',
+  profileFields: [],
+});
+
+export const normalizeWebauthnRelatedOrigins = (origins?: string[]): string[] =>
+  origins?.map((origin) => origin.trim()).filter(Boolean) ?? [];
+
+export const normalizeDeleteAccountUrl = (url?: string): string => url?.trim() ?? '';
+
+export const convertAccountCenterToForm = (
+  accountCenter?: AccountCenterConfig
+): AccountCenterFormValues => ({
+  enabled: accountCenter?.enabled ?? false,
+  fields: {
+    ...createDefaultAccountCenterFormValues().fields,
+    ...accountCenter?.fields,
+  },
+  webauthnRelatedOrigins: normalizeWebauthnRelatedOrigins(accountCenter?.webauthnRelatedOrigins),
+  deleteAccountUrl: normalizeDeleteAccountUrl(accountCenter?.deleteAccountUrl ?? undefined),
+  customCss: accountCenter?.customCss ?? undefined,
+  profileFields: accountCenter?.profileFields ?? [],
+});
+
+/**
+ * @deprecated
+ */
 export enum SignUpIdentifier {
   Email = 'email',
   Phone = 'phone',
@@ -16,31 +102,40 @@ export enum SignUpIdentifier {
   None = 'none',
 }
 
-export type SignUpForm = Omit<SignUp, 'identifiers'> & {
-  identifier: SignUpIdentifier;
+export type SignUpForm = Omit<SignUp, 'identifiers' | 'secondaryIdentifiers'> & {
+  /**
+   * New identifiers field that merges the `signUpIdentifier` and `secondaryIdentifiers` fields
+   **/
+  identifiers: Array<{
+    /**
+     * Wrapped the identifier value into an object to make it manageable using the `useFieldArray` hook.
+     * `useFieldArray` requires the array item to be an object.
+     * Also for the future benefit, we may add `verify` field to the identifier object, once we support
+     * unverified email/phone as the sign-up identifier.
+     */
+    identifier: SignUpIdentifierMethod;
+  }>;
 };
+
+export type CustomUiCspForm = Required<Record<keyof CustomUiCsp, string[]>>;
 
 export type SignInExperienceForm = Omit<
   SignInExperience,
-  'signUp' | 'customCss' | 'passwordPolicy'
+  'signUp' | 'customCss' | 'customUiCsp' | 'signUpProfileFields' | OmittedSignInExperienceKeys
 > & {
   customCss?: string; // Code editor components can not properly handle null value, manually transform null to undefined instead.
+  customUiCsp: CustomUiCspForm;
   signUp: SignUpForm;
-  /** The parsed password policy object. All properties are required. */
-  passwordPolicy: PasswordPolicy & {
-    /**
-     * The custom words separated by line breaks.
-     *
-     * This property is only used for UI display.
-     */
-    customWords: string;
-    /**
-     * Whether the custom words feature is enabled. Default value will be true if `rejects.words` is not empty.
-     *
-     * This property is only used for UI display.
-     */
-    isCustomWordsEnabled: boolean;
-  };
+  /**
+   * `useFieldArray` requires an array, so the form always stores this as an array.
+   */
+  signUpProfileFields: SignUpProfileFields;
+  /**
+   * Legacy tenants may still store `null`, which means "use the default catalog behavior".
+   * Keep tracking whether the original value was already explicitly configured so saving unrelated
+   * settings does not silently change `null` into `[]`.
+   */
+  hasConfiguredSignUpProfileFields: boolean;
   createAccountEnabled: boolean;
 };
 
@@ -51,10 +146,19 @@ export type SignInMethodsObject = Record<
   { password: boolean; verificationCode: boolean }
 >;
 
-export type UpdateSignInExperienceData = Omit<SignInExperience, 'mfa'> & {
-  /**
-   * `mfa` data will not be updated in the sign-in experience page.
-   * Hard code it to `undefined` to have a better type checking when constructing the update data.
-   */
-  mfa: undefined;
+/**
+ * The managed data of the sign-in experience page.
+ * This type omits the properties defined in @see {OmittedSignInExperienceKeys},
+ * as they are not managed by the sign-in experience page.
+ *
+ * - Those keys should be omitted from the form data.
+ * - Those keys should be omitted from the submitted data.
+ * - Those keys should not be used in any data comparison logic.
+ */
+export type SignInExperiencePageManagedData = Omit<
+  SignInExperience,
+  OmittedSignInExperienceKeys | 'customUiCsp' | 'hideLogtoBranding'
+> & {
+  customUiCsp?: CustomUiCsp;
+  hideLogtoBranding?: boolean;
 };

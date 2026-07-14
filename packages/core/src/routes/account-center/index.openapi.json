@@ -31,6 +31,15 @@
                   },
                   "fields": {
                     "description": "The fields settings for the account API."
+                  },
+                  "webauthnRelatedOrigins": {
+                    "description": "The allowed domains for webauthn."
+                  },
+                  "deleteAccountUrl": {
+                    "description": "The custom endpoint URL for account deletion."
+                  },
+                  "profileFields": {
+                    "description": "Ordered list of custom profile fields to show in the prebuilt account center. Each entry references an existing field by name in the custom profile fields catalog."
                   }
                 }
               }

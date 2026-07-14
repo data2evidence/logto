@@ -1,10 +1,12 @@
+import concurrent_device_limit from './concurrent-device-limit.js';
+
 const application_details = {
   page_title: '应用详情',
   back_to_applications: '返回全部应用',
   check_guide: '查看指南',
   settings: '设置',
   settings_description:
-    'An "Application" is a registered software or service that can access user info or act for a user. Applications help recognize who’s asking for what from Logto and handle the sign-in and permission. Fill in the required fields for authentication.',
+    '“应用”是注册的软件或服务，可以访问用户信息或代表用户执行操作。应用可以帮助 Logto 识别是谁在请求什么，并负责处理登录和授权。请填写认证所需的必填字段。',
   integration: '集成',
   integration_description:
     '使用由 Cloudflare 边缘网络提供动力的 Logto 安全工作者部署，实现世界各地的一流性能和 0ms 冷启动。',
@@ -22,6 +24,7 @@ const application_details = {
   description_placeholder: '请输入应用描述',
   config_endpoint: 'OpenID Provider 配置端点',
   issuer_endpoint: '发行者端点',
+  jwks_uri: 'JWKS URI',
   authorization_endpoint: '授权端点',
   authorization_endpoint_tip: '进行鉴权与授权的端点。用于 OpenID Connect 中的 <a>鉴权</a> 流程。',
   show_endpoint_details: '显示端点详细信息',
@@ -38,9 +41,10 @@ const application_details = {
   redirect_uri_placeholder_native: 'io.logto://callback',
   redirect_uri_tip:
     '在用户登录完成（不论成功与否）后重定向的目标 URI。参见 OpenID Connect <a>AuthRequest</a> 以了解更多。',
-  /** UNTRANSLATED */
   mixed_redirect_uri_warning:
-    'Your application type is not compatible with at least one of the redirect URIs. It does not follow best practices and we strongly recommend keeping the redirect URIs consistent.',
+    '你的应用程序类型与至少一个重定向 URI 不兼容。这不符合最佳实践，我们强烈建议保持重定向 URI 的一致性。',
+  wildcard_redirect_uri_warning:
+    '通配符重定向 URI 不是标准 OIDC，可能会增加攻击面。请谨慎使用，尽可能使用精确的重定向 URI。',
   post_sign_out_redirect_uri: '退出登录后重定向 URI',
   post_sign_out_redirect_uris: '退出登录后重定向 URIs',
   post_sign_out_redirect_uri_placeholder: 'https://your.website.com/home',
@@ -64,15 +68,25 @@ const application_details = {
   rotate_refresh_token: '轮换刷新令牌',
   rotate_refresh_token_label:
     '启用后，当原先的刷新令牌的时效已经过去 70%，或者满足一定条件时，Logto 将会为访问令牌请求发放新的刷新令牌。<a>了解更多</a>',
-  /** UNTRANSLATED */
   rotate_refresh_token_label_for_public_clients:
-    'When enabled, Logto will issue a new refresh token for each token request. <a>Learn more</a>',
+    '启用后，Logto 将为每个令牌请求颁发一个新的刷新令牌。<a>了解更多</a>',
   backchannel_logout: '后端通道注销',
   backchannel_logout_description: '配置 OpenID Connect 后端通道注销端点，以及该应用是否需要会话。',
   backchannel_logout_uri: '后端通道注销 URI',
   backchannel_logout_uri_session_required: '是否需要会话？',
   backchannel_logout_uri_session_required_description:
     '启用后，当使用 `backchannel_logout_uri` 时，RP 需要在注销令牌中包含 `sid`（会话 ID）声明，以标识 RP 与 OP 的会话。',
+  token_exchange: '令牌交换',
+  token_exchange_description: '管理此应用程序的令牌交换设置。',
+  allow_token_exchange: '允许令牌交换',
+  allow_token_exchange_description:
+    '允许此应用程序发起令牌交换请求。这是 <impersonationLink>用户冒充</impersonationLink> 和 <patLink>个人访问令牌</patLink> 所必需的。',
+  allow_token_exchange_public_client_warning:
+    '不建议为公共客户端（单页应用/原生应用）启用令牌交换。公共客户端无法安全存储凭据，可能会使你的应用暴露于令牌冒充风险。',
+  device_flow_tag: '设备流',
+  device_flow_notification:
+    '此应用启用了 OAuth 2.0 Device Authorization Flow，适用于输入受限的设备或无界面应用（如电视、CLI）。用户在另一台设备上通过输入设备码或扫描二维码完成登录。<a>了解更多</a>',
+  device_flow_try_demo: '试用演示',
   delete_description: '本操作会永久性地删除该应用，且不可撤销。输入 <span>{{name}}</span> 确认。',
   enter_your_application_name: '输入你的应用名称',
   application_deleted: '应用 {{name}} 成功删除。',
@@ -91,6 +105,8 @@ const application_details = {
   protect_origin_server: '保护您的源服务器',
   protect_origin_server_description:
     '确保保护源服务器免受直接访问。请参阅指南了解更多<a>详细说明</a>。',
+  third_party_settings_description:
+    '将第三方应用程序与 Logto 集成为你的身份提供者 (IdP)，使用 OIDC / OAuth 2.0，并提供用户授权同意界面。',
   session_duration: '会话持续时间（天）',
   try_it: '试一下',
   no_organization_placeholder: '找不到组织。<a>前往组织</a>',
@@ -144,6 +160,17 @@ const application_details = {
     organization_title: '组织',
     organization_description: '选择第三方应用程序需要访问特定组织数据的权限。',
     grant_organization_level_permissions: '授予组织数据权限',
+    oidc_title: 'OIDC',
+    oidc_description:
+      '核心 OIDC 权限会自动为你的应用配置。这些 scope 对认证至关重要，并且不会显示在用户授权屏幕上。',
+    default_oidc_permissions: '默认 OIDC 权限',
+    permission_column: '权限',
+    guide_column: '指南',
+    openid_permission: 'openid',
+    openid_permission_guide:
+      "用于访问 OAuth 资源时可选。\n用于 OIDC 认证时必需。授予访问 ID Token 的权限，并允许访问 'userinfo_endpoint'。",
+    offline_access_permission: 'offline_access',
+    offline_access_permission_guide: '可选。获取刷新令牌，用于长时访问或后台任务。',
   },
   roles: {
     assign_button: '分配机器对机器角色',
@@ -168,12 +195,9 @@ const application_details = {
     never: '从不',
     create_new_secret: '创建新密钥',
     delete_confirmation: '此操作无法撤销。你确定要删除此密钥吗？',
-    /** UNTRANSLATED */
-    deleted: 'The secret has been successfully deleted.',
-    /** UNTRANSLATED */
-    activated: 'The secret has been successfully activated.',
-    /** UNTRANSLATED */
-    deactivated: 'The secret has been successfully deactivated.',
+    deleted: '密钥已成功删除。',
+    activated: '密钥已成功激活。',
+    deactivated: '密钥已成功停用。',
     legacy_secret: '旧密钥',
     expired: '已过期',
     expired_tooltip: '此密钥已于 {{date}} 过期。',
@@ -184,10 +208,8 @@ const application_details = {
       expiration_description_never: '该密钥永不过期。我们建议设置一个到期日期以增强安全性。',
       days: '{{count}} 天',
       days_other: '{{count}} 天',
-      /** UNTRANSLATED */
-      years: '{{count}} year',
-      /** UNTRANSLATED */
-      years_other: '{{count}} years',
+      years: '{{count}} 年',
+      years_other: '{{count}} 年',
       created: '密钥 {{name}} 已成功创建。',
     },
     edit_modal: {
@@ -196,92 +218,54 @@ const application_details = {
     },
   },
   saml_idp_config: {
-    /** UNTRANSLATED */
-    title: 'SAML IdP metadata',
-    /** UNTRANSLATED */
-    description:
-      'Use the following metadata and certificate to configure the SAML IdP in your application.',
-    /** UNTRANSLATED */
-    metadata_url_label: 'IdP metadata URL',
-    /** UNTRANSLATED */
-    single_sign_on_service_url_label: 'Single sign-on service URL',
-    /** UNTRANSLATED */
-    idp_entity_id_label: 'IdP entity ID',
+    title: 'SAML IdP 元数据',
+    description: '使用以下元数据和证书配置你的应用中的 SAML IdP。',
+    metadata_url_label: 'IdP 元数据 URL',
+    single_sign_on_service_url_label: '单一登录服务 URL',
+    idp_entity_id_label: 'IdP 实体 ID',
   },
   saml_idp_certificates: {
-    /** UNTRANSLATED */
-    title: 'SAML signing certificate',
-    /** UNTRANSLATED */
-    expires_at: 'Expires at',
-    /** UNTRANSLATED */
-    finger_print: 'Fingerprint',
-    /** UNTRANSLATED */
-    status: 'Status',
-    /** UNTRANSLATED */
-    active: 'Active',
-    /** UNTRANSLATED */
-    inactive: 'Inactive',
+    title: 'SAML 签名证书',
+    expires_at: '到期时间',
+    finger_print: '指纹',
+    status: '状态',
+    active: '活跃',
+    inactive: '非活跃',
   },
   saml_idp_name_id_format: {
-    /** UNTRANSLATED */
-    title: 'Name ID format',
-    /** UNTRANSLATED */
-    description: 'Select the name ID format of the SAML IdP.',
-    /** UNTRANSLATED */
-    persistent: 'Persistent',
-    /** UNTRANSLATED */
-    persistent_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    transient: 'Transient',
-    /** UNTRANSLATED */
-    transient_description: 'Use one-time user ID as Name ID',
-    /** UNTRANSLATED */
-    unspecified: 'Unspecified',
-    /** UNTRANSLATED */
-    unspecified_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    email_address: 'Email address',
-    /** UNTRANSLATED */
-    email_address_description: 'Use email address as Name ID',
+    title: '名称 ID 格式',
+    description: '选择 SAML IdP 的名称 ID 格式。',
+    persistent: '持久性',
+    persistent_description: '使用 Logto 用户 ID 作为名称 ID',
+    transient: '临时性',
+    transient_description: '使用一次性用户 ID 作为名称 ID',
+    unspecified: '未指定',
+    unspecified_description: '使用 Logto 用户 ID 作为名称 ID',
+    email_address: '电子邮件地址',
+    email_address_description: '使用电子邮件地址作为名称 ID',
   },
   saml_encryption_config: {
-    /** UNTRANSLATED */
-    encrypt_assertion: 'Encrypt SAML assertion',
-    /** UNTRANSLATED */
-    encrypt_assertion_description: 'By enabling this option, the SAML assertion will be encrypted.',
-    /** UNTRANSLATED */
-    encrypt_then_sign: 'Encrypt then sign',
-    /** UNTRANSLATED */
+    encrypt_assertion: '加密 SAML 断言',
+    encrypt_assertion_description: '启用此选项后，SAML 断言将被加密。',
+    encrypt_then_sign: '先加密后签名',
     encrypt_then_sign_description:
-      'By enabling this option, the SAML assertion will be encrypted and then signed; otherwise, the SAML assertion will be signed and then encrypted.',
-    /** UNTRANSLATED */
-    certificate: 'Certificate',
-    /** UNTRANSLATED */
-    certificate_tooltip:
-      'Copy and paste the x509 certificate you get from your service provider to encrypt the SAML assertion.',
-    /** UNTRANSLATED */
+      '启用此选项后，SAML 断言将被加密然后签名；否则，SAML 断言将被签名然后加密。',
+    certificate: '证书',
+    certificate_tooltip: '复制并粘贴从你的服务提供者获取的 x509 证书以加密 SAML 断言。',
     certificate_placeholder:
       '-----BEGIN CERTIFICATE-----\nMIICYDCCAcmgAwIBA...\n-----END CERTIFICATE-----\n',
-    /** UNTRANSLATED */
-    certificate_missing_error: 'Certificate is required.',
-    /** UNTRANSLATED */
-    certificate_invalid_format_error:
-      'Invalid certificate format detected. Please check the certificate format and try again.',
+    certificate_missing_error: '需要证书。',
+    certificate_invalid_format_error: '检测到证书格式无效。请检查证书格式并重试。',
   },
   saml_app_attribute_mapping: {
-    /** UNTRANSLATED */
-    name: 'Attribute mappings',
-    /** UNTRANSLATED */
-    title: 'Base attribute mappings',
-    /** UNTRANSLATED */
-    description: 'Add attribute mappings to sync user profile from Logto to your application.',
-    /** UNTRANSLATED */
-    col_logto_claims: 'Value of Logto',
-    /** UNTRANSLATED */
-    col_sp_claims: 'Value name of your application',
-    /** UNTRANSLATED */
-    add_button: 'Add another',
+    name: '属性映射',
+    title: '基础属性映射',
+    description: '添加属性映射以从 Logto 同步用户资料到你的应用程序。',
+    col_logto_claims: 'Logto 的值',
+    col_sp_claims: '你应用中的值名称',
+    add_button: '添加另一个',
   },
+  concurrent_device_limit,
 };
 
 export default Object.freeze(application_details);

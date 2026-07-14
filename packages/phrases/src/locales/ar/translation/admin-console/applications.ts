@@ -3,9 +3,11 @@ const applications = {
   title: 'التطبيقات',
   subtitle: 'إنشاء وإدارة التطبيقات للمصادقة بواسطة OIDC.',
   subtitle_with_app_type: 'قم بإعداد مصادقة Logto لتطبيقك {{name}}',
+  create_device_flow_description:
+    'أنشئ تطبيقًا أصليًا يستخدم منح تفويض جهاز OAuth 2.0 للأجهزة ذات الإدخال المحدود أو التطبيقات بدون واجهة.',
   create: 'إنشاء تطبيق',
-  create_subtitle_third_party:
-    'استخدم Logto كموفر هوية (IdP) للتكامل بسهولة مع التطبيقات من جهات خارجية',
+  create_third_party: 'إنشاء تطبيق جهة خارجية',
+  create_thrid_party_modal_title: 'إنشاء تطبيق جهة خارجية ({{type}})',
   application_name: 'اسم التطبيق',
   application_name_placeholder: 'تطبيقي',
   application_description: 'وصف التطبيق',
@@ -22,7 +24,8 @@ const applications = {
     native: {
       title: 'تطبيق محلي',
       subtitle: 'تطبيق يعمل في بيئة محلية',
-      description: 'على سبيل المثال، تطبيق iOS، تطبيق Android',
+      description:
+        'على سبيل المثال، تطبيق iOS، تطبيق Android، تطبيق سطح المكتب، أجهزة التلفاز، CLI',
     },
     spa: {
       title: 'تطبيق صفحة واحدة',
@@ -45,12 +48,9 @@ const applications = {
       description: 'غير متوفر',
     },
     saml: {
-      /** UNTRANSLATED */
-      title: 'SAML App',
-      /** UNTRANSLATED */
-      subtitle: 'An app that is used as an SAML IdP connector',
-      /** UNTRANSLATED */
-      description: 'E.g., SAML',
+      title: 'تطبيق SAML',
+      subtitle: 'تطبيق يُستخدم كموصل IdP لبروتوكول SAML',
+      description: 'على سبيل المثال، SAML',
     },
     third_party: {
       title: 'تطبيق الجهة الخارجية',
@@ -58,9 +58,32 @@ const applications = {
       description: 'على سبيل المثال، OIDC، SAML',
     },
   },
+  authorization_flow: {
+    title: 'تدفق التفويض',
+    tooltip: 'حدد تدفق التفويض لتطبيقك. بمجرد التعيين، لا يمكن تغييره.',
+    authorization_code: {
+      title: 'Authorization code',
+      description:
+        'نوع التفويض الافتراضي والأكثر شيوعًا. يتم إعادة توجيه المستخدمين إلى صفحة تسجيل الدخول لتفويض الوصول مباشرة.',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        'للأجهزة ذات الإدخال المحدود أو التطبيقات بدون واجهة (مثل أجهزة التلفزيون، CLI). يُكمل المستخدمون تسجيل الدخول على جهاز منفصل عن طريق إدخال رمز الجهاز أو مسح رمز QR.',
+    },
+  },
   placeholder_title: 'حدد نوع التطبيق للمتابعة',
   placeholder_description:
     'يستخدم Logto كيان التطبيق لـ OIDC للمساعدة في مهام مثل تحديد التطبيقات الخاصة بك وإدارة تسجيل الدخول وإنشاء سجلات التدقيق.',
+  third_party_application_placeholder_description:
+    'استخدم Logto كمزود هوية لتوفير تفويض OAuth للخدمات الخارجية. \n يتضمن شاشة موافقة المستخدم المُبنية مسبقًا للوصول إلى الموارد. <a>اعرف المزيد</a>',
+  guide: {
+    third_party: {
+      title: 'دمج تطبيق جهة خارجية',
+      description:
+        'استخدم Logto كمزوّد هوية لتوفير تفويض OAuth لخدمات الجهات الخارجية. يتضمن شاشة موافقة مستخدم مُعدّة مسبقًا للوصول الآمن إلى الموارد. <a>معرفة المزيد</a>',
+    },
+  },
 };
 
 export default Object.freeze(applications);

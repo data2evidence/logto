@@ -1,18 +1,30 @@
 const tenants = {
   title: 'Settings',
   description: 'Efficiently manage tenant settings and customize your domain.',
+  oss_description:
+    'Change your account settings and manage your personal information here to ensure your account security.',
   tabs: {
     settings: 'Settings',
     members: 'Members',
     domains: 'Domains',
+    oidc_configs: 'OIDC configs',
     subscription: 'Plan and billing',
     billing_history: 'Billing history',
+  },
+  members: {
+    card_title: 'Manage tenants more securely with Logto Cloud',
+    card_description:
+      'Add admins or collaborators to your tenant without sharing a single admin account.',
+    card_action: 'Explore Logto Cloud',
   },
   settings: {
     title: 'SETTINGS',
     description: 'Set the tenant name and view your data hosted region and tenant type.',
     tenant_id: 'Tenant ID',
     tenant_name: 'Tenant name',
+    tenant_instance: 'Select your instance',
+    tenant_instance_description:
+      'Select where your tenant will be hosted. Choose Logto Cloud for public shared infrastructure, or a private instance for dedicated resources.',
     tenant_region: 'Data region',
     tenant_region_description:
       'The physical location where your tenant resources (users, apps, etc.) are hosted. This cannot be changed after creation.',
@@ -21,10 +33,16 @@ const tenants = {
     environment_tag_production: 'Prod',
     tenant_type: 'Tenant type',
     development_description:
-      "For testing only and shouldn't be used in production. No subscription is required. It has all the pro features but has limitations like a sign-in banner. <a>Learn more</a>",
+      "For testing only and shouldn't be used in production. No subscription is required. It has all the pro features but has limitations like a sign-in banner.",
     production_description:
-      'Intended for apps that are being used by end-users and may require a paid subscription. <a>Learn more</a>',
+      'Intended for apps that are being used by end-users and may require a paid subscription.',
     tenant_info_saved: 'Tenant information saved successfully.',
+    tenant_mfa: 'Multi-factor authentication',
+    tenant_mfa_description:
+      'Require your members to set up multi-factor authentication to access this tenant.',
+    enterprise_sso: 'Enterprise SSO',
+    enterprise_sso_description:
+      "Available on paid plans. Contact us to enable enterprise SSO so all members can sign in to the Logto Cloud Console using your organization's identity provider.",
   },
   full_env_tag: {
     development: 'Development',
@@ -47,9 +65,12 @@ const tenants = {
   create_modal: {
     title: 'Create tenant',
     subtitle: 'Create a new tenant that has isolated resources and users.',
+    tenant_id: 'Tenant ID',
     tenant_usage_purpose: 'What do you want to use this tenant for?',
     development_description:
       "For testing only and shouldn't be used in production. No subscription is required.",
+    development_description_for_private_regions:
+      "For testing only and shouldn't be used in production.",
     development_hint: 'It has all the pro features but has limitations like a sign-in banner.',
     production_description: 'For use by end-users and may require a paid subscription.',
     available_plan: 'Available plan:',
@@ -59,6 +80,11 @@ const tenants = {
     invitation_failed:
       'Some invitation failed to send. Please try again in Settings -> Members later.',
     tenant_type_description: 'This cannot be changed after creation.',
+    tenant_id_invalid:
+      'Tenant ID can only contain lowercase letters, numbers, and hyphens, and must not exceed {{max}} characters.',
+    tenant_id_placeholder: 'Your tenant ID',
+    tenant_id_tip:
+      'Customize the Tenant ID. If left empty, Logto will generate a default ID. The Tenant ID cannot be changed after creation.',
   },
   dev_tenant_migration: {
     title: 'You can now try our Pro features for free by creating a new "Development tenant"!',

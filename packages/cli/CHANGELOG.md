@@ -1,5 +1,255 @@
 # Change Log
 
+## 1.40.1
+
+### Patch Changes
+
+- Updated dependencies [e4eaa5aef5]
+  - @logto/core-kit@2.10.0
+  - @logto/schemas@1.40.1
+
+## 1.40.0
+
+### Minor Changes
+
+- 32c9ea4d81: add `--dapc` (alias `--disable-admin-pwned-password-check`) option to both `install` and `db seed` commands for air-gapped OSS deployments.
+
+  The admin tenant's seeded password policy enables the Have I Been Pwned (HIBP) breach check by default, which sends an outbound request to `api.pwnedpasswords.com` on every admin password submission. This causes the first admin sign-up to hang on deployments where the endpoint is unreachable. Passing the option seeds the policy with the breach check disabled, so admin sign-up no longer depends on outbound network access.
+
+### Patch Changes
+
+- Updated dependencies [fafe81e8f]
+- Updated dependencies [617275158]
+- Updated dependencies [41a56f79e3]
+- Updated dependencies [16553c027]
+- Updated dependencies [32c9ea4d81]
+  - @logto/schemas@1.40.0
+  - @logto/connector-kit@5.0.1
+
+## 1.39.0
+
+### Minor Changes
+
+- 3350b13ec8: add grace period support to private signing key rotation
+
+  This update adds support for a grace period during private signing key rotation, through the environment variable `PRIVATE_KEY_ROTATION_GRACE_PERIOD`, or CLI `--gracePeriod` option.
+
+  During the grace period, the new signing key is marked as "Next", and the existing signing key remains active. This allows for a smoother transition when rotating keys, as it provides a window of time for clients to refresh cached JWKS without experiencing downtime or authentication failures.
+
+  After the grace period ends, the new private signing key will transition to "Current" state, and the old signing key will be marked as "Previous".
+
+  Check out the [documentation](https://docs.logto.io/logto-oss/using-cli/rotate-signing-keys) for more details.
+
+### Patch Changes
+
+- Updated dependencies [93523a1ae0]
+- Updated dependencies [ab073bb65f]
+- Updated dependencies [3350b13ec8]
+  - @logto/core-kit@2.9.0
+  - @logto/schemas@1.39.0
+  - @logto/shared@3.4.0
+
+## 1.38.0
+
+### Patch Changes
+
+- Updated dependencies [7cee48bd97]
+- Updated dependencies [56cec74a00]
+- Updated dependencies [74c993a91e]
+- Updated dependencies [4e25126228]
+- Updated dependencies [5b7f1cb794]
+- Updated dependencies [4e25126228]
+- Updated dependencies [d2afe7351f]
+  - @logto/schemas@1.38.0
+  - @logto/core-kit@2.8.0
+  - @logto/connector-kit@5.0.0
+
+## 1.37.1
+
+### Patch Changes
+
+- Updated dependencies [57b0008ee8]
+  - @logto/core-kit@2.7.1
+  - @logto/schemas@1.37.1
+
+## 1.37.0
+
+### Minor Changes
+
+- 32d1562699: add out-of-the-box account center app
+
+  Summary
+
+  - Release the Account Center single-page app as a built-in Logto application for end users.
+  - Support profile updates for primary email, phone, username, and password with verification flows.
+  - Provide MFA management for TOTP, backup codes (download/regenerate), and passkeys (WebAuthn), including rename and delete actions.
+  - Gate sensitive operations behind password/email/phone verification and surface dedicated success screens.
+
+  To learn more about this feature, please refer to the documentation: https://docs.logto.io/end-user-flows/account-settings/by-account-api
+
+### Patch Changes
+
+- Updated dependencies [32d1562699]
+- Updated dependencies [eced1f02d4]
+  - @logto/schemas@1.37.0
+
+## 1.36.0
+
+### Patch Changes
+
+- 317f9744d1: allow disabling Postgres `statement_timeout` for PgBouncer/RDS Proxy
+
+  - add `DATABASE_STATEMENT_TIMEOUT` parsing in shared, core, and CLI
+  - set `DATABASE_STATEMENT_TIMEOUT=DISABLE_TIMEOUT` to omit the startup parameter
+
+- Updated dependencies [7cbe315dde]
+- Updated dependencies [10a9e68f1d]
+- Updated dependencies [317f9744d1]
+- Updated dependencies [ce65b07964]
+  - @logto/schemas@1.36.0
+  - @logto/shared@3.3.1
+  - @logto/core-kit@2.7.0
+
+## 1.35.0
+
+### Patch Changes
+
+- Updated dependencies [a6858e76cf]
+- Updated dependencies [116dcf5e7d]
+- Updated dependencies [462e430445]
+- Updated dependencies [7c87ebc068]
+- Updated dependencies [116dcf5e7d]
+  - @logto/schemas@1.35.0
+  - @logto/connector-kit@4.7.0
+
+## 1.34.0
+
+### Patch Changes
+
+- Updated dependencies [900201a48c]
+- Updated dependencies [c3266a917a]
+  - @logto/schemas@1.34.0
+
+## 1.33.0
+
+### Patch Changes
+
+- @logto/schemas@1.33.0
+
+## 1.32.0
+
+### Patch Changes
+
+- Updated dependencies [ad4f9d6abf]
+- Updated dependencies [5da6792d40]
+- Updated dependencies [1fb8593659]
+- Updated dependencies [0ef4260e34]
+  - @logto/schemas@1.32.0
+  - @logto/connector-kit@4.6.0
+
+## 1.31.0
+
+### Patch Changes
+
+- Updated dependencies [bb385eb15d]
+  - @logto/schemas@1.31.0
+
+## 1.30.1
+
+### Patch Changes
+
+- Updated dependencies [4cc321dbb]
+  - @logto/core-kit@2.6.1
+  - @logto/schemas@1.30.1
+
+## 1.30.0
+
+### Patch Changes
+
+- Updated dependencies [9a4e11cf8]
+- Updated dependencies [34964af46]
+- Updated dependencies [34964af46]
+- Updated dependencies [0343699d7]
+- Updated dependencies [3f5533080]
+  - @logto/schemas@1.30.0
+  - @logto/connector-kit@4.4.0
+
+## 1.29.0
+
+### Patch Changes
+
+- Updated dependencies [f2c0a05ac]
+- Updated dependencies [db77aad7a]
+- Updated dependencies [a9324332a]
+- Updated dependencies [50d50f73b]
+  - @logto/schemas@1.29.0
+
+## 1.28.0
+
+### Patch Changes
+
+- Updated dependencies [35bbc4399]
+  - @logto/shared@3.3.0
+  - @logto/schemas@1.28.0
+
+## 1.27.0
+
+### Minor Changes
+
+- 2961d355d: bump node version to ^22.14.0
+
+### Patch Changes
+
+- 83e7be741: loose CLI version restriction on Node.js
+
+  Allows the CLI to run on a higher Node.js major version rather than exiting with an error. This is useful for users who are on a newer Node.js version but still want to use the CLI.
+
+- Updated dependencies [e69ea0373]
+- Updated dependencies [2961d355d]
+- Updated dependencies [0a76f3389]
+  - @logto/schemas@1.27.0
+  - @logto/connector-kit@4.3.0
+  - @logto/core-kit@2.6.0
+  - @logto/shared@3.2.0
+
+## 1.26.0
+
+### Patch Changes
+
+- Updated dependencies [13d04d776]
+  - @logto/schemas@1.26.0
+
+## 1.25.0
+
+### Patch Changes
+
+- Updated dependencies [1c7bdf9ba]
+- Updated dependencies [b0135bcd3]
+  - @logto/schemas@1.25.0
+  - @logto/connector-kit@4.2.0
+
+## 1.24.1
+
+### Patch Changes
+
+- cb261024b: fix cli add offical connectors command missing connectors bug
+
+  Fix the bug when running the cli commend `logto connectors add --official`, only 8 connectors are fetched from npm registry.
+  This fix update logic to query additional pages of results when fetching connectors from the npm registry.
+
+- e11e57de8: bump dependencies for security update
+- Updated dependencies [e11e57de8]
+  - @logto/connector-kit@4.1.1
+  - @logto/core-kit@2.5.4
+  - @logto/schemas@1.24.1
+  - @logto/shared@3.1.4
+
+## 1.24.0
+
+### Patch Changes
+
+- @logto/schemas@1.24.0
+
 ## 1.23.1
 
 ### Patch Changes

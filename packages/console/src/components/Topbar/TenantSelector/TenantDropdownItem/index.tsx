@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import Tick from '@/assets/icons/tick.svg?react';
 import { type TenantResponse } from '@/cloud/types/router';
-import { regionFlagMap } from '@/components/Region';
+import { RegionFlag } from '@/components/Region';
 import SkuName from '@/components/SkuName';
 import { DropdownItem } from '@/ds-components/Dropdown';
 
@@ -22,11 +22,9 @@ function TenantDropdownItem({ tenantData, isSelected, onClick }: Props) {
     name,
     tag,
     regionName,
-    subscription: { planId, isEnterprisePlan },
+    subscription: { planId },
   } = tenantData;
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
-
-  const RegionFlag = regionFlagMap[regionName];
 
   return (
     <DropdownItem className={styles.item} onClick={onClick}>
@@ -37,7 +35,7 @@ function TenantDropdownItem({ tenantData, isSelected, onClick }: Props) {
         </div>
         <div className={styles.metadata}>
           <div className={styles.region}>
-            <RegionFlag width={12} />
+            <RegionFlag regionName={regionName} width={12} />
             <span>{regionName}</span>
           </div>
           <span>{t(`tenants.full_env_tag.${tag}`)}</span>

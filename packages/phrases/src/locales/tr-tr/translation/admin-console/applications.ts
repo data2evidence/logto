@@ -4,9 +4,11 @@ const applications = {
   subtitle:
     'Kimlik doğrulaması için Logtoyu kullanmak üzere mobil, tek sayfa, machine to machine veya geleneksel bir uygulama ayarlayınız',
   subtitle_with_app_type: 'Logto Doğrulamasını {{name}} uygulamanız için yapılandırın',
+  create_device_flow_description:
+    'Giriş kısıtlı cihazlar veya headless uygulamalar için OAuth 2.0 Cihaz Yetkilendirme Hakkı kullanan yerel bir uygulama oluşturun.',
   create: 'Uygulama oluştur',
-  create_subtitle_third_party:
-    "Logto'yu kimlik sağlayıcısı (IdP) olarak kullanarak üçüncü taraf uygulamalarla kolayca entegre olun",
+  create_third_party: 'Üçüncü taraf uygulama oluştur',
+  create_thrid_party_modal_title: 'Üçüncü taraf uygulaması oluştur ({{type}})',
   application_name: 'Uygulama adı',
   application_name_placeholder: 'Uygulamam',
   application_description: 'Uygulama açıklaması',
@@ -23,7 +25,7 @@ const applications = {
     native: {
       title: 'Yerel Uygulama',
       subtitle: 'Nativede çalışan bir uygulama ',
-      description: 'Örneğin, iOS uygulaması, Android uygulaması',
+      description: 'Örneğin, iOS uygulaması, Android uygulaması, masaüstü uygulaması, TV, CLI',
     },
     spa: {
       title: 'Tek Sayfalı Uygulama',
@@ -47,12 +49,9 @@ const applications = {
       description: 'N/A',
     },
     saml: {
-      /** UNTRANSLATED */
-      title: 'SAML App',
-      /** UNTRANSLATED */
-      subtitle: 'An app that is used as an SAML IdP connector',
-      /** UNTRANSLATED */
-      description: 'E.g., SAML',
+      title: 'SAML Uygulaması',
+      subtitle: 'SAML IdP bağlayıcısı olarak kullanılan bir uygulama',
+      description: 'Örneğin, SAML',
     },
     third_party: {
       title: 'Üçüncü Taraf Uygulama',
@@ -60,9 +59,32 @@ const applications = {
       description: 'Ör., OIDC, SAML',
     },
   },
+  authorization_flow: {
+    title: 'Yetkilendirme akışı',
+    tooltip: 'Uygulamanız için yetkilendirme akışını seçin. Bir kez ayarlandığında değiştirilemez.',
+    authorization_code: {
+      title: 'Authorization code',
+      description:
+        'Varsayılan ve en yaygın yetkilendirme türü. Kullanıcılar, erişimi doğrudan yetkilendirmek için oturum açma sayfasına yönlendirilir.',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        "Giriş kısıtlı cihazlar veya arayüzsüz uygulamalar (ör. TV'ler, CLI) için. Kullanıcılar, bir cihaz kodu girerek veya QR kodu tarayarak ayrı bir cihazda oturum açmayı tamamlar.",
+    },
+  },
   placeholder_title: 'Devam etmek için bir uygulama tipi seçin',
   placeholder_description:
     'Logto, uygulamanızı tanımlamaya, oturum açmayı yönetmeye ve denetim kayıtları oluşturmaya yardımcı olmak için OIDC için bir uygulama varlığı kullanır.',
+  third_party_application_placeholder_description:
+    'Üçüncü taraf hizmetlere OAuth yetkilendirmesi sağlamak için Logtoyu bir Kimlik Sağlayıcı olarak kullanın. \n Kaynak erişimi için önceden oluşturulmuş bir kullanıcı onay ekranı içerir. <a>Daha fazla bilgi edinin</a>',
+  guide: {
+    third_party: {
+      title: 'Üçüncü taraf uygulamayı entegre et',
+      description:
+        "Üçüncü taraf hizmetlere OAuth yetkilendirmesi sağlamak için Logto'yu Kimlik Sağlayıcınız olarak kullanın. Güvenli kaynak erişimi için önceden oluşturulmuş bir kullanıcı onay ekranı içerir. <a>Daha fazla bilgi</a>",
+    },
+  },
 };
 
 export default Object.freeze(applications);

@@ -1,4 +1,5 @@
-import { UsersPasswordEncryptionMethod, ConnectorType } from '@logto/schemas';
+/* eslint-disable max-lines -- will fix in the next PR */
+import { UsersPasswordEncryptionMethod, ConnectorType, SignInIdentifier } from '@logto/schemas';
 import { HTTPError } from 'ky';
 
 import {
@@ -21,11 +22,8 @@ import {
   updateUserProfile,
 } from '#src/api/index.js';
 import { clearConnectorsByTypes } from '#src/helpers/connector.js';
+import { signInWithPassword, signInWithSocial } from '#src/helpers/experience/index.js';
 import { createUserByAdmin, expectRejects } from '#src/helpers/index.js';
-import {
-  createNewSocialUserWithUsernameAndPassword,
-  signInWithPassword,
-} from '#src/helpers/interactions.js';
 import { enableAllPasswordSignInMethods } from '#src/helpers/sign-in-experience.js';
 import {
   generateUsername,
@@ -33,6 +31,7 @@ import {
   generatePhone,
   generatePassword,
   randomString,
+  generateNationalPhoneNumber,
 } from '#src/utils.js';
 
 describe('admin console user management', () => {
@@ -49,17 +48,76 @@ describe('admin console user management', () => {
     expect(userDetails.ssoIdentities).toBeUndefined();
 
     // `ssoIdentities` field should be array type is specified that return user info with `includeSsoIdentities`.
-    const userDetailsWithSsoIdentities = await getUser(user.id, true);
+    const userDetailsWithSsoIdentities = await getUser(user.id, { withSsoIdentities: true });
     expect(userDetailsWithSsoIdentities.ssoIdentities).toStrictEqual([]);
   });
 
-  it('should create user with password digest successfully', async () => {
-    const user = await createUserByAdmin({
-      passwordDigest: '5f4dcc3b5aa765d61d8327deb882cf99',
-      passwordAlgorithm: UsersPasswordEncryptionMethod.MD5,
+  describe('GET /users/:userId with includePasswordHash', () => {
+    it('should not return password hash by default', async () => {
+      const user = await createUserByAdmin({ password: generatePassword() });
+      const userDetails = await getUser(user.id);
+      expect(userDetails.hasPassword).toBe(true);
+      expect(userDetails.passwordDigest).toBeUndefined();
+      expect(userDetails.passwordAlgorithm).toBeUndefined();
     });
 
-    await expect(verifyUserPassword(user.id, 'password')).resolves.not.toThrow();
+    it('should return password hash when includePasswordHash=true', async () => {
+      const user = await createUserByAdmin({ password: generatePassword() });
+      const userDetails = await getUser(user.id, { includePasswordHash: true });
+      expect(userDetails.hasPassword).toBe(true);
+      expect(userDetails.passwordDigest).toBeTruthy();
+      expect(userDetails.passwordAlgorithm).toBe(UsersPasswordEncryptionMethod.Argon2i);
+    });
+
+    it('should return null password fields when user has no password', async () => {
+      const user = await createUserByAdmin();
+      const userDetails = await getUser(user.id, { includePasswordHash: true });
+      expect(userDetails.hasPassword).toBe(false);
+      expect(userDetails.passwordDigest).toBeNull();
+      expect(userDetails.passwordAlgorithm).toBeNull();
+    });
+  });
+
+  describe('create user with password digest', () => {
+    it('should create user with password digest successfully', async () => {
+      const user = await createUserByAdmin({
+        passwordDigest: '5f4dcc3b5aa765d61d8327deb882cf99',
+        passwordAlgorithm: UsersPasswordEncryptionMethod.MD5,
+      });
+
+      await expect(verifyUserPassword(user.id, 'password')).resolves.not.toThrow();
+    });
+
+    it('should create user with password digest length 256', async () => {
+      const user = await createUserByAdmin({
+        passwordDigest: 'a'.repeat(256),
+        passwordAlgorithm: UsersPasswordEncryptionMethod.MD5,
+      });
+      expect(user).not.toBeNull();
+    });
+
+    it('should fail to create user with password digest if password digest is too long (257)', async () => {
+      await expectRejects(
+        createUserByAdmin({
+          passwordDigest: 'a'.repeat(257),
+          passwordAlgorithm: UsersPasswordEncryptionMethod.MD5,
+        }),
+        {
+          code: 'guard.invalid_input',
+          status: 400,
+        }
+      );
+    });
+
+    it('should create user with legacy password digest', async () => {
+      const user = await createUserByAdmin({
+        passwordDigest:
+          '["sha512", ["@"], "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86"]',
+        passwordAlgorithm: UsersPasswordEncryptionMethod.Legacy,
+      });
+
+      await expect(verifyUserPassword(user.id, 'password')).resolves.not.toThrow();
+    });
   });
 
   it('should create user with custom data and profile successfully', async () => {
@@ -195,7 +253,12 @@ describe('admin console user management', () => {
 
     await enableAllPasswordSignInMethods();
     // Sign in with deleted user should throw error
-    await expect(signInWithPassword({ username, password })).rejects.toThrowError();
+    await expect(
+      signInWithPassword({
+        identifier: { type: SignInIdentifier.Username, value: username },
+        password,
+      })
+    ).rejects.toThrowError();
   });
 
   it('should update user password successfully', async () => {
@@ -233,7 +296,13 @@ describe('admin console user management', () => {
     const { id: userId } = await createUserByAdmin();
     const { redirectTo } = await getConnectorAuthorizationUri(connectorId, state, redirectUri);
 
-    expect(redirectTo).toBe(`http://mock-social/?state=${state}&redirect_uri=${redirectUri}`);
+    const authorizationUriParams = new URLSearchParams({
+      state,
+      redirect_uri: redirectUri,
+      scope: 'email profile', // Default mock social connector scope
+    });
+
+    expect(redirectTo).toBe(`http://mock-social/?${authorizationUriParams.toString()}`);
 
     const identities = await postUserIdentity(userId, connectorId, {
       code,
@@ -297,7 +366,11 @@ describe('admin console user management', () => {
       config: mockSocialConnectorConfig,
     });
 
-    const createdUserId = await createNewSocialUserWithUsernameAndPassword(connectorId);
+    const createdUserId = await signInWithSocial(
+      connectorId,
+      { id: `social_user_${randomString()}` },
+      { registerNewUser: true }
+    );
 
     const userInfo = await getUser(createdUserId);
     expect(userInfo.identities).toHaveProperty(mockSocialConnectorTarget);
@@ -333,4 +406,80 @@ describe('admin console user management', () => {
       status: 400,
     });
   });
+
+  describe('create and update user phone number with normalization', () => {
+    const nationalNumber = generateNationalPhoneNumber();
+    const countryCode = '61';
+
+    const internationalFormatNumber = `${countryCode}${nationalNumber}`;
+    const leadingZeroFormatNumber = `${countryCode}0${nationalNumber}`;
+
+    const testCases: Array<{
+      existing: string;
+      newCreated: string;
+    }> = [
+      {
+        existing: internationalFormatNumber,
+        newCreated: leadingZeroFormatNumber,
+      },
+      {
+        existing: leadingZeroFormatNumber,
+        newCreated: internationalFormatNumber,
+      },
+    ];
+
+    it.each(testCases)(
+      'should failed to create user with phone number conflict',
+      async ({ existing, newCreated }) => {
+        const user = await createUserByAdmin({
+          primaryPhone: existing,
+        });
+
+        await expectRejects(
+          createUserByAdmin({
+            primaryPhone: newCreated,
+          }),
+          {
+            code: 'user.phone_already_in_use',
+            status: 422,
+          }
+        );
+
+        await deleteUser(user.id);
+      }
+    );
+
+    it.each(testCases)(
+      'should failed to update user with phone number conflict',
+      async ({ existing, newCreated }) => {
+        const user = await createUserByAdmin({
+          primaryPhone: existing,
+        });
+
+        const newUser = await createUserByAdmin({
+          username: generateUsername(),
+        });
+
+        await expectRejects(
+          updateUser(newUser.id, {
+            primaryPhone: newCreated,
+          }),
+          {
+            code: 'user.phone_already_in_use',
+            status: 422,
+          }
+        );
+
+        // Should allow update existing user
+        await expect(
+          updateUser(user.id, {
+            primaryPhone: newCreated,
+          })
+        ).resolves.not.toThrow();
+
+        await Promise.all([deleteUser(user.id), deleteUser(newUser.id)]);
+      }
+    );
+  });
 });
+/* eslint-enable max-lines */

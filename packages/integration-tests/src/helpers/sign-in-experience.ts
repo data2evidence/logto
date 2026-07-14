@@ -113,6 +113,22 @@ export const enableUserControlledMfaWithTotp = async () =>
     },
   });
 
+export const enableUserControlledMfaWithTotpAndWebAuthn = async () =>
+  updateSignInExperience({
+    mfa: {
+      factors: [MfaFactor.TOTP, MfaFactor.WebAuthn],
+      policy: MfaPolicy.NoPrompt,
+    },
+  });
+
+export const enableAllUserControlledMfaFactors = async () =>
+  updateSignInExperience({
+    mfa: {
+      factors: [MfaFactor.TOTP, MfaFactor.WebAuthn, MfaFactor.BackupCode],
+      policy: MfaPolicy.NoPrompt,
+    },
+  });
+
 export const enableUserControlledMfaWithTotpOnlyAtSignIn = async () =>
   updateSignInExperience({
     mfa: {
@@ -153,6 +169,38 @@ export const enableMandatoryMfaWithTotpAndBackupCode = async () =>
     },
   });
 
+export const enableMandatoryMfaWithEmail = async () =>
+  updateSignInExperience({
+    mfa: {
+      factors: [MfaFactor.EmailVerificationCode],
+      policy: MfaPolicy.Mandatory,
+    },
+  });
+
+export const enableMandatoryMfaWithEmailAndBackupCode = async () =>
+  updateSignInExperience({
+    mfa: {
+      factors: [MfaFactor.EmailVerificationCode, MfaFactor.BackupCode],
+      policy: MfaPolicy.Mandatory,
+    },
+  });
+
+export const enableMandatoryMfaWithPhone = async () =>
+  updateSignInExperience({
+    mfa: {
+      factors: [MfaFactor.PhoneVerificationCode],
+      policy: MfaPolicy.Mandatory,
+    },
+  });
+
+export const enableMandatoryMfaWithPhoneAndBackupCode = async () =>
+  updateSignInExperience({
+    mfa: {
+      factors: [MfaFactor.PhoneVerificationCode, MfaFactor.BackupCode],
+      policy: MfaPolicy.Mandatory,
+    },
+  });
+
 export const enableMandatoryMfaWithWebAuthnAndBackupCode = async () =>
   updateSignInExperience({
     mfa: {
@@ -163,6 +211,11 @@ export const enableMandatoryMfaWithWebAuthnAndBackupCode = async () =>
 
 export const resetMfaSettings = async () =>
   updateSignInExperience({ mfa: { policy: MfaPolicy.PromptAtSignInAndSignUp, factors: [] } });
+
+export const resetPasskeySignInSettings = async () =>
+  updateSignInExperience({
+    passkeySignIn: { enabled: false, showPasskeyButton: false, allowAutofill: false },
+  });
 
 /** Enable only username and password sign-in and sign-up. */
 export const setUsernamePasswordOnly = async () => {
@@ -196,5 +249,19 @@ export const setLanguage = async (
     languageInfo: {
       fallbackLanguage: language,
       autoDetect,
+    },
+  });
+
+export const enableCaptcha = async () =>
+  updateSignInExperience({
+    captchaPolicy: {
+      enabled: true,
+    },
+  });
+
+export const disableCaptcha = async () =>
+  updateSignInExperience({
+    captchaPolicy: {
+      enabled: false,
     },
   });

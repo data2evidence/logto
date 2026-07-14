@@ -10,10 +10,13 @@ import styles from './index.module.scss';
 export enum CardType {
   UserData = 'user_data',
   GrantData = 'grant_data',
+  InteractionData = 'interaction_data',
+  ApplicationData = 'application_data',
   TokenData = 'token_data',
   FetchExternalData = 'fetch_external_data',
   EnvironmentVariables = 'environment_variables',
   ApiContext = 'api_context',
+  ErrorHandling = 'error_handling',
 }
 
 type GuardCardProps = {

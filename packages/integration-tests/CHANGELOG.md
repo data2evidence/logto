@@ -1,5 +1,252 @@
 # Change Log
 
+## 1.21.0
+
+### Minor Changes
+
+- ab073bb65f: support blocking token issuance when custom JWT scripts fail
+
+  This update adds configurable JWT customizer error handling for access tokens and client credentials flows.
+
+  - core now preserves `api.denyAccess()` as `access_denied` and converts other blocking-mode script failures into localized `invalid_request` responses
+  - console adds a dedicated `Error handling` tab for configuring the behavior, defaults `blockIssuanceOnError` to enabled for newly created scripts, keeps existing scripts without a saved value on the legacy disabled default, and aligns the related guidance copy
+  - schemas, phrases, and integration coverage are updated to match the new blocking behavior and localized error messages
+
+### Patch Changes
+
+- 5c83985dbe: return response bodies from organization user and role assignment APIs
+
+  - POST `/organizations/:id/users` now returns `{ userIds: string[] }` echoing the user IDs that were sent with the request
+  - POST `/organizations/:id/users/:userId/roles` now returns `{ organizationRoleIds: string[] }` with the final deduplicated role IDs that were assigned, resolved from any provided role names
+
+## 1.20.0
+
+### Minor Changes
+
+- 7cee48bd97: support OAuth 2.0 Device Authorization Grant (device flow)
+
+  Device flow lets users sign in on input-limited devices such as smart TVs, CLI tools, IoT gadgets, and gaming consoles by completing authentication on a separate device like a phone or laptop.
+
+  How it works:
+
+  1. The device displays a short user code and a verification URL.
+  2. The user opens the URL on another device, enters the code, and signs in.
+  3. Once approved, the original device receives tokens and completes authentication.
+
+  To create a device flow application in Console:
+
+  - Select "Input-limited app / CLI" under the Native framework list, or
+  - Create an app without framework, then choose "Device flow" as the authorization flow, or
+  - Create a third-party Native app, then choose "Device flow" as the authorization flow.
+
+  The application settings page shows a device-flow-specific guide and a built-in demo you can try immediately.
+
+- a023a97c7c: add a new MFA onboarding page for users to explicitly enable optional MFA
+
+  For users who are not required to set up MFA, we added a new page after credential verification in the sign-in flow to explicitly ask whether they want to enable optional MFA for better account security.
+
+  This is especially important when the passkey sign-in feature is available, since passkeys can be used for both sign-in and MFA verification, and users who set up a passkey for sign-in might not want to enable it as an MFA factor at the same time.
+
+- a816cf77cb: support adaptive MFA
+
+  - In Console, the MFA settings page always exposes the adaptive MFA option and saves `adaptiveMfa` configuration in the sign-in experience payload.
+  - In Core, when adaptive MFA is enabled in the sign-in experience config, the sign-in flow evaluates adaptive MFA rules against the current sign-in context and requires MFA verification when those rules are triggered.
+  - The sign-in context is now consistently persisted into interaction data, so custom-claims scripts can read it from `context.interaction.signInContext`.
+  - The `PostSignInAdaptiveMfaTriggered` webhook event is emitted when adaptive MFA forces MFA during sign-in.
+
+- a023a97c7c: support passkey sign-in authentication method
+
+  ### Summary
+
+  Passkey sign-in provides a faster, passwordless sign-in experience that reduces friction for end users and helps improve account security. It removes repeated password entry for returning users, works with platform authenticators users already trust (for example Face ID, Touch ID, Windows Hello), and offers a smoother path from account creation to subsequent sign-ins.
+
+  #### Bind passkey for sign-in
+
+  After passkey sign-in is enabled, new users are prompted to bind a passkey during registration. Existing users who have not bound a passkey (WebAuthn) factor yet can be guided to bind one in a later sign-in flow. If a user already has a WebAuthn credential from MFA setup, that credential can be reused directly for passkey sign-in without requiring another registration step.
+
+  #### Various sign-in flows to support different user journeys and preferences
+
+  1. **Passkey sign-in button**: When **Show passkey sign-in button** is enabled, users can click **Continue with passkey** on the sign-in page to immediately trigger the browser passkey chooser and complete sign-in.
+  2. **Identifier-first flow (button hidden)**: When **Show passkey sign-in button** is disabled, sign-in follows an identifier-first flow. Users first enter an identifier (for example email or username) on the first screen. On the next step, the flow prioritizes passkey and prompts users to **Verify via passkey** before falling back to password or verification code when needed.
+  3. **Allow autofill**: When **Allow autofill** is enabled, supported browsers can show passkey suggestions directly from the identifier input on the sign-in page. Users can select a previously saved passkey from the autofill popup and sign in with minimal extra input.
+
+  Check out our [documentation](https://docs.logto.io/end-user-flows/sign-up-and-sign-in/passkey-sign-in) for more details.
+
+## 1.19.0
+
+### Minor Changes
+
+- b8ca1a40c7: support ID token claims configuration
+
+  You can now customize which additional claims (e.g., `custom_data`, `identities`, `roles`, `organizations`, `organization_roles`) are included in the ID token via Console or Management API.
+
+### Patch Changes
+
+- bb2f4ea7c7: fix the issue that the "Tell us about yourself" section does not appear during signup when only optional custom profile fields are configured
+
+  Previously, the `hasMissingExtraProfileFields` method only checked for required custom profile fields, causing the "Tell us about yourself" section to not appear during signup when only optional fields were configured.
+
+  Now, the method also checks for optional fields and whether the user has submitted the extra profile form, ensuring that the section is always displayed as expected.
+
+## 1.18.0
+
+### Minor Changes
+
+- 7cbe315dde: support token exchange grant type with app-level control
+
+  - Add `allowTokenExchange` field to `customClientMetadata` to control whether an application can initiate token exchange requests
+  - Machine-to-machine applications now support token exchange
+  - All new applications will have token exchange disabled by default, you can enable it in the application settings
+  - For backward compatibility, existing first-party Traditional, Native, and SPA applications will have this enabled
+  - Third-party applications are not allowed to use token exchange
+  - Add UI toggle in Console with risk warning for public clients (single-page application / native application)
+
+- c8b2caec5c: add trust-unverified-email support for OIDC social connector and OIDC-based enterprise SSO connectors
+
+  - Add `trustUnverifiedEmail` to the OIDC social connector config (default `false`) to allow syncing emails when `email_verified` is missing or false
+  - Apply the setting in core OIDC/Azure OIDC SSO connectors and expose it in the Admin Console with new tips and translations
+
+### Patch Changes
+
+- 1fc65a2536: return role assignment results in user role APIs
+
+  - POST `/users/:userId/roles` now returns `{ roleIds: string[]; addedRoleIds: string[] }` where `roleIds` echoes the requested IDs, and `addedRoleIds` includes only the IDs that were newly created (existing assignments are omitted)
+  - PUT `/users/:userId/roles` now returns `{ roleIds: string[] }` to confirm the final assigned roles
+
+## 1.17.0
+
+### Minor Changes
+
+- d551f5ccc3: support creating third-party SPA and Native applications
+
+  Previously, only traditional web applications could be marked as third-party apps. Now you can also create third-party single-page applications (SPA) and native applications, enabling more flexible OAuth/OIDC integration scenarios.
+
+## 1.16.0
+
+### Minor Changes
+
+- 08f887c448: support cross-app authentication callbacks within the same browser session
+
+  When multiple applications are initiating authentication requests within the same browser session,
+  authentication callbacks may interfere with each other due to the shared `_interaction` cookie.
+
+  To resolve this, we now change the cookie from a plain UID string to a structured mapping object
+  `{ [app_id]: interaction_uid }`, and maintain the `app_id` in either the URL search parameters or HTTP
+  headers for all authentication-related requests and redirects. This ensures that each application can
+  correctly identify its own authentication context without interference from others.
+
+  The fallback mechanism is also implemented to ensure backward compatibility.
+
+- c3266a917a: add a new webhook event "Identifier.Lockout", which is triggered when a user is locked out due to repeated failed sign-in attempts
+
+## 1.15.0
+
+### Minor Changes
+
+- 0ef4260e34: unify branding customization options between applications and organizations
+
+  We are now offering a more unified experience for branding customization options between applications and organizations, including:
+
+  - Branding colors (light and dark mode)
+  - Branding logos and favicons (both light and dark mode)
+  - Custom CSS
+
+  When all branding customization options are set, the precedence of the options are as follows:
+  Organization > Application > Omni sign-in experience settings
+
+### Patch Changes
+
+- 1e77967e7c: fix(core): bind WebAuthn `rpId` to request domain for account api
+
+  - Before: WebAuthn registration via the account API always bound passkeys to the Logto default domain.
+  - After: The `rpId` now matches the domain you use to access the API (including custom domains), consistent with the sign-in experience.
+
+## 1.14.0
+
+### Minor Changes
+
+- bb385eb15d: add a new feature for collecting user profile on new user registration
+
+  You can now collect user profile information on the last step of your registration flow.
+
+  ### Getting started
+
+  1. In Console: `Sign-in Experience > Collect user profile`. Add your profile fields:
+
+     - Use built-in basics (Name, Gender, Birthdate, Address, …); or
+     - Create custom fields (choose type, label, validation rules, required, etc.).
+
+  2. Drag & drop to reorder fields in the list; the order reflects in the form.
+  3. Test by signing up a new user in the demo app; a "Tell us about yourself" step will appear with your fields.
+  4. Registration completes only after all required fields are filled.
+
+  Check out our [docs](https://docs.logto.io/end-user-flows/collect-user-profile) for more details.
+
+## 1.13.1
+
+### Patch Changes
+
+- 3cf7ee141: fix potential WebAuthn registration errors by specifying the displayName
+
+  This is an optional field, but it's actually required by some browsers. For example, when using Chrome on Windows 11 with the "Use other devices" option (scanning QR code), an empty displayName will cause the registration to fail.
+
+## 1.13.0
+
+### Minor Changes
+
+- 35bbc4399: add phone number validation and parsing to ensure the correct format when updating an existing user’s primary phone number or creating a new user with a phone number
+
+## 1.12.0
+
+### Minor Changes
+
+- 6fafcefef: add one-time token verification method to support magic link authentication
+
+  You can now use the "one-time token" to compose magic links, and send them to the end user's email.
+  With a magic link, one can register a new account or sign in directly to the application, without the need to enter a password, or input verification codes.
+
+  You can also use magic link to invite users to your organizations.
+
+  ### Example API request to create a one-time token
+
+  ```bash
+  POST /api/one-time-tokens
+  ```
+
+  Request payload:
+
+  ```jsonc
+  {
+    "email": "user@example.com",
+    // Optional. Defaults to 600 (10 mins).
+    "expiresIn": 3600,
+    // Optional. User will be provisioned to the specified organizations upon successful verification.
+    "context": {
+      "jitOrganizationIds": ["your-org-id"],
+    },
+  }
+  ```
+
+  ### Compose your magic link
+
+  After you get the one-time token, you can compose a magic link and send it to the end user's email address. The magic link should at least contain the token and the user email as parameters, and should navigate to a landing page in your own application. E.g. `https://yourapp.com/landing-page`.
+
+  Here's a simple example of what the magic link may look like:
+
+  ```http
+  https://yourapp.com/landing-page?token=YHwbXSXxQfL02IoxFqr1hGvkB13uTqcd&email=user@example.com
+  ```
+
+  Refer to [our docs](https://docs.logto.io/docs/end-user-flows/one-time-token) for more details.
+
+- 2961d355d: bump node version to ^22.14.0
+
+## 1.11.1
+
+### Patch Changes
+
+- e11e57de8: bump dependencies for security update
+
 ## 1.11.0
 
 ### Minor Changes

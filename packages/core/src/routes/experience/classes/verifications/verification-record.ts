@@ -16,6 +16,7 @@ export abstract class VerificationRecord<
   abstract get isVerified(): boolean;
 
   abstract toJson(): Json;
+  abstract toSanitizedJson(): Json;
 }
 
 type IdentifierVerificationType =
@@ -23,7 +24,8 @@ type IdentifierVerificationType =
   | VerificationType.PhoneVerificationCode
   | VerificationType.Password
   | VerificationType.Social
-  | VerificationType.EnterpriseSso;
+  | VerificationType.EnterpriseSso
+  | VerificationType.OneTimeToken;
 
 /**
  * The abstract class for all identifier verification records.

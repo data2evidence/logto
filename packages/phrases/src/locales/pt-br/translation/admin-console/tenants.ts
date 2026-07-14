@@ -1,12 +1,21 @@
 const tenants = {
   title: 'Configurações',
   description: 'Gerencie eficientemente as configurações do locatário e personalize seu domínio.',
+  oss_description:
+    'Altere as configurações da sua conta e gerencie suas informações pessoais aqui para garantir a segurança da sua conta.',
   tabs: {
     settings: 'Configurações',
     members: 'Membros',
     domains: 'Domínios',
+    oidc_configs: 'Configurações de OIDC',
     subscription: 'Plano e faturamento',
     billing_history: 'Histórico de faturamento',
+  },
+  members: {
+    card_title: 'Gerencie tenants com mais segurança usando o Logto Cloud',
+    card_description:
+      'Adicione administradores ou colaboradores ao seu tenant sem compartilhar uma única conta de administrador.',
+    card_action: 'Explorar o Logto Cloud',
   },
   settings: {
     title: 'CONFIGURAÇÕES',
@@ -14,6 +23,9 @@ const tenants = {
       'Defina o nome do locatário e visualize a região de hospedagem dos seus dados e o tipo de locatário.',
     tenant_id: 'ID do Locatário',
     tenant_name: 'Nome do Locatário',
+    tenant_instance: 'Selecione sua instância',
+    tenant_instance_description:
+      'Selecione onde seu locatário será hospedado. Escolha Logto Cloud para infraestrutura pública compartilhada, ou uma instância privada para recursos dedicados.',
     tenant_region: 'Região de hospedagem',
     tenant_region_description:
       'A localização física onde seus recursos de locatário (usuários, aplicativos, etc.) estão hospedados. Isso não pode ser alterado após a criação.',
@@ -23,10 +35,16 @@ const tenants = {
     environment_tag_production: 'Produção',
     tenant_type: 'Tipo de locatário',
     development_description:
-      'Apenas para testes e não deve ser usado em produção. Nenhuma assinatura é necessária. Possui todos os recursos profissionais, mas com limitações como um banner de entrada. <a>Veja mais</a>',
+      'Apenas para testes e não deve ser usado em produção. Nenhuma assinatura é necessária. Possui todos os recursos profissionais, mas com limitações como um banner de entrada.',
     production_description:
-      'Destinado a aplicativos usados por usuários finais e que podem exigir uma assinatura paga. <a>Veja mais</a>',
+      'Destinado a aplicativos usados por usuários finais e que podem exigir uma assinatura paga.',
     tenant_info_saved: 'As informações do locatário foram salvas com sucesso.',
+    tenant_mfa: 'Autenticação multifator',
+    tenant_mfa_description:
+      'Exija que seus membros configurem a autenticação multifator para acessar este locatário.',
+    enterprise_sso: 'Enterprise SSO',
+    enterprise_sso_description:
+      'Disponível em planos pagos. Entre em contato conosco para habilitar o Enterprise SSO para que todos os membros possam fazer login no console Logto Cloud usando o provedor de identidade da sua organização.',
   },
   full_env_tag: {
     development: 'Desenvolvimento',
@@ -50,9 +68,12 @@ const tenants = {
   create_modal: {
     title: 'Criar inquilino',
     subtitle: 'Crie um novo locatário que tenha recursos e usuários isolados.',
+    tenant_id: 'ID do Locatário',
     tenant_usage_purpose: 'Para que você deseja usar este locatário?',
     development_description:
       'Apenas para testes e não deve ser usado em produção. Nenhuma assinatura é necessária.',
+    development_description_for_private_regions:
+      'Apenas para testes e não deve ser usado em produção.',
     development_hint:
       'Possui todos os recursos profissionais, mas com limitações como um banner de entrada.',
     production_description: 'Para uso por usuários finais e pode exigir uma assinatura paga.',
@@ -63,6 +84,11 @@ const tenants = {
     invitation_failed:
       'Algumas convites falharam ao serem enviadas. Por favor, tente novamente em Configurações -> Membros mais tarde.',
     tenant_type_description: 'Isso não pode ser alterado após a criação.',
+    tenant_id_invalid:
+      'O ID do inquilino pode conter apenas letras minúsculas, números e hífens, e não deve exceder {{max}} caracteres.',
+    tenant_id_placeholder: 'Seu ID de inquilino',
+    tenant_id_tip:
+      'Personalize o ID do inquilino. Se deixado em branco, o Logto irá gerar um ID padrão. O ID do inquilino não pode ser alterado após a criação.',
   },
   dev_tenant_migration: {
     title:
@@ -100,8 +126,7 @@ const tenants = {
   },
   status: {
     mau_exceeded: 'MAU Excedido',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: 'Token excedido',
     suspended: 'Suspenso',
     overdue: 'Atrasado',
   },

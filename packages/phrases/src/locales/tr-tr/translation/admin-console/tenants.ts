@@ -1,18 +1,30 @@
 const tenants = {
   title: 'Ayarlar',
   description: 'Kiracı ayarlarını verimli bir şekilde yönetin ve alan adınızı özelleştirin.',
+  oss_description:
+    'Hesap güvenliğinizi sağlamak için hesap ayarlarınızı burada değiştirin ve kişisel bilgilerinizi yönetin.',
   tabs: {
     settings: 'Ayarlar',
     members: 'Üyeler',
     domains: 'Alan adları',
+    oidc_configs: 'OIDC yapılandırmaları',
     subscription: 'Plan ve faturalandırma',
     billing_history: 'Fatura geçmişi',
+  },
+  members: {
+    card_title: 'Kiracıları Logto Cloud ile daha güvenli yönetin',
+    card_description:
+      'Tek bir yönetici hesabını paylaşmadan kiracınıza yöneticiler veya iş birlikçileri ekleyin.',
+    card_action: 'Logto Cloud’u keşfedin',
   },
   settings: {
     title: 'AYARLAR',
     description: 'Kiracı adını ayarlayın ve verilerinizin barındırıldığı bölgeyi görüntüleyin.',
     tenant_id: 'Kiracı Kimliği',
     tenant_name: 'Kiracı Adı',
+    tenant_instance: 'Örnek seçin',
+    tenant_instance_description:
+      "Kiracınızın nerede barındırılacağını seçin. Genel paylaşımlı altyapı için Logto Cloud'u veya özel kaynaklar için özel bir örneği seçin.",
     tenant_region: 'Veriler barındırılan bölge',
     tenant_region_description:
       'Kiracı kaynaklarınızın (kullanıcılar, uygulamalar vb.) barındırıldığı fiziksel konum. Bu, oluşturulduktan sonra değiştirilemez.',
@@ -22,10 +34,16 @@ const tenants = {
     environment_tag_production: 'Prod',
     tenant_type: 'Kiracı türü',
     development_description:
-      "Yalnızca test amacıyla ve üretimde kullanılmamalıdır. Abonelik gerekli değildir. Tüm pro özelliklere sahiptir ancak giriş banner'ı gibi bazı sınırlamaları bulunmaktadır. <a>Daha fazla bilgi</a>",
+      "Yalnızca test amacıyla ve üretimde kullanılmamalıdır. Abonelik gerekli değildir. Tüm pro özelliklere sahiptir ancak giriş banner'ı gibi bazı sınırlamaları bulunmaktadır.",
     production_description:
-      'Son kullanıcılar tarafından kullanılan uygulamalar için tasarlanmıştır ve ücretli abonelik gerektirebilir. <a>Daha fazla bilgi</a>',
+      'Son kullanıcılar tarafından kullanılan uygulamalar için tasarlanmıştır ve ücretli abonelik gerektirebilir.',
     tenant_info_saved: 'Kiracı bilgileri başarıyla kaydedildi.',
+    tenant_mfa: 'Çok faktörlü kimlik doğrulama',
+    tenant_mfa_description:
+      'Üyelerinizin bu kiracıya erişmek için çok faktörlü kimlik doğrulamayı yapılandırmasını zorunlu kılın.',
+    enterprise_sso: 'Enterprise SSO',
+    enterprise_sso_description:
+      'Ücretli planlarda kullanılabilir. Tüm üyelerin kuruluşunuzun kimlik sağlayıcısını kullanarak Logto Cloud Konsoluna giriş yapabilmesi için Enterprise SSO etkinleştirmek üzere bizimle iletişime geçin.',
   },
   full_env_tag: {
     development: 'Geliştirme',
@@ -49,9 +67,12 @@ const tenants = {
   create_modal: {
     title: 'Kiracı Oluştur',
     subtitle: 'İzolasyonlu kaynaklara ve kullanıcılara sahip yeni bir kiracı oluşturun.',
+    tenant_id: 'Kiracı Kimliği',
     tenant_usage_purpose: 'Bu kiracıyı ne için kullanmak istiyorsunuz?',
     development_description:
       'Yalnızca test amacıyla ve üretimde kullanılmamalıdır. Abonelik gerekli değildir.',
+    development_description_for_private_regions:
+      'Yalnızca test amacıyla ve üretimde kullanılmamalıdır.',
     development_hint:
       'Tüm pro özelliklere sahiptir ancak giriş bannerı gibi bazı sınırlamaları bulunmaktadır.',
     production_description:
@@ -63,6 +84,11 @@ const tenants = {
     invitation_failed:
       'Bazı davetler gönderilemedi. Lütfen daha sonra Ayarlar -> Üyeler üzerinden tekrar deneyin.',
     tenant_type_description: 'Bu, oluşturulduktan sonra değiştirilemez.',
+    tenant_id_invalid:
+      'Kiracı kimliği yalnızca küçük harfler, sayılar ve kısa çizgiler içerebilir ve {{max}} karakteri aşmamalıdır.',
+    tenant_id_placeholder: 'Kiracı kimliğiniz',
+    tenant_id_tip:
+      'Kiracı kimliğini özelleştirin. Boş bırakılırsa, Logto varsayılan bir kimlik oluşturur. Kiracı kimliği oluşturulduktan sonra değiştirilemez.',
   },
   dev_tenant_migration: {
     title:
@@ -99,8 +125,7 @@ const tenants = {
   },
   status: {
     mau_exceeded: 'MAU Sınırı Aşıldı',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: 'Jeton sınırı aşıldı',
     suspended: 'Askıya Alındı',
     overdue: 'Geçmişte',
   },

@@ -83,6 +83,21 @@ const profile = {
     about_to_start_deletion: 'أنت على وشك بدء عملية الحذف ولا يمكن التراجع عن هذا الإجراء.',
     permanently_delete: 'حذف بشكل دائم',
   },
+  mfa: {
+    title: 'المصادقة الثنائية',
+    section_description:
+      'أضف طبقة أمان إضافية لحسابك باستخدام تطبيق المصادقة أو مفتاح المرور أو رموز النسخ الاحتياطي.',
+    two_step_verification: 'التحقق بخطوتين',
+    not_configured: 'غير مُعد',
+    configured: 'مُعد',
+    passkeys_count_one: 'مفتاح مرور {{count}}',
+    passkeys_count_other: '{{count}} مفتاح مرور',
+    backup_codes_count_one: 'رمز {{count}} متاح',
+    backup_codes_count_other: '{{count}} رمز متاح',
+    add: 'إضافة',
+    view: 'عرض',
+    remove: 'إزالة',
+  },
   set: 'تعيين',
   change: 'تغيير',
   link: 'ربط',
@@ -102,6 +117,49 @@ const profile = {
   unlink_confirm_text: 'نعم ، إلغاء الربط',
   unlink_reminder:
     'لن يتمكن المستخدمون من تسجيل الدخول باستخدام حساب <span></span> إذا قمت بإلغاء الربط. هل أنت متأكد من المتابعة؟',
+  fields: {
+    name: 'الاسم',
+    name_description:
+      'الاسم الكامل للمستخدم بشكل قابل للعرض بما في ذلك جميع أجزاء الاسم (مثال: "جين دو").',
+    avatar: 'الصورة الرمزية',
+    avatar_description: 'رابط صورة الصورة الرمزية للمستخدم.',
+    familyName: 'اسم العائلة',
+    familyName_description: 'اسم العائلة للمستخدم (مثال: "دو").',
+    givenName: 'الاسم الأول',
+    givenName_description: 'الاسم الأول للمستخدم (مثال: "جين").',
+    middleName: 'الاسم الأوسط',
+    middleName_description: 'الاسم الأوسط للمستخدم (مثال: "ماري").',
+    nickname: 'اللقب',
+    nickname_description: 'اسم غير رسمي أو مألوف للمستخدم، قد يختلف عن اسمه القانوني.',
+    preferredUsername: 'اسم المستخدم المفضل',
+    preferredUsername_description: 'اسم مستخدم مختصر يرغب المستخدم في أن يُشار إليه به.',
+    profile: 'الملف الشخصي',
+    profile_description:
+      'رابط صفحة الملف الشخصي للمستخدم القابلة للقراءة (مثال: ملف وسائل التواصل الاجتماعي).',
+    website: 'الموقع الإلكتروني',
+    website_description: 'رابط الموقع الإلكتروني الشخصي أو المدونة للمستخدم.',
+    gender: 'الجنس',
+    gender_description: 'الجنس الذي يعرّف به المستخدم نفسه (مثال: "أنثى"، "ذكر"، "غير ثنائي").',
+    birthdate: 'تاريخ الميلاد',
+    birthdate_description: 'تاريخ ميلاد المستخدم بتنسيق محدد (مثال: "MM-dd-yyyy").',
+    zoneinfo: 'المنطقة الزمنية',
+    zoneinfo_description:
+      'المنطقة الزمنية للمستخدم بتنسيق IANA (مثال: "America/New_York" أو "Europe/Paris").',
+    locale: 'اللغة',
+    locale_description: 'لغة المستخدم بتنسيق IETF BCP 47 (مثال: "en-US" أو "ar-SA").',
+    address: {
+      formatted: 'العنوان',
+      streetAddress: 'عنوان الشارع',
+      locality: 'المدينة',
+      region: 'الولاية',
+      postalCode: 'الرمز البريدي',
+      country: 'البلد',
+    },
+    address_description:
+      'العنوان الكامل للمستخدم بشكل قابل للعرض بما في ذلك جميع أجزاء العنوان (مثال: "123 الشارع الرئيسي، أني تاون، الولايات المتحدة 12345").',
+    fullname: 'الاسم الكامل',
+    fullname_description: 'مزيج مرن من اسم العائلة، الاسم الأول، والاسم الأوسط بناءً على التكوين.',
+  },
 };
 
 export default Object.freeze(profile);

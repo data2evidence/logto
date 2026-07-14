@@ -10,6 +10,7 @@ const description = {
   sign_in: 'Zaloguj się',
   privacy_policy: 'Polityka prywatności',
   create_account: 'Utwórz konto',
+  switch_account: 'Przełącz konto',
   or: 'lub',
   and: 'i',
   enter_passcode: 'Kod weryfikacyjny został wysłany na twoje {{address}} {{target}}',
@@ -17,10 +18,9 @@ const description = {
   resend_after_seconds:
     'Nie otrzymałeś jeszcze? Wyślij ponownie za <span>{{seconds}}</span> sekund',
   resend_passcode: 'Nie otrzymałeś jeszcze? <a>Wyślij ponownie kod weryfikacyjny</a>',
-  create_account_id_exists: 'Konto z {{type}} {{value}} już istnieje. Czy chcesz się zalogować?',
+  create_account_id_exists: 'Konto z {{value}} już istnieje. Kontynuuj logowanie.',
   link_account_id_exists: 'Konto z {{type}} {{value}} już istnieje. Czy chcesz je połączyć?',
-  sign_in_id_does_not_exist:
-    'Konto z {{type}} {{value}} nie istnieje. Czy chcesz utworzyć nowe konto?',
+  sign_in_id_does_not_exist: 'Nie znaleziono konta dla {{value}}. Utworzyć nowe?',
   sign_in_id_does_not_exist_alert: 'Konto z {{type}} {{value}} nie istnieje.',
   create_account_id_exists_alert:
     'Konto z {{type}} {{value}} jest połączone z innym kontem. Spróbuj inny {{type}}.',
@@ -58,15 +58,30 @@ const description = {
     'Dla zwiększenia bezpieczeństwa, proszę uzupełnić poniższe informacje o koncie.',
   create_your_account: 'Utwórz konto',
   sign_in_to_your_account: 'Zaloguj się do swojego konta',
+  device_activation: 'Aktywacja urządzenia',
+  device_activation_description:
+    'Wpisz kod wyświetlony na twoim urządzeniu. Upewnij się, że jest zgodny, a następnie kontynuuj logowanie na tym urządzeniu.',
+  device_activation_error_description: 'Wpisz kod wyświetlony na twoim urządzeniu.',
+  device_activation_success: 'Twoje urządzenie jest teraz połączone!',
+  device_activation_success_description: 'Wróć do swojego urządzenia, aby kontynuować.',
   no_region_code_found: 'Nie znaleziono kodu regionu',
   verify_email: 'Potwierdź swój email',
   verify_phone: 'Potwierdź swój numer telefonu',
   password_requirements: 'Wymagania dotyczące hasła {{items, list}}.',
   password_requirement: {
     length_one: 'wymaga co najmniej {{count}} znaku',
+    length_two: 'wymaga co najmniej {{count}} znaki',
+    length_few: 'wymaga co najmniej {{count}} znaków',
+    length_many: 'wymaga co najmniej {{count}} znaków',
     length_other: 'wymaga co najmniej {{count}} znaków',
     character_types_one:
       'powinno zawierać co najmniej {{count}} rodzaj liter wielkich, małych liter, cyfr i symboli',
+    character_types_two:
+      'powinno zawierać co najmniej {{count}} rodzaje liter wielkich, małych liter, cyfr i symboli',
+    character_types_few:
+      'powinno zawierać co najmniej {{count}} rodzaje liter wielkich, małych liter, cyfr i symboli',
+    character_types_many:
+      'powinno zawierać co najmniej {{count}} rodzaje liter wielkich, małych liter, cyfr i symboli',
     character_types_other:
       'powinno zawierać co najmniej {{count}} rodzaje liter wielkich, małych liter, cyfr i symboli',
   },
@@ -75,30 +90,18 @@ const description = {
   single_sign_on_connectors_list:
     'Twoja firma włączyła jednokrotne logowanie dla konta e-mail {{email}}. Możesz kontynuować logowanie za pomocą następujących dostawców SSO.',
   single_sign_on_enabled: 'To konto ma włączone jednokrotne logowanie.',
-  /** UNTRANSLATED */
-  authorize_title: 'Authorize {{name}}',
-  /** UNTRANSLATED */
-  request_permission: '{{name}} is requesting access to:',
-  /** UNTRANSLATED */
-  grant_organization_access: 'Grant the organization access:',
-  /** UNTRANSLATED */
-  authorize_personal_data_usage: 'Authorize the use of your personal data:',
-  /** UNTRANSLATED */
-  authorize_organization_access: 'Authorize access to the specific organization:',
-  /** UNTRANSLATED */
-  user_scopes: 'Personal user data',
-  /** UNTRANSLATED */
-  organization_scopes: 'Organization access',
-  /** UNTRANSLATED */
-  authorize_agreement: `By authorizing the access, you agree to the {{name}}'s <link></link>.`,
-  /** UNTRANSLATED */
-  authorize_agreement_with_redirect: `By authorizing the access, you agree to the {{name}}'s <link></link>, and will be redirected to {{uri}}.`,
-  /** UNTRANSLATED */
-  not_you: 'Not you?',
-  /** UNTRANSLATED */
-  user_id: 'User ID: {{id}}',
-  /** UNTRANSLATED */
-  redirect_to: 'You will be redirected to {{name}}.',
+  authorize_title: 'Autoryzuj {{name}}',
+  request_permission: '{{name}} żąda dostępu do:',
+  grant_organization_access: 'Przyznaj dostęp do organizacji:',
+  authorize_personal_data_usage: 'Autoryzuj użycie twoich danych osobowych:',
+  authorize_organization_access: 'Autoryzuj dostęp do określonej organizacji:',
+  user_scopes: 'Dane osobowe użytkownika',
+  organization_scopes: 'Dostęp do organizacji',
+  authorize_agreement: `Autoryzując dostęp, zgadzasz się na <link></link> {{name}}.`,
+  authorize_agreement_with_redirect: `Autoryzując dostęp, zgadzasz się na <link></link> {{name}} i zostaniesz przekierowany do {{uri}}.`,
+  not_you: 'Nie ty?',
+  user_id: 'ID użytkownika: {{id}}',
+  redirect_to: 'Zostaniesz przekierowany do {{name}}.',
   auto_agreement: 'Kontynuując, zgadzasz się na <link></link>.',
   identifier_sign_in_description:
     'Wprowadź swoje {{types, list(type: disjunction;)}} aby się zalogować.',
@@ -109,6 +112,21 @@ const description = {
   back_to_sign_in: 'Wróć do logowania',
   support_email: 'Email wsparcia: <link></link>',
   support_website: 'Strona wsparcia: <link></link>',
+  switch_account_title: 'Jesteś obecnie zalogowany jako {{account}}',
+  switch_account_description:
+    'Aby kontynuować, zostaniesz wylogowany z obecnego konta i automatycznie przełączony na nowe konto.',
+  about_yourself: 'Opowiedz nam o sobie',
+  verify_identity: 'Zweryfikuj swoją tożsamość',
+  choose_verification_method: 'Wybierz sposób logowania',
+  verification_method: {
+    passkey: 'Klucz dostępu',
+    passkey_description: 'Weryfikacja przez urządzenie lub sprzęt USB',
+    password: 'Hasło',
+    password_description: 'Wpisz hasło',
+    email_verification_code: 'Kod weryfikacyjny e-mail',
+    phone_verification_code: 'Kod weryfikacyjny telefonu',
+    verification_code_description: 'Wyślij do {{target}}',
+  },
 };
 
 export default Object.freeze(description);

@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import SecondaryPageLayout from '@/Layout/SecondaryPageLayout';
 import { fulfillProfile } from '@/apis/experience';
@@ -9,10 +8,11 @@ import { usePromiseConfirmModal } from '@/hooks/use-confirm-modal';
 import type { ErrorHandlers } from '@/hooks/use-error-handler';
 import useErrorHandler from '@/hooks/use-error-handler';
 import useGlobalRedirectTo from '@/hooks/use-global-redirect-to';
+import useNavigateWithPreservedSearchParams from '@/hooks/use-navigate-with-preserved-search-params';
 import usePasswordPolicyChecker from '@/hooks/use-password-policy-checker';
 import usePasswordRejectionErrorHandler from '@/hooks/use-password-rejection-handler';
-import usePreSignInErrorHandler from '@/hooks/use-pre-sign-in-error-handler';
 import { usePasswordPolicy } from '@/hooks/use-sie';
+import useSubmitInteractionErrorHandler from '@/hooks/use-submit-interaction-error-handler';
 import { type ContinueFlowInteractionEvent } from '@/types';
 
 type Props = {
@@ -26,7 +26,7 @@ const SetPassword = ({ interactionEvent }: Props) => {
     setErrorMessage(undefined);
   }, []);
 
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPreservedSearchParams();
   const { show } = usePromiseConfirmModal();
   const redirectTo = useGlobalRedirectTo();
 
@@ -35,7 +35,9 @@ const SetPassword = ({ interactionEvent }: Props) => {
   const handleError = useErrorHandler();
 
   const passwordRejectionErrorHandler = usePasswordRejectionErrorHandler({ setErrorMessage });
-  const preSignInErrorHandler = usePreSignInErrorHandler({ interactionEvent, replace: true });
+  const submitInteractionErrorHandler = useSubmitInteractionErrorHandler(interactionEvent, {
+    replace: true,
+  });
 
   const errorHandlers: ErrorHandlers = useMemo(
     () => ({
@@ -43,10 +45,10 @@ const SetPassword = ({ interactionEvent }: Props) => {
         await show({ type: 'alert', ModalContent: error.message, cancelText: 'action.got_it' });
         navigate(-1);
       },
-      ...preSignInErrorHandler,
+      ...submitInteractionErrorHandler,
       ...passwordRejectionErrorHandler,
     }),
-    [navigate, passwordRejectionErrorHandler, preSignInErrorHandler, show]
+    [navigate, passwordRejectionErrorHandler, submitInteractionErrorHandler, show]
   );
 
   const onSubmitHandler = useCallback(

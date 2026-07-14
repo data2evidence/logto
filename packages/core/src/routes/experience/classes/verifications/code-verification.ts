@@ -1,17 +1,22 @@
-import { TemplateType, type ToZodObject } from '@logto/connector-kit';
+import { TemplateType } from '@logto/connector-kit';
 import {
   type InteractionEvent,
   SignInIdentifier,
   VerificationType,
   type User,
+  type CodeVerificationType,
+  type VerificationCodeIdentifierOf,
   type VerificationCodeIdentifier,
-  type VerificationCodeSignInIdentifier,
+  type CodeVerificationRecordData,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
 import { z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
-import { type createPasscodeLibrary } from '#src/libraries/passcode.js';
+import {
+  type SendPasscodeContextPayload,
+  type createPasscodeLibrary,
+} from '#src/libraries/passcode.js';
 import type Libraries from '#src/tenants/Libraries.js';
 import type Queries from '#src/tenants/Queries.js';
 import assertThat from '#src/utils/assert-that.js';
@@ -19,6 +24,12 @@ import assertThat from '#src/utils/assert-that.js';
 import { findUserByIdentifier } from '../utils.js';
 
 import { type IdentifierVerificationRecord } from './verification-record.js';
+
+export {
+  type CodeVerificationRecordData,
+  emailCodeVerificationRecordDataGuard,
+  phoneCodeVerificationRecordDataGuard,
+} from '@logto/schemas';
 
 const eventToTemplateTypeMap: Record<InteractionEvent, TemplateType> = {
   SignIn: TemplateType.SignIn,
@@ -38,37 +49,12 @@ const getPasscodeIdentifierPayload = (
 ): Parameters<ReturnType<typeof createPasscodeLibrary>['createPasscode']>[2] =>
   identifier.type === 'email' ? { email: identifier.value } : { phone: identifier.value };
 
-type CodeVerificationType =
-  | VerificationType.EmailVerificationCode
-  | VerificationType.PhoneVerificationCode;
-
-type SinInIdentifierTypeOf = {
-  [VerificationType.EmailVerificationCode]: SignInIdentifier.Email;
-  [VerificationType.PhoneVerificationCode]: SignInIdentifier.Phone;
-};
-
-type VerificationCodeIdentifierOf<T extends CodeVerificationType> = VerificationCodeIdentifier<
-  SinInIdentifierTypeOf[T]
->;
-
 type CodeVerificationIdentifierMap = {
   [VerificationType.EmailVerificationCode]: { primaryEmail: string };
   [VerificationType.PhoneVerificationCode]: { primaryPhone: string };
+  [VerificationType.MfaEmailVerificationCode]: Record<string, unknown>;
+  [VerificationType.MfaPhoneVerificationCode]: Record<string, unknown>;
 };
-
-/** The JSON data type for the `CodeVerification` record */
-export type CodeVerificationRecordData<T extends CodeVerificationType = CodeVerificationType> = {
-  id: string;
-  type: T;
-  identifier: VerificationCodeIdentifierOf<T>;
-  templateType: TemplateType;
-  verified: boolean;
-};
-
-export const identifierCodeVerificationTypeMap = Object.freeze({
-  [SignInIdentifier.Email]: VerificationType.EmailVerificationCode,
-  [SignInIdentifier.Phone]: VerificationType.PhoneVerificationCode,
-}) satisfies Record<VerificationCodeSignInIdentifier, CodeVerificationType>;
 
 /**
  * This is the parent class for `EmailCodeVerification` and `PhoneCodeVerification`. Not publicly exposed.
@@ -107,11 +93,16 @@ abstract class CodeVerification<T extends CodeVerificationType>
   /**
    * Send the verification code to the current `identifier`
    *
-   * @remark Instead of session jti,
+   * @param {SendPasscodeContextPayload} payload - The extra context information for the verification code template.
+   * @remarks
+   * Instead of session jti,
    * the verification id is used as `interaction_jti` to uniquely identify the passcode record in DB
    * for the current interaction.
    */
-  async sendVerificationCode() {
+  async sendVerificationCode(
+    payload?: SendPasscodeContextPayload,
+    options?: { skipDelivery?: boolean }
+  ) {
     const { createPasscode, sendPasscode } = this.libraries.passcodes;
 
     const verificationCode = await createPasscode(
@@ -120,7 +111,11 @@ abstract class CodeVerification<T extends CodeVerificationType>
       getPasscodeIdentifierPayload(this.identifier)
     );
 
-    await sendPasscode(verificationCode);
+    if (options?.skipDelivery) {
+      return;
+    }
+
+    await sendPasscode(verificationCode, payload);
   }
 
   /**
@@ -182,6 +177,10 @@ abstract class CodeVerification<T extends CodeVerificationType>
     };
   }
 
+  toSanitizedJson(): CodeVerificationRecordData<T> {
+    return this.toJson();
+  }
+
   abstract toUserProfile(): CodeVerificationIdentifierMap[T];
 }
 
@@ -216,14 +215,6 @@ export class EmailCodeVerification extends CodeVerification<VerificationType.Ema
   }
 }
 
-export const emailCodeVerificationRecordDataGuard = basicCodeVerificationRecordDataGuard.extend({
-  type: z.literal(VerificationType.EmailVerificationCode),
-  identifier: z.object({
-    type: z.literal(SignInIdentifier.Email),
-    value: z.string(),
-  }),
-}) satisfies ToZodObject<CodeVerificationRecordData<VerificationType.EmailVerificationCode>>;
-
 /**
  * A verification code class that verifies a given phone identifier.
  *
@@ -249,13 +240,31 @@ export class PhoneCodeVerification extends CodeVerification<VerificationType.Pho
   }
 }
 
-export const phoneCodeVerificationRecordDataGuard = basicCodeVerificationRecordDataGuard.extend({
-  type: z.literal(VerificationType.PhoneVerificationCode),
-  identifier: z.object({
-    type: z.literal(SignInIdentifier.Phone),
-    value: z.string(),
-  }),
-}) satisfies ToZodObject<CodeVerificationRecordData<VerificationType.PhoneVerificationCode>>;
+export class MfaEmailCodeVerification extends CodeVerification<VerificationType.MfaEmailVerificationCode> {
+  public readonly type = VerificationType.MfaEmailVerificationCode;
+
+  toUserProfile(): Record<string, unknown> {
+    return {};
+  }
+
+  get isNewBindMfaVerification(): boolean {
+    // This class is only used for MFA verification
+    return false;
+  }
+}
+
+export class MfaPhoneCodeVerification extends CodeVerification<VerificationType.MfaPhoneVerificationCode> {
+  public readonly type = VerificationType.MfaPhoneVerificationCode;
+
+  toUserProfile(): Record<string, unknown> {
+    return {};
+  }
+
+  get isNewBindMfaVerification(): boolean {
+    // This class is only used for MFA verification
+    return false;
+  }
+}
 
 /**
  * Factory method to create a new `EmailCodeVerification` / `PhoneCodeVerification` record using the given identifier.
@@ -287,6 +296,41 @@ export const createNewCodeVerificationRecord = (
         identifier,
         templateType,
         verified: false,
+      });
+    }
+  }
+};
+
+/**
+ * Factory method to create a new `MfaEmailCodeVerification` / `MfaPhoneCodeVerification` record using the given identifier.
+ */
+export const createNewMfaCodeVerificationRecord = (
+  libraries: Libraries,
+  queries: Queries,
+  identifier:
+    | VerificationCodeIdentifier<SignInIdentifier.Email>
+    | VerificationCodeIdentifier<SignInIdentifier.Phone>,
+  verified = false
+): MfaEmailCodeVerification | MfaPhoneCodeVerification => {
+  const { type } = identifier;
+
+  switch (type) {
+    case SignInIdentifier.Email: {
+      return new MfaEmailCodeVerification(libraries, queries, {
+        id: generateStandardId(),
+        type: VerificationType.MfaEmailVerificationCode,
+        identifier,
+        templateType: TemplateType.MfaVerification,
+        verified,
+      });
+    }
+    case SignInIdentifier.Phone: {
+      return new MfaPhoneCodeVerification(libraries, queries, {
+        id: generateStandardId(),
+        type: VerificationType.MfaPhoneVerificationCode,
+        identifier,
+        templateType: TemplateType.MfaVerification,
+        verified,
       });
     }
   }

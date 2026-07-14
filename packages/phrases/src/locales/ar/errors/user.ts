@@ -7,6 +7,7 @@ const user = {
   email_not_exist: 'عنوان البريد الإلكتروني غير مسجل حتى الآن.',
   phone_not_exist: 'رقم الهاتف غير مسجل حتى الآن.',
   identity_not_exist: 'الحساب الاجتماعي غير مسجل حتى الآن.',
+  sso_identity_not_exist: 'لم يتم تسجيل حساب SSO المؤسسي بعد.',
   identity_already_in_use: 'تم ربط الحساب الاجتماعي بحساب موجود بالفعل.',
   social_account_exists_in_profile: 'لقد قمت بربط هذا الحساب الاجتماعي بالفعل.',
   cannot_delete_self: 'لا يمكنك حذف نفسك.',
@@ -29,25 +30,26 @@ const user = {
   missing_profile: 'يجب عليك تقديم معلومات إضافية قبل تسجيل الدخول.',
   role_exists: 'تمت إضافة معرف الدور {{roleId}} بالفعل لهذا المستخدم.',
   invalid_role_type: 'نوع الدور غير صالح، لا يمكن تعيين دور آلة إلى المستخدم.',
+  suggest_mfa: 'لتحسين أمان الحساب، نوصي بربط MFA بحسابك.',
   missing_mfa: 'يجب عليك ربط MFA الإضافي قبل تسجيل الدخول.',
   totp_already_in_use: 'تم استخدام TOTP بالفعل.',
   backup_code_already_in_use: 'تم استخدام رمز النسخ الاحتياطي بالفعل.',
   password_algorithm_required: 'مطلوب خوارزمية كلمة المرور.',
   password_and_digest: 'لا يمكنك تعيين كلمة مرور عادية ومعلومات تجزئة كلمة المرور معًا.',
   personal_access_token_name_exists: 'اسم رمز الوصول الشخصي موجود بالفعل.',
-  /** UNTRANSLATED */
-  totp_secret_invalid: 'Invalid TOTP secret supplied.',
-  /** UNTRANSLATED */
-  wrong_backup_code_format: 'Backup code format is invalid.',
-  /** UNTRANSLATED */
-  username_required: 'Username is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
+  totp_secret_invalid: 'تم توفير سر TOTP غير صالح.',
+  wrong_backup_code_format: 'تنسيق رمز النسخ الاحتياطي غير صالح.',
+  username_required: 'اسم المستخدم هو معرف مطلوب، لا يمكنك تعيينه ليكون null.',
   email_or_phone_required:
-    'Email address or phone number is a required identifier, at least one is required.',
-  /** UNTRANSLATED */
-  email_required: 'Email address is a required identifier, you can not set it to null.',
-  /** UNTRANSLATED */
-  phone_required: 'Phone number is a required identifier, you can not set it to null.',
+    'عنوان البريد الإلكتروني أو رقم الهاتف هو معرف مطلوب، يجب تحديد واحد على الأقل.',
+  last_sign_in_method_required: 'يجب أن تحتفظ بطريقة واحدة متاحة على الأقل لتسجيل الدخول في حسابك.',
+  email_required: 'عنوان البريد الإلكتروني هو معرف مطلوب، لا يمكنك تعيينه ليكون null.',
+  phone_required: 'رقم الهاتف هو معرف مطلوب، لا يمكنك تعيينه ليكون null.',
+  enterprise_sso_identity_not_exists:
+    'المستخدم ليس لديه هوية مؤسسية مرتبطة بمعرف الموصل SSO المحدد: {{ ssoConnectorId }}.',
+  identity_not_exists_in_current_user:
+    'الهوية المحددة غير موجودة في حساب المستخدم الحالي. من فضلك قم بربط الهوية قبل المتابعة.',
+  passkey_preferred: 'أنشئ مفتاح مرور لتبسيط عملية تسجيل الدخول الخاصة بك.',
 };
 
 export default Object.freeze(user);

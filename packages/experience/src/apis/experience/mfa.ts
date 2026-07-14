@@ -1,5 +1,6 @@
 import {
   MfaFactor,
+  type SignInIdentifier,
   type WebAuthnRegistrationOptions,
   type WebAuthnAuthenticationOptions,
   type BindMfaPayload,
@@ -55,39 +56,55 @@ export const createBackupCode = async () =>
     codes: string[];
   }>();
 
+export const enableMfa = async () => {
+  await api.post(`${experienceApiRoutes.mfa}/mfa-enabled`);
+  return submitInteraction();
+};
+
 export const skipMfa = async () => {
   await api.post(`${experienceApiRoutes.mfa}/mfa-skipped`);
   return submitInteraction();
 };
 
-export const bindMfa = async (payload: BindMfaPayload, verificationId: string) => {
-  switch (payload.type) {
-    case MfaFactor.TOTP: {
-      const { code } = payload;
-      await api.post(`${experienceApiRoutes.verification}/totp/verify`, {
-        json: {
-          code,
-          verificationId,
-        },
-      });
-      break;
-    }
-    case MfaFactor.WebAuthn: {
-      await api.post(`${experienceApiRoutes.verification}/web-authn/registration/verify`, {
-        json: {
-          verificationId,
-          payload,
-        },
-      });
-      break;
-    }
-    case MfaFactor.BackupCode: {
-      // No need to verify backup codes
-      break;
+export const skipMfaSuggestion = async () => {
+  await api.post(`${experienceApiRoutes.mfa}/mfa-suggestion-skipped`);
+  return submitInteraction();
+};
+
+export const bindMfa = async (
+  type: MfaFactor,
+  verificationId: string,
+  payload?: BindMfaPayload
+) => {
+  if (payload) {
+    switch (payload.type) {
+      case MfaFactor.TOTP: {
+        const { code } = payload;
+        await api.post(`${experienceApiRoutes.verification}/totp/verify`, {
+          json: {
+            code,
+            verificationId,
+          },
+        });
+        break;
+      }
+      case MfaFactor.WebAuthn: {
+        await api.post(`${experienceApiRoutes.verification}/web-authn/registration/verify`, {
+          json: {
+            verificationId,
+            payload,
+          },
+        });
+        break;
+      }
+      case MfaFactor.BackupCode: {
+        // No need to verify backup codes
+        break;
+      }
     }
   }
 
-  await addMfa(payload.type, verificationId);
+  await addMfa(type, verificationId);
   return submitInteraction();
 };
 
@@ -122,5 +139,26 @@ export const verifyMfa = async (payload: VerifyMfaPayload, verificationId?: stri
     }
   }
 
+  return submitInteraction();
+};
+
+// Email/Phone MFA verification code
+export const sendMfaVerificationCode = async (
+  identifierType: SignInIdentifier.Email | SignInIdentifier.Phone
+) =>
+  api
+    .post(`${experienceApiRoutes.verification}/mfa-verification-code`, {
+      json: { identifierType },
+    })
+    .json<{ verificationId: string }>();
+
+export const verifyMfaByVerificationCode = async (
+  verificationId: string,
+  code: string,
+  identifierType: SignInIdentifier.Email | SignInIdentifier.Phone
+) => {
+  await api.post(`${experienceApiRoutes.verification}/mfa-verification-code/verify`, {
+    json: { verificationId, code, identifierType },
+  });
   return submitInteraction();
 };

@@ -1,27 +1,40 @@
 /* eslint-disable max-lines */
 import { emailRegEx, phoneRegEx, usernameRegEx } from '@logto/core-kit';
 import {
+  ProductEvent,
   UsersPasswordEncryptionMethod,
+  adminTenantId,
   jsonObjectGuard,
+  userMfaDataGuard,
+  userPasskeySignInDataGuard,
   userProfileGuard,
-  userProfileResponseGuard,
 } from '@logto/schemas';
 import { conditional, yes } from '@silverhand/essentials';
 import { boolean, literal, nativeEnum, object, string } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import { buildManagementApiContext } from '#src/libraries/hook/utils.js';
+import {
+  buildUpdatedUserLogtoConfig,
+  buildUserLogtoConfigResponse,
+  userLogtoConfigResponseGuard,
+} from '#src/libraries/user-logto-config.js';
 import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import assertThat from '#src/utils/assert-that.js';
 
-import { transpileUserProfileResponse } from '../../utils/user.js';
+import { parseLegacyPassword } from '../../utils/password.js';
+import { captureDeveloperEvent } from '../../utils/posthog.js';
+import {
+  adminUserProfileResponseGuard,
+  transpileAdminUserProfileResponse,
+} from '../../utils/user.js';
 import type { ManagementApiRouter, RouterInitArgs } from '../types.js';
 
 export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
   ...args: RouterInitArgs<T>
 ) {
-  const [router, { queries, libraries }] = args;
+  const [router, { queries, libraries, id: tenantId }] = args;
   const {
     users: {
       deleteUserById,
@@ -29,7 +42,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
       hasUser,
       updateUserById,
       hasUserWithEmail,
-      hasUserWithPhone,
+      hasUserWithNormalizedPhone,
     },
   } = queries;
   const {
@@ -47,22 +60,26 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
     '/users/:userId',
     koaGuard({
       params: object({ userId: string() }),
-      query: object({ includeSsoIdentities: string().optional() }),
-      response: userProfileResponseGuard,
+      query: object({
+        includeSsoIdentities: string().optional(),
+        includePasswordHash: string().optional(),
+      }),
+      response: adminUserProfileResponseGuard,
       status: [200, 404],
     }),
     async (ctx, next) => {
       const {
         params: { userId },
-        query: { includeSsoIdentities = 'false' },
+        query: { includeSsoIdentities = 'false', includePasswordHash = 'false' },
       } = ctx.guard;
 
       const user = await findUserById(userId);
 
-      ctx.body = transpileUserProfileResponse(user, {
+      ctx.body = transpileAdminUserProfileResponse(user, {
         ssoIdentities: conditional(
           yes(includeSsoIdentities) && [...(await findUserSsoIdentities(userId))]
         ),
+        includePasswordHash: yes(includePasswordHash),
       });
 
       return next();
@@ -114,6 +131,60 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
     }
   );
 
+  router.get(
+    '/users/:userId/logto-configs',
+    koaGuard({
+      params: object({ userId: string() }),
+      response: userLogtoConfigResponseGuard,
+      status: [200, 404],
+    }),
+    async (ctx, next) => {
+      const {
+        params: { userId },
+      } = ctx.guard;
+
+      const user = await findUserById(userId);
+      ctx.body = buildUserLogtoConfigResponse(user.logtoConfig);
+
+      return next();
+    }
+  );
+
+  router.patch(
+    '/users/:userId/logto-configs',
+    koaGuard({
+      params: object({ userId: string() }),
+      body: object({
+        mfa: userMfaDataGuard.optional(),
+        passkeySignIn: userPasskeySignInDataGuard.optional(),
+      }),
+      response: userLogtoConfigResponseGuard,
+      status: [200, 404],
+    }),
+    async (ctx, next) => {
+      const {
+        params: { userId },
+        body: {
+          mfa: { enabled, skipped, skipMfaOnSignIn } = {},
+          passkeySignIn: { skipped: passkeySkipped } = {},
+        },
+      } = ctx.guard;
+
+      const user = await findUserById(userId);
+      const updatedUser = await updateUserById(userId, {
+        logtoConfig: buildUpdatedUserLogtoConfig(user, {
+          mfa: { enabled, skipped, skipMfaOnSignIn },
+          passkeySignIn: { skipped: passkeySkipped },
+        }),
+      });
+
+      ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
+      ctx.body = buildUserLogtoConfigResponse(updatedUser.logtoConfig);
+
+      return next();
+    }
+  );
+
   router.patch(
     '/users/:userId/profile',
     koaGuard({
@@ -148,14 +219,14 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
         primaryEmail: string().regex(emailRegEx),
         username: string().regex(usernameRegEx),
         password: string().min(1),
-        passwordDigest: string(),
+        passwordDigest: string().max(256),
         passwordAlgorithm: nativeEnum(UsersPasswordEncryptionMethod),
         name: string(),
         avatar: string().url().or(literal('')).nullable(),
         customData: jsonObjectGuard,
         profile: userProfileGuard,
       }).partial(),
-      response: userProfileResponseGuard,
+      response: adminUserProfileResponseGuard,
       status: [200, 400, 404, 422],
     }),
     async (ctx, next) => {
@@ -190,34 +261,35 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
         })
       );
       assertThat(
-        !primaryPhone || !(await hasUserWithPhone(primaryPhone)),
+        !primaryPhone || !(await hasUserWithNormalizedPhone(primaryPhone)),
         new RequestError({ code: 'user.phone_already_in_use', status: 422 })
       );
 
+      if (passwordAlgorithm === UsersPasswordEncryptionMethod.Legacy) {
+        parseLegacyPassword(passwordDigest);
+      }
+
       const id = await generateUserId();
 
-      const [user] = await insertUser(
-        {
-          id,
-          primaryEmail,
-          primaryPhone,
-          username,
-          name,
-          avatar,
-          ...conditional(customData && { customData }),
-          ...conditional(password && (await encryptUserPassword(password))),
-          ...conditional(
-            passwordDigest && {
-              passwordEncrypted: passwordDigest,
-              passwordEncryptionMethod: passwordAlgorithm,
-            }
-          ),
-          ...conditional(profile && { profile }),
-        },
-        []
-      );
+      const [user] = await insertUser({
+        id,
+        primaryEmail,
+        primaryPhone,
+        username,
+        name,
+        avatar,
+        ...conditional(customData && { customData }),
+        ...conditional(password && (await encryptUserPassword(password))),
+        ...conditional(
+          passwordDigest && {
+            passwordEncrypted: passwordDigest,
+            passwordEncryptionMethod: passwordAlgorithm,
+          }
+        ),
+        ...conditional(profile && { profile }),
+      });
 
-      ctx.body = transpileUserProfileResponse(user);
+      ctx.body = transpileAdminUserProfileResponse(user);
       return next();
     }
   );
@@ -235,7 +307,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
         customData: jsonObjectGuard,
         profile: userProfileGuard,
       }).partial(),
-      response: userProfileResponseGuard,
+      response: adminUserProfileResponseGuard,
       status: [200, 404, 422],
     }),
     async (ctx, next) => {
@@ -248,7 +320,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
       await checkIdentifierCollision(body, userId);
 
       const updatedUser = await updateUserById(userId, body, 'replace');
-      ctx.body = transpileUserProfileResponse(updatedUser);
+      ctx.body = transpileAdminUserProfileResponse(updatedUser);
 
       return next();
     }
@@ -259,7 +331,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
     koaGuard({
       params: object({ userId: string() }),
       body: object({ password: string().min(1) }),
-      response: userProfileResponseGuard,
+      response: adminUserProfileResponseGuard,
       status: [200, 422],
     }),
     async (ctx, next) => {
@@ -277,7 +349,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
         passwordEncryptionMethod,
       });
 
-      ctx.body = transpileUserProfileResponse(user);
+      ctx.body = transpileAdminUserProfileResponse(user);
 
       return next();
     }
@@ -329,7 +401,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
     koaGuard({
       params: object({ userId: string() }),
       body: object({ isSuspended: boolean() }),
-      response: userProfileResponseGuard,
+      response: adminUserProfileResponseGuard,
       status: [200, 404],
     }),
     async (ctx, next) => {
@@ -348,7 +420,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
         await signOutUser(user.id);
       }
 
-      ctx.body = transpileUserProfileResponse(user);
+      ctx.body = transpileAdminUserProfileResponse(user);
 
       return next();
     }
@@ -374,6 +446,9 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
       await signOutUser(userId);
       await deleteUserById(userId);
 
+      if (tenantId === adminTenantId) {
+        captureDeveloperEvent(userId, ProductEvent.DeveloperDeleted);
+      }
       ctx.status = 204;
 
       // Manually trigger the `User.Deleted` hook since we need to send the user data in the payload

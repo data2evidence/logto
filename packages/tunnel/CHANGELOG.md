@@ -1,5 +1,100 @@
 # @logto/tunnel
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [e4eaa5aef5]
+  - @logto/core-kit@2.10.0
+
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [93523a1ae0]
+- Updated dependencies [3350b13ec8]
+  - @logto/core-kit@2.9.0
+  - @logto/shared@3.4.0
+
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [74c993a91e]
+  - @logto/core-kit@2.8.0
+
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies [57b0008ee8]
+  - @logto/core-kit@2.7.1
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [317f9744d1]
+- Updated dependencies [ce65b07964]
+  - @logto/shared@3.3.1
+  - @logto/core-kit@2.7.0
+
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [4cc321dbb]
+  - @logto/core-kit@2.6.1
+
+## 0.3.2
+
+### Patch Changes
+
+- 37e692888: security updates for dependencies
+
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [35bbc4399]
+  - @logto/shared@3.3.0
+
+## 0.3.0
+
+### Minor Changes
+
+- 2961d355d: bump node version to ^22.14.0
+
+### Patch Changes
+
+- Updated dependencies [2961d355d]
+  - @logto/core-kit@2.6.0
+  - @logto/shared@3.2.0
+
+## 0.2.6
+
+### Patch Changes
+
+- 6144149bb: disallow zstd compression to fix potential garbled text response
+
+## 0.2.5
+
+### Patch Changes
+
+- e11e57de8: bump dependencies for security update
+- Updated dependencies [e11e57de8]
+  - @logto/core-kit@2.5.4
+  - @logto/shared@3.1.4
+
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [62eb8ed8d]
+- Updated dependencies [a8080e891]
+  - @logto/core-kit@2.5.3
+  - @logto/shared@3.1.3
+
 ## 0.2.3
 
 ### Patch Changes

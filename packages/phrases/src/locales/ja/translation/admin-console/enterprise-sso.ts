@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'エンタープライズSSO',
   title: 'エンタープライズSSO',
-  subtitle:
-    '企業のアイデンティティプロバイダーとの接続を可能にし、SP主導のシングルサインオンを有効にします。',
+  subtitle: '企業のアイデンティティプロバイダーを接続し、シングルサインオンを有効にします。',
   create: 'エンタープライズコネクターを追加',
   col_connector_name: 'コネクター名',
   col_type: 'タイプ',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       'IdPにてSAML 2.0の新しいアプリケーション連携を作成します。次に以下の値を貼り付けます。',
     saml: {
       acs_url_field_name: 'アサーションコンシューマサービスURL（応答URL）',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: 'オーディエンス URI (SP エンティティ ID)',
+      entity_id_field_name: 'サービスプロバイダー (SP) エンティティ ID',
+      entity_id_field_tooltip:
+        'SP エンティティ ID は任意の文字列形式で指定可能で、通常は識別子として URI 形式または URL 形式を使用しますが、これに限定されません。',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'リダイレクトURI（コールバックURL）',
+      redirect_uri_field_description:
+        'Redirect URI は、SSO 認証の後にユーザーがリダイレクトされる場所です。この URI を IdP の設定に追加してください。',
+      redirect_uri_field_custom_domain_description:
+        'Logto で複数の<a>カスタムドメイン</a>を使用する場合は、すべての対応するコールバック URI を IdP に追加し、各ドメインで SSO が機能するようにしてください。\n\nLogto の既定ドメイン (*.logto.app) は常に有効です。そのドメインで SSO をサポートしたい場合にのみ含めてください。',
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'クライアントシークレット',
       issuer_field_name: '発行者',
       scope_field_name: 'スコープ',
+      scope_field_placeholder: 'スコープを入力してください（スペースで区切ってください）',
     },
   },
 };

@@ -73,6 +73,12 @@ const user_details = {
     deletion_confirmation:
       'Está a remover o existente <name/> para a verificação em duas etapas. Tem a certeza de que deseja continuar?',
   },
+  passkey: {
+    field_name: 'Chaves de acesso',
+    field_description_empty: 'Este utilizador não ativou o início de sessão com chave de acesso.',
+    deletion_confirmation:
+      'Está a remover a chave de acesso existente <name/> para o início de sessão. Tem a certeza de que deseja continuar?',
+  },
   suspended: 'suspenso',
   suspend_user: 'Suspender utilizador',
   suspend_user_reminder:
@@ -111,7 +117,7 @@ const user_details = {
     title_short: 'token',
     empty: 'O utilizador não possui nenhum token de acesso pessoal.',
     create: 'Criar novo token',
-    tip: 'Tokens de acesso pessoal (PATs) fornecem uma maneira segura para os utilizadores concederem tokens de acesso sem usar as suas credenciais e login interativo. Isso é útil para CI/CD, scripts ou aplicações que precisam acessar recursos programaticamente. <a>Saiba mais</a>',
+    tip: 'Tokens de acesso pessoal (PATs) fornecem uma maneira segura para os utilizadores concederem tokens de acesso sem usar as suas credenciais e login interativo. Isso é útil para CI/CD, scripts ou aplicações que precisam acessar recursos programaticamente.',
     value: 'Valor',
     created_at: 'Criado em',
     expires_at: 'Expira em',
@@ -134,6 +140,58 @@ const user_details = {
     edit_modal: {
       title: 'Editar token de acesso pessoal',
       edited: 'O token {{name}} foi editado com sucesso.',
+    },
+  },
+  sessions: {
+    title: 'Sessões',
+    description:
+      'Gerir sessões mantidas pelo Servidor de Autorização Logto. Revogar uma sessão Logto aqui impede o consentimento automático em futuras solicitações de autorização.',
+    field_name: 'Sessões',
+    multiple_signed_in: 'Este utilizador iniciou sessão em vários dispositivos ou navegadores.',
+    not_found:
+      'Nenhuma sessão Logto ativa encontrada. O utilizador não está atualmente logado em nenhum dispositivo.',
+    name_column: 'Nome',
+    session_id_column: 'ID da sessão',
+    location_column: 'Localização',
+    browser_on_os: '{{browser}} em {{os}}',
+    user: 'Utilizador',
+    applications: 'Aplicações',
+    signed_in_at: 'Último início de sessão',
+    ip: 'IP',
+    browser_name: 'Nome do navegador',
+    os_name: 'Nome do sistema operativo',
+    device_model: 'Modelo do dispositivo',
+    revoke_session: 'Revogar sessão',
+    revoke_session_confirmation:
+      'Se remover esta sessão, os utilizadores terão de se autenticar novamente.',
+  },
+  third_party_apps: {
+    title: 'Aplicações de terceiros',
+    description:
+      'Use o Logto como fornecedor de identidade para autorizar aplicações de terceiros. Veja e gira as aplicações às quais este utilizador concedeu acesso.',
+    field_name: 'Aplicações de terceiros autorizadas',
+    multiple_authorized: 'Este utilizador autorizou várias aplicações e serviços de terceiros.',
+    not_authorized:
+      'Este utilizador ainda não autorizou quaisquer aplicações ou serviços de terceiros.',
+    name_column: 'Nome',
+    app_id_column: 'ID da aplicação',
+    access_created_at_column: 'Acesso criado em',
+    revoke_access_title: 'Revogar acesso?',
+    revoke_access_description:
+      'Isto irá revogar o acesso da aplicação à conta deste utilizador em todos os dispositivos. O utilizador terá de autorizar novamente para restaurar o acesso.',
+  },
+  connections: {
+    title: 'Ligação',
+    description:
+      'O utilizador liga contas de terceiros para login social, SSO empresarial ou acesso a recursos.',
+    token_status_column: 'Estado do token',
+    token_status: {
+      active: 'Ativo',
+      expired: 'Expirado',
+      inactive: 'Inativo',
+      not_applicable: 'Não aplicável',
+      available: 'Disponível',
+      not_available: 'Indisponível',
     },
   },
 };

@@ -1,18 +1,28 @@
 const tenants = {
   title: '设置',
   description: '高效管理租户设置并自定义您的域名。',
+  oss_description: '在此更改账户设置并管理您的个人信息，以确保账户安全。',
   tabs: {
     settings: '设置',
     members: '成员',
     domains: '域名管理',
+    oidc_configs: 'OIDC 配置',
     subscription: '套餐与计费',
     billing_history: '历史账单',
+  },
+  members: {
+    card_title: '通过 Logto Cloud 更安全地管理租户',
+    card_description: '无需共享单一管理员账户，也能为您的租户添加管理员或协作者。',
+    card_action: '探索 Logto Cloud',
   },
   settings: {
     title: '设置',
     description: '设置租户名称并查看您的数据托管地区和租户类型。',
     tenant_id: '租户 ID',
     tenant_name: '租户名称',
+    tenant_instance: '选择您的实例',
+    tenant_instance_description:
+      '选择您的租户将在哪里托管。选择 Logto Cloud 作为公共共享基础设施，或选择私人实例以获得专用资源。',
     tenant_region: '数据托管地区',
     tenant_region_description: '托管您的租户资源（用户、应用程序等）的物理位置。创建后无法更改。',
     tenant_region_tip: '您的租户资源托管在 {{region}}。 <a>了解更多</a>',
@@ -20,9 +30,14 @@ const tenants = {
     environment_tag_production: '产品',
     tenant_type: '租户类型',
     development_description:
-      '仅用于测试，不应在生产环境中使用。不需要订阅。它具有所有专业功能，但有像登录横幅之类的限制。<a>了解更多</a>',
-    production_description: '适用于由最终用户使用且可能需要付费订阅的应用程序。<a>了解更多</a>',
+      '仅用于测试，不应在生产环境中使用。不需要订阅。它具有所有专业功能，但有像登录横幅之类的限制。',
+    production_description: '适用于由最终用户使用且可能需要付费订阅的应用程序。',
     tenant_info_saved: '租户信息成功保存。',
+    tenant_mfa: '多因素认证',
+    tenant_mfa_description: '要求成员设置多因素认证才能访问此租户。',
+    enterprise_sso: '企业 SSO',
+    enterprise_sso_description:
+      '仅限付费计划。联系我们启用企业 SSO，让所有成员可以使用您组织的身份提供商登录 Logto Cloud 控制台。',
   },
   full_env_tag: {
     development: '开发',
@@ -43,8 +58,10 @@ const tenants = {
   create_modal: {
     title: '创建租户',
     subtitle: '创建一个拥有独立资源和用户的新租户。',
+    tenant_id: '租户 ID',
     tenant_usage_purpose: '您想要使用此租户做什么?',
     development_description: '仅用于测试，不应在生产环境中使用。不需要订阅。',
+    development_description_for_private_regions: '仅用于测试，不应在生产环境中使用。',
     development_hint: '它具有所有专业功能，但有像登录横幅之类的限制。',
     production_description: '用于最终用户使用，可能需要付费订阅。',
     available_plan: '可用方案：',
@@ -53,6 +70,9 @@ const tenants = {
     tenant_created: '租户创建成功。',
     invitation_failed: '某些邀请未能发送。请稍后在设置 -> 成员中重试。',
     tenant_type_description: '创建后将无法更改。',
+    tenant_id_invalid: '租户 ID 只能包含小写字母、数字和连字符，且不能超过 {{max}} 个字符。',
+    tenant_id_placeholder: '你的租户 ID',
+    tenant_id_tip: '自定义租户 ID。如果留空，Logto 将生成默认 ID。租户 ID 在创建后无法更改。',
   },
   dev_tenant_migration: {
     title: '您现在可以通过创建新的“开发租户”免费尝试我们的专业功能！',
@@ -83,20 +103,19 @@ const tenants = {
   tenant_landing_page: {
     title: '您还没有创建租户',
     description:
-      '要开始使用Logto配置项目，请创建一个新的租户。如果您需要注销或删除您的帐户，只需单击右上角的头像按钮。',
+      '要开始使用 Logto 配置项目，请创建一个新的租户。如果您需要注销或删除您的帐户，只需单击右上角的头像按钮。',
     create_tenant_button: '创建租户',
   },
   status: {
     mau_exceeded: '超出 MAU 限制',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: '超出 Token 限制',
     suspended: '已暂停',
     overdue: '逾期',
   },
   tenant_suspended_page: {
     title: '租户已暂停，请联系我们以恢复访问。',
     description_1:
-      '我们非常遗憾地通知您，由于不当使用，包括超出MAU限制、逾期付款或其他未经授权的操作，您的租户帐户已被临时停用。',
+      '我们非常遗憾地通知您，由于不当使用，包括超出 MAU 限制、逾期付款或其他未经授权的操作，您的租户帐户已被临时停用。',
     description_2:
       '如果您需要进一步澄清、有任何疑虑或希望恢复全部功能并解锁您的租户，请立即联系我们。',
   },

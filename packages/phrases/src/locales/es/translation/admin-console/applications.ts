@@ -4,9 +4,11 @@ const applications = {
   subtitle:
     'Configura la autenticación de Logto para tu aplicación nativa, de página única, de máquina a máquina o tradicional',
   subtitle_with_app_type: 'Configura la autenticación de Logto para tu aplicación {{name}}',
+  create_device_flow_description:
+    'Crea una aplicación nativa que utiliza la concesión de autorización de dispositivo OAuth 2.0 para dispositivos con entrada limitada o aplicaciones headless.',
   create: 'Crear aplicación',
-  create_subtitle_third_party:
-    'Utiliza Logto como proveedor de identidad (IdP) para integrarte fácilmente con aplicaciones de terceros',
+  create_third_party: 'Crear aplicación de terceros',
+  create_thrid_party_modal_title: 'Crear una app de terceros ({{type}})',
   application_name: 'Nombre de la aplicación',
   application_name_placeholder: 'Mi App',
   application_description: 'Descripción de la aplicación',
@@ -23,7 +25,7 @@ const applications = {
     native: {
       title: 'App nativa',
       subtitle: 'Una aplicación que se ejecuta en un entorno nativo',
-      description: 'Por ejemplo, una app de iOS, una app de Android',
+      description: 'Por ejemplo, una app de iOS, una app de Android, app de escritorio, TVs, CLI',
     },
     spa: {
       title: 'App de página única',
@@ -47,12 +49,9 @@ const applications = {
       description: 'N/A',
     },
     saml: {
-      /** UNTRANSLATED */
-      title: 'SAML App',
-      /** UNTRANSLATED */
-      subtitle: 'An app that is used as an SAML IdP connector',
-      /** UNTRANSLATED */
-      description: 'E.g., SAML',
+      title: 'Aplicación SAML',
+      subtitle: 'Una aplicación que se utiliza como conector de IdP de SAML',
+      description: 'Por ejemplo, SAML',
     },
     third_party: {
       title: 'App de terceros',
@@ -60,9 +59,33 @@ const applications = {
       description: 'Ej.: OIDC, SAML',
     },
   },
+  authorization_flow: {
+    title: 'Flujo de autorización',
+    tooltip:
+      'Seleccione el flujo de autorización para su aplicación. Una vez configurado, no se puede cambiar.',
+    authorization_code: {
+      title: 'Authorization code',
+      description:
+        'El tipo de autorización predeterminado y más común. Los usuarios son redirigidos a una página de inicio de sesión para autorizar el acceso directamente.',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        'Para dispositivos con entrada limitada o aplicaciones sin interfaz (p. ej., televisores, CLI). Los usuarios completan el inicio de sesión en un dispositivo separado ingresando un código de dispositivo o escaneando un código QR.',
+    },
+  },
   placeholder_title: 'Selecciona un tipo de aplicación para continuar',
   placeholder_description:
     'Logto utiliza una entidad de aplicación para OIDC para ayudar con tareas como la identificación de tus aplicaciones, la gestión de inicio de sesión y la creación de registros de auditoría.',
+  third_party_application_placeholder_description:
+    'Usa Logto como un Proveedor de Identidad para proporcionar autorización OAuth a servicios de terceros. \n Incluye una pantalla de consentimiento de usuario preconstruida para el acceso a recursos. <a>Más información</a>',
+  guide: {
+    third_party: {
+      title: 'Integrar una aplicación de terceros',
+      description:
+        'Usa Logto como tu Proveedor de Identidad para proporcionar autorización OAuth a servicios de terceros. Incluye una pantalla de consentimiento de usuario preconstruida para un acceso seguro a los recursos. <a>Más información</a>',
+    },
+  },
 };
 
 export default Object.freeze(applications);

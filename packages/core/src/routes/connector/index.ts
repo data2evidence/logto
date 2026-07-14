@@ -1,12 +1,19 @@
 import { type ConnectorFactory } from '@logto/cli/lib/connector/index.js';
 import type router from '@logto/cloud/routes';
 import { demoConnectorIds, validateConfig } from '@logto/connector-kit';
-import { Connectors, ConnectorType, connectorResponseGuard, type JsonObject } from '@logto/schemas';
+import {
+  Connectors,
+  ConnectorType,
+  connectorResponseGuard,
+  type JsonObject,
+  ProductEvent,
+} from '@logto/schemas';
 import { generateStandardShortId } from '@logto/shared';
 import { conditional } from '@silverhand/essentials';
 import cleanDeep from 'clean-deep';
 import { string, object } from 'zod';
 
+import { EnvSet } from '#src/env-set/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
 import { type QuotaLibrary } from '#src/libraries/quota.js';
 import koaGuard from '#src/middleware/koa-guard.js';
@@ -15,6 +22,7 @@ import { buildExtraInfo } from '#src/utils/connectors/extra-information.js';
 import { loadConnectorFactories, transpileLogtoConnector } from '#src/utils/connectors/index.js';
 import { checkSocialConnectorTargetAndPlatformUniqueness } from '#src/utils/connectors/platform.js';
 
+import { captureEvent } from '../../utils/posthog.js';
 import type { ManagementApiRouter, RouterInitArgs } from '../types.js';
 
 import connectorAuthorizationUriRoutes from './authorization-uri.js';
@@ -31,6 +39,10 @@ const guardConnectorsQuota = async (
 };
 
 const passwordlessConnector = new Set([ConnectorType.Email, ConnectorType.Sms]);
+const pickFactoryProperties = <T extends ConnectorFactory<typeof router>>(factory: T) => ({
+  type: factory.type,
+  name: factory.metadata.name.en,
+});
 
 export default function connectorRoutes<T extends ManagementApiRouter>(
   ...[router, tenant]: RouterInitArgs<T>
@@ -59,6 +71,7 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
           connectorId: true,
           metadata: true,
           syncProfile: true,
+          enableTokenStorage: true,
         })
         /* 
           Currently the id can not be locked until the connector is successfully created.
@@ -70,9 +83,10 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
       response: connectorResponseGuard,
       status: [200, 400, 403, 422],
     }),
+    // eslint-disable-next-line complexity
     async (ctx, next) => {
       const {
-        body: { id: proposedId, connectorId, metadata, config, syncProfile },
+        body: { id: proposedId, connectorId, metadata, config, syncProfile, enableTokenStorage },
       } = ctx.guard;
 
       const connectorFactories = await loadConnectorFactories();
@@ -134,12 +148,31 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
         validateConfig(config, connectorFactory.configGuard);
       }
 
+      if (enableTokenStorage) {
+        assertThat(
+          EnvSet.values.secretVaultKek,
+          new RequestError({
+            code: 'request.feature_not_supported',
+            status: 422,
+          })
+        );
+
+        assertThat(
+          connectorFactory.type === ConnectorType.Social &&
+            connectorFactory.metadata.isTokenStorageSupported,
+          new RequestError({
+            code: 'connector.token_storage_not_supported',
+            status: 422,
+          })
+        );
+      }
+
       const insertConnectorId = proposedId ?? generateStandardShortId();
 
       await insertConnector({
         id: insertConnectorId,
         connectorId,
-        ...cleanDeep({ syncProfile, config, metadata }),
+        ...cleanDeep({ syncProfile, config, metadata, enableTokenStorage }),
       });
 
       /**
@@ -159,6 +192,18 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
         if (conflictingConnectorIds.length > 0) {
           await deleteConnectorByIds(conflictingConnectorIds);
         }
+
+        captureEvent(
+          { tenantId: tenant.id, request: ctx.req },
+          ProductEvent.PasswordlessConnectorUpdated,
+          pickFactoryProperties(connectorFactory)
+        );
+      } else {
+        captureEvent(
+          { tenantId: tenant.id, request: ctx.req },
+          ProductEvent.SocialConnectorCreated,
+          pickFactoryProperties(connectorFactory)
+        );
       }
 
       const connector = await getLogtoConnectorById(insertConnectorId);
@@ -233,15 +278,16 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
     koaGuard({
       params: object({ id: string().min(1) }),
       body: Connectors.createGuard
-        .pick({ config: true, metadata: true, syncProfile: true })
+        .pick({ config: true, metadata: true, syncProfile: true, enableTokenStorage: true })
         .partial(),
       response: connectorResponseGuard,
       status: [200, 400, 404, 422],
     }),
+    // eslint-disable-next-line complexity
     async (ctx, next) => {
       const {
         params: { id },
-        body: { config, metadata, syncProfile },
+        body: { config, metadata, syncProfile, enableTokenStorage },
       } = ctx.guard;
 
       const { type, validateConfig, metadata: originalMetadata } = await getLogtoConnectorById(id);
@@ -268,8 +314,35 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
         );
       }
 
+      if (enableTokenStorage) {
+        assertThat(
+          EnvSet.values.secretVaultKek,
+          new RequestError({
+            code: 'request.feature_not_supported',
+            status: 422,
+          })
+        );
+
+        assertThat(
+          type === ConnectorType.Social && originalMetadata.isTokenStorageSupported,
+          new RequestError({
+            code: 'connector.token_storage_not_supported',
+            status: 422,
+          })
+        );
+      }
+
       if (config) {
         validateConfig(config);
+      }
+
+      if (
+        type === ConnectorType.Social &&
+        originalMetadata.isTokenStorageSupported &&
+        enableTokenStorage === false
+      ) {
+        // Delete all stored tokens when disabling token storage.
+        await tenant.queries.secrets.deleteTokenSetSecretsBySocialConnectorId(id);
       }
 
       await updateConnector({
@@ -283,10 +356,12 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
           config: conditional(config && (cleanDeep(config) as JsonObject)),
           metadata: conditional(metadata && cleanDeep(metadata)),
           syncProfile,
+          enableTokenStorage,
         },
         where: { id },
         jsonbMode: 'replace',
       });
+
       const connector = await getLogtoConnectorById(id);
       ctx.body = await transpileLogtoConnector(connector, buildExtraInfo(connector.metadata));
 
@@ -295,6 +370,7 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
   );
 
   router.delete(
+    // eslint-disable-next-line max-lines -- refactor later
     '/connectors/:id',
     koaGuard({ params: object({ id: string().min(1) }), status: [204, 404] }),
     async (ctx, next) => {
@@ -313,6 +389,11 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
 
       if (connectorFactory?.type === ConnectorType.Social) {
         await removeUnavailableSocialConnectorTargets();
+        captureEvent(
+          { tenantId: tenant.id, request: ctx.req },
+          ProductEvent.SocialConnectorDeleted,
+          pickFactoryProperties(connectorFactory)
+        );
       }
 
       ctx.status = 204;

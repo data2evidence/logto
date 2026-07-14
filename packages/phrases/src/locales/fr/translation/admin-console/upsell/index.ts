@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'Mettre à niveau le plan',
   compare_plans: 'Comparer les plans',
+  try_with_product_name: 'Essayez {{productName}} maintenant',
   view_plans: 'Voir les plans',
   create_tenant: {
     title: 'Sélectionnez votre plan pour le locataire',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'Mettre à jour le plan',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: "L'utilisation de jetons a dépassé la limite. Mettez à niveau votre plan.",
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      "Vous avez dépassé la limite d'utilisation des jetons de <planName/>. Les utilisateurs ne pourront pas accéder correctement au service Logto. Veuillez mettre à niveau votre plan vers la version premium rapidement pour éviter tout inconvénient.",
   },
   payment_overdue_modal: {
     title: 'Paiement de facture en retard',
@@ -50,6 +49,25 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'Vous allez changer votre locataire de développement en locataire de production',
+    description:
+      'Prêt à passer en ligne ? Convertir ce locataire dev en locataire de production débloquera toutes les fonctionnalités',
+    benefits: {
+      stable_environment:
+        'Pour les utilisateurs finaux : Un environnement stable pour un usage réel.',
+      keep_pro_features:
+        'Conservez les fonctionnalités Pro : vous allez vous abonner au plan Pro. <a>Voir les fonctionnalités Pro.</a>',
+      no_dev_restrictions:
+        "Pas de restrictions de développement : Supprime les limites du système d'entité et de ressource et la bannière de connexion.",
+    },
+    cards: {
+      dev_description: 'À des fins de test',
+      prod_description: 'Production réelle',
+      convert_label: 'convertir',
+    },
+    button: 'Convertir en locataire de production',
+  },
 };
 
 export default Object.freeze(upsell);

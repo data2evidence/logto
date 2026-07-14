@@ -68,6 +68,12 @@ const user_details = {
     deletion_confirmation:
       '기존의 2단계 인증에서 <name/>을(를) 제거하고 있습니다. 계속 진행하시겠습니까?',
   },
+  passkey: {
+    field_name: '패스키',
+    field_description_empty: '이 사용자는 패스키 로그인을 활성화하지 않았습니다.',
+    deletion_confirmation:
+      '패스키 로그인에 대해 기존의 <name/>을(를) 제거하고 있습니다. 계속 진행하시겠습니까?',
+  },
   suspended: '정지됨',
   suspend_user: '사용자 정지',
   suspend_user_reminder:
@@ -105,7 +111,7 @@ const user_details = {
     title_short: '토큰',
     empty: '사용자에게 개인 액세스 토큰이 없습니다.',
     create: '새로운 토큰 생성',
-    tip: '개인 액세스 토큰(PAT)은 사용자가 자격 증명과 상호작용 로그인을 사용하지 않고 액세스 토큰을 부여할 수 있는 안전한 방법을 제공합니다. 이는 CI/CD, 스크립트 또는 프로그램으로 리소스에 접근해야 하는 애플리케이션에 유용합니다. <a>자세히 알아보기</a>',
+    tip: '개인 액세스 토큰(PAT)은 사용자가 자격 증명과 상호작용 로그인을 사용하지 않고 액세스 토큰을 부여할 수 있는 안전한 방법을 제공합니다. 이는 CI/CD, 스크립트 또는 프로그램으로 리소스에 접근해야 하는 애플리케이션에 유용합니다.',
     value: '값',
     created_at: '생성 시각',
     expires_at: '만료 시각',
@@ -127,6 +133,55 @@ const user_details = {
     edit_modal: {
       title: '개인 액세스 토큰 편집',
       edited: '토큰 {{name}}이/가 성공적으로 편집되었습니다.',
+    },
+  },
+  sessions: {
+    title: '세션',
+    description:
+      'Logto 인증 서버에 의해 유지되는 세션을 관리합니다. 여기서 Logto 세션을 해지하면 자동 동의가 미래의 인증 요청에서 방지됩니다.',
+    field_name: '세션',
+    multiple_signed_in: '이 사용자는 여러 기기나 브라우저에 로그인했습니다.',
+    not_found:
+      '활성 Logto 세션을 찾을 수 없습니다. 사용자가 현재 어떤 장치에서도 로그인되어 있지 않습니다.',
+    name_column: '이름',
+    session_id_column: '세션 ID',
+    location_column: '위치',
+    browser_on_os: '{{os}}의 {{browser}}',
+    user: '사용자',
+    applications: '애플리케이션',
+    signed_in_at: '마지막 로그인',
+    ip: 'IP',
+    browser_name: '브라우저 이름',
+    os_name: 'OS 이름',
+    device_model: '기기 모델',
+    revoke_session: '세션 해지',
+    revoke_session_confirmation: '이 세션을 제거하면 사용자는 다시 인증해야 합니다.',
+  },
+  third_party_apps: {
+    title: '서드파티 앱',
+    description:
+      'Logto를 ID 공급자로 사용해 서드파티 앱을 승인할 수 있습니다. 이 사용자가 접근 권한을 부여한 앱을 확인하고 관리하세요.',
+    field_name: '승인된 서드파티 앱',
+    multiple_authorized: '이 사용자는 여러 서드파티 앱 및 서비스를 승인했습니다.',
+    not_authorized: '이 사용자는 아직 어떤 서드파티 앱이나 서비스도 승인하지 않았습니다.',
+    name_column: '이름',
+    app_id_column: '앱 ID',
+    access_created_at_column: '접근 권한 부여 시각',
+    revoke_access_title: '접근 권한을 취소하시겠습니까?',
+    revoke_access_description:
+      '이 작업은 모든 기기에서 이 사용자의 계정에 대한 앱 접근 권한을 취소합니다. 접근 권한을 복구하려면 사용자가 다시 승인해야 합니다.',
+  },
+  connections: {
+    title: '연결',
+    description: '사용자는 소셜 로그인, 기업 SSO 또는 리소스 접근을 위해 타사 계정을 연결합니다.',
+    token_status_column: '토큰 상태',
+    token_status: {
+      active: '활성화',
+      expired: '만료됨',
+      inactive: '비활성화',
+      not_applicable: '해당 없음',
+      available: '사용 가능',
+      not_available: '사용 불가능',
     },
   },
 };

@@ -1,5 +1,425 @@
 # Change Log
 
+## 1.19.2
+
+### Patch Changes
+
+- 346816a350: fix: require terms agreement when the sign-in flow turns into a registration
+
+  When the agreement policy is `ManualRegistrationOnly` ("Require checkbox agreement on registration only"), signing in with an unregistered email or phone and then confirming "create a new account" used to create the account without ever asking the user to agree to the terms. The terms agreement is now prompted before the account is created on this path, matching the dedicated registration form and the social/SSO registration flows.
+
+## 1.19.1
+
+### Patch Changes
+
+- cc9857d073: fix: add localStorage fallback for social/SSO redirect state in in-app browsers
+
+  Some in-app browsers (e.g., Instagram, Facebook, LINE) open OAuth IdP pages in a new WebView, causing sessionStorage to be lost when redirecting back. This change adds a localStorage-based fallback mechanism:
+
+  - Before redirecting to the IdP, continue storing state in sessionStorage and also store a fallback redirect context bundle (state, verificationId, connectorId) in localStorage
+  - On callback, if sessionStorage state is missing, attempt to restore from localStorage
+  - localStorage entries are consumed on read and auto-swept after 10 minutes
+  - If both storages are empty, show an error toast to the user
+
+## 1.19.0
+
+### Minor Changes
+
+- 7cee48bd97: support OAuth 2.0 Device Authorization Grant (device flow)
+
+  Device flow lets users sign in on input-limited devices such as smart TVs, CLI tools, IoT gadgets, and gaming consoles by completing authentication on a separate device like a phone or laptop.
+
+  How it works:
+
+  1. The device displays a short user code and a verification URL.
+  2. The user opens the URL on another device, enters the code, and signs in.
+  3. Once approved, the original device receives tokens and completes authentication.
+
+  To create a device flow application in Console:
+
+  - Select "Input-limited app / CLI" under the Native framework list, or
+  - Create an app without framework, then choose "Device flow" as the authorization flow, or
+  - Create a third-party Native app, then choose "Device flow" as the authorization flow.
+
+  The application settings page shows a device-flow-specific guide and a built-in demo you can try immediately.
+
+- a023a97c7c: add a new MFA onboarding page for users to explicitly enable optional MFA
+
+  For users who are not required to set up MFA, we added a new page after credential verification in the sign-in flow to explicitly ask whether they want to enable optional MFA for better account security.
+
+  This is especially important when the passkey sign-in feature is available, since passkeys can be used for both sign-in and MFA verification, and users who set up a passkey for sign-in might not want to enable it as an MFA factor at the same time.
+
+- a023a97c7c: support passkey sign-in authentication method
+
+  ### Summary
+
+  Passkey sign-in provides a faster, passwordless sign-in experience that reduces friction for end users and helps improve account security. It removes repeated password entry for returning users, works with platform authenticators users already trust (for example Face ID, Touch ID, Windows Hello), and offers a smoother path from account creation to subsequent sign-ins.
+
+  #### Bind passkey for sign-in
+
+  After passkey sign-in is enabled, new users are prompted to bind a passkey during registration. Existing users who have not bound a passkey (WebAuthn) factor yet can be guided to bind one in a later sign-in flow. If a user already has a WebAuthn credential from MFA setup, that credential can be reused directly for passkey sign-in without requiring another registration step.
+
+  #### Various sign-in flows to support different user journeys and preferences
+
+  1. **Passkey sign-in button**: When **Show passkey sign-in button** is enabled, users can click **Continue with passkey** on the sign-in page to immediately trigger the browser passkey chooser and complete sign-in.
+  2. **Identifier-first flow (button hidden)**: When **Show passkey sign-in button** is disabled, sign-in follows an identifier-first flow. Users first enter an identifier (for example email or username) on the first screen. On the next step, the flow prioritizes passkey and prompts users to **Verify via passkey** before falling back to password or verification code when needed.
+  3. **Allow autofill**: When **Allow autofill** is enabled, supported browsers can show passkey suggestions directly from the identifier input on the sign-in page. Users can select a previously saved passkey from the autofill popup and sign in with minimal extra input.
+
+  Check out our [documentation](https://docs.logto.io/end-user-flows/sign-up-and-sign-in/passkey-sign-in) for more details.
+
+## 1.18.2
+
+### Patch Changes
+
+- 3c47f4f947: fix broken social link flow when username and email are both enabled as required sign-up identifiers and social IdP returns no verified email.
+
+  Repro:
+
+  - enable username+email as required sign-up identifiers;
+  - enable “require users to provide missing sign-up identifiers for social sign-in”;
+  - sign in with a new social identity lacking verified email;
+  - create new account, fulfill required username, then fulfill required email with an address already registered.
+
+  Expected: show a link-and-sign-in modal and link the new social identity to the existing email account when the user clicks the `Link` button.
+
+  Actual: the `link_social` state is lost. Users are prompted with a simple email-exists confirmation modal instead. Clicking the `Sign In` button performs a normal sign-in flow without linking the social identity.
+
+  Root cause: `link_social` query parameter wasn’t propagated after username fulfillment, so the email verification step lost linking context.
+
+  Fix: generate and append `link_social` during username fulfillment so it carries through to email verification and preserves the linking flow.
+
+## 1.18.1
+
+### Patch Changes
+
+- fce241ad25: prevent repeated auto sign-in requests on direct sign-in page
+
+  In certain scenarios, the direct sign-in page may trigger repeated auto sign-in attempts due to re-renders, resulting in unexpected behavior.
+
+  For example, an extra social authentication request can be triggered when a user clicks the Terms of Service link on a social direct sign-in page with manual Terms of Service enforcement enabled. This can cause social authentication to fail.
+
+  This update ensures that the auto sign-in logic runs only once when the component mounts, preventing multiple redirects and improving the overall user experience.
+
+- a4093a4aed: fix enterprise sso account not exist error code
+
+  Fixes the enterprise SSO account not exist error code to use a specific one instead of the generic social account one.
+
+## 1.18.0
+
+### Minor Changes
+
+- 116dcf5e7d: support reCaptcha domain customization
+
+  You can now customize the domain for reCaptcha, for example, using reCaptcha with `recaptcha.net` domain.
+
+- 116dcf5e7d: support reCAPTCHA Enterprise checkbox mode
+
+  You can now choose between two verification modes for reCAPTCHA Enterprise:
+
+  - **Invisible**: Score-based verification that runs automatically in the background (default)
+  - **Checkbox**: Displays the "I'm not a robot" widget for user interaction
+
+  Note: The verification mode must match your reCAPTCHA key type configured in Google Cloud Console.
+
+## 1.17.0
+
+### Minor Changes
+
+- 08f887c448: support cross-app authentication callbacks within the same browser session
+
+  When multiple applications are initiating authentication requests within the same browser session,
+  authentication callbacks may interfere with each other due to the shared `_interaction` cookie.
+
+  To resolve this, we now change the cookie from a plain UID string to a structured mapping object
+  `{ [app_id]: interaction_uid }`, and maintain the `app_id` in either the URL search parameters or HTTP
+  headers for all authentication-related requests and redirects. This ensures that each application can
+  correctly identify its own authentication context without interference from others.
+
+  The fallback mechanism is also implemented to ensure backward compatibility.
+
+## 1.16.1
+
+### Patch Changes
+
+- 3ed4d0a91e: fix an issue that prevents Logto Experience from working in Android 11 and some older browser versions
+
+  The issue is introduced in version 1.32.0 by the usage of the `||=` operator, which is not supported in some older browsers (#7857).
+
+- 568db900bb: fix the country code dropdown menu position on desktop.
+
+  - fix initial position calculation by waiting for the parent input field element to be well rendered
+  - add a max dropdown menu top position to prevent it from going off the screen on a small screen
+
+## 1.16.0
+
+### Minor Changes
+
+- ad4f9d6abf: add support to the OIDC standard authentication parameter `ui_locales`
+
+  We are now supporting the standard OIDC `ui_locales` auth parameter to customize the language of the authentication pages. You can pass the `ui_locales` parameter in the `signIn` method via the `extraParams` option in all Logto SDKs.
+
+  ### What it does
+
+  - Determines the UI language of the Logto-hosted sign-in experience at runtime. Logto picks the first language tag in `ui_locales` that is supported in your tenant's language library.
+  - Affects email localization for messages triggered by the interaction (e.g., verification code emails).
+  - Exposes the original value to email templates as a variable `uiLocales`, allowing you to include it in the email subject/content if needed.
+
+  ### Example
+
+  If you want to display the sign-in page in French (Canada), you can do it like this:
+
+  ```ts
+  await logtoClient.signIn({
+    redirectUri: "https://your.app/callback",
+    extraParams: {
+      ui_locales: "fr-CA fr en",
+    },
+  });
+  ```
+
+  Refer to the [documentation](https://docs.logto.io/end-user-flows/authentication-parameters/ui-locales) for more details.
+
+- 1fb8593659: add email/phone MFA via verification codes
+
+  Summary
+
+  - Add two new MFA factors: Email verification code and SMS (phone) verification code.
+  - Support binding these factors during registration or first sign-in when MFA is required.
+  - Support verifying these factors on subsequent sign-ins with dedicated MFA verification pages.
+  - Update Console to configure these factors and surface guidance/conflict warnings.
+  - Support customizing forgot password methods in Sign-in Experience (related).
+
+  To learn more about this feature, please refer to the documentation: https://docs.logto.io/end-user-flows/mfa
+
+### Patch Changes
+
+- 147f257503: fix a bug that prevents terms agreement dialog from working properly when using magic link authentication
+
+## 1.15.0
+
+### Minor Changes
+
+- bb385eb15d: add a new feature for collecting user profile on new user registration
+
+  You can now collect user profile information on the last step of your registration flow.
+
+  ### Getting started
+
+  1. In Console: `Sign-in Experience > Collect user profile`. Add your profile fields:
+
+     - Use built-in basics (Name, Gender, Birthdate, Address, …); or
+     - Create custom fields (choose type, label, validation rules, required, etc.).
+
+  2. Drag & drop to reorder fields in the list; the order reflects in the form.
+  3. Test by signing up a new user in the demo app; a "Tell us about yourself" step will appear with your fields.
+  4. Registration completes only after all required fields are filled.
+
+  Check out our [docs](https://docs.logto.io/end-user-flows/collect-user-profile) for more details.
+
+## 1.14.0
+
+### Minor Changes
+
+- 35bbc4399: add phone number validation and parsing to ensure the correct format when updating an existing user’s primary phone number or creating a new user with a phone number
+
+### Patch Changes
+
+- c1dfbfdd2: add CAPTCHA box to identifier sign in form
+
+## 1.13.0
+
+### Minor Changes
+
+- 6fafcefef: add one-time token verification method to support magic link authentication
+
+  You can now use the "one-time token" to compose magic links, and send them to the end user's email.
+  With a magic link, one can register a new account or sign in directly to the application, without the need to enter a password, or input verification codes.
+
+  You can also use magic link to invite users to your organizations.
+
+  ### Example API request to create a one-time token
+
+  ```bash
+  POST /api/one-time-tokens
+  ```
+
+  Request payload:
+
+  ```jsonc
+  {
+    "email": "user@example.com",
+    // Optional. Defaults to 600 (10 mins).
+    "expiresIn": 3600,
+    // Optional. User will be provisioned to the specified organizations upon successful verification.
+    "context": {
+      "jitOrganizationIds": ["your-org-id"],
+    },
+  }
+  ```
+
+  ### Compose your magic link
+
+  After you get the one-time token, you can compose a magic link and send it to the end user's email address. The magic link should at least contain the token and the user email as parameters, and should navigate to a landing page in your own application. E.g. `https://yourapp.com/landing-page`.
+
+  Here's a simple example of what the magic link may look like:
+
+  ```http
+  https://yourapp.com/landing-page?token=YHwbXSXxQfL02IoxFqr1hGvkB13uTqcd&email=user@example.com
+  ```
+
+  Refer to [our docs](https://docs.logto.io/docs/end-user-flows/one-time-token) for more details.
+
+- 2961d355d: bump node version to ^22.14.0
+- 0a76f3389: add captcha bot protection
+
+  You can now enable CAPTCHA bot protection for your sign-in experience with providers like Google reCAPTCHA enterprise and Cloudflare Turnstile.
+
+  To enable CAPTCHA bot protection, you need to:
+
+  1. Go to Console > Security > CAPTCHA > Bot protection.
+  2. Select the CAPTCHA provider you want to use.
+  3. Configure the CAPTCHA provider.
+  4. Save the settings.
+  5. Enable CAPTCHA in the Security page.
+
+  Then take a preview of your sign-in experience to see the CAPTCHA in action.
+
+## 1.12.0
+
+### Minor Changes
+
+- 13d04d776: feat: support multiple sign-up identifiers in sign-in experience
+
+  ## New update
+
+  Introduces a new optional field, `secondaryIdentifiers`, to the sign-in experience sign-up settings. This enhancement allows developers to specify multiple required user identifiers during the user sign-up process. Available options include `email`, `phone`, `username` and `emailOrPhone`.
+
+  ### Explanation of the difference between `signUp.identifiers` and new `signUp.secondaryIdentifiers`
+
+  The existing `signUp.identifiers` field represents the sign-up identifiers enabled for user sign-up and is an array type. In this legacy setup, if multiple identifiers are provided, users can complete the sign-up process using any one of them. The only multi-value case allowed is `[email, phone]`, which signifies that users can provide either an email or a phone number.
+
+  To enhance flexibility and support multiple required sign-up identifiers, the existing `signUp.identifiers` field does not suffice. To maintain backward compatibility with existing data, we have introduced this new `secondaryIdentifiers` field.
+
+  Unlike the `signUp.identifiers` field, the `signUp.secondaryIdentifiers` array follows an `AND` logic, meaning that all elements listed in this field are required during the sign-up process, in addition to the primary identifiers. This new field also accommodates the `emailOrPhone` case by defining an exclusive `emailOrPhone` value type, which indicates that either a phone number or an email address must be provided.
+
+  In summary, while `identifiers` allows for optional selection among email and phone, `secondaryIdentifiers` enforces mandatory inclusion of all specified identifiers.
+
+  ### Examples
+
+  1. `username` as the primary identifier. In addition, user will be required to provide a verified `email` and `phone number` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["username"],
+    "secondaryIdentifiers": [
+      {
+        "type": "email",
+        "verify": true
+      },
+      {
+        "type": "phone",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": true
+  }
+  ```
+
+  2. `username` as the primary identifier. In addition, user will be required to provide either a verified `email` or `phone number` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["username"],
+    "secondaryIdentifiers": [
+      {
+        "type": "emailOrPhone",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": true
+  }
+  ```
+
+  3. `email` or `phone number` as the primary identifier. In addition, user will be required to provide a `username` during the sign-up process.
+
+  ```json
+  {
+    "identifiers": ["email", "phone"],
+    "secondaryIdentifiers": [
+      {
+        "type": "username",
+        "verify": true
+      }
+    ],
+    "verify": true,
+    "password": false
+  }
+  ```
+
+  ### Sign-in experience settings
+
+  - `@logto/core`: Update the `/api/sign-in-experience` endpoint to support the new `secondaryIdentifiers` field in the sign-up settings.
+  - `@logto/console`: Replace the sign-up identifier single selector with a multi-selector to support multiple sign-up identifiers. The order of the identifiers can be rearranged by dragging and dropping the items in the list. The first item in the list will be considered the primary identifier and stored in the `signUp.identifiers` field, while the rest will be stored in the `signUp.secondaryIdentifiers` field.
+
+  ### End-user experience
+
+  The sign-up flow is now split into two stages:
+
+  - Primary identifiers (`signUp.identifiers`) are collected in the first-screen registration screen.
+  - Secondary identifiers (`signUp.secondaryIdentifiers`) are requested in subsequent steps after the primary registration has been submitted.
+
+  ## Other refactors
+
+  We have fully decoupled the sign-up identifier settings from the sign-in methods. Developers can now require as many user identifiers as needed during the sign-up process without impacting the sign-in process.
+
+  The following restrictions on sign-in and sign-up settings have been removed:
+
+  1. Password requirement is now optional when `username` is configured as a sign-up identifier. However, users without passwords cannot sign in using username authentication.
+  2. Removed the constraint requiring sign-up identifiers to be enabled as sign-in methods.
+  3. Removed the requirement for password verification across all sign-in methods when password is enabled for sign-up.
+
+## 1.11.2
+
+### Patch Changes
+
+- 28643c1f1: fix the email/phone identifier conflict handling logic during user registration.
+
+  When a user attempts to register with an email/phone that already exists:
+
+  ### Previous Behavior
+
+  "Sign in instead" modal will be shown when:
+
+  - The email/phone identifier has been verified through a verification code validation
+  - Identifier type (email/phone) was enabled in sign-in methods
+
+  This caused an issue when:
+
+  - Only password authentication method was enabled in the sign-in method settings.
+  - When users clicked "Sign in instead" action button, the API call will throw an sign-in method not enabled error. Which is confusing for the user.
+
+  Expected behavior: Show the "Email/phone already exists" error modal directly. If only password authentication is enabled. User should not be able to sign in with email/phone directly.
+
+  ### Fixed Behavior
+
+  Shows the "Sign in instead" modal if:
+
+  - The email/phone identifier type is enabled in the sign-in method settings and the verification code is enabled for the identifier.
+
+  Otherwise, shows the "Email/phone already exists" error modal directly.
+
+- bd18da4cf: properly filter WeChat connectors by platform (Web | Native) in SSR sign-in experience settings
+
+  Previously, platform-based social connector filtering was applied during the sign-in experience settings fetch process but not in the SSR sign-in experience data. As a result, platform-specific connectors were not correctly filtered when rendering the page using SSR data.
+
+  This update ensures that the same filtering logic is applied to SSR sign-in experience data, resolving the issue.
+
+  Affected connectors: WeChat Web and WeChat Native.
+
+- e11e57de8: bump dependencies for security update
+
 ## 1.11.1
 
 ### Patch Changes

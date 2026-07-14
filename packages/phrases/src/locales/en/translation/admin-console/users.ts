@@ -2,7 +2,7 @@ const users = {
   page_title: 'User management',
   title: 'User management',
   subtitle:
-    'Manage user identities including creating users, editing user information, viewing user logs, password resets and deleting users',
+    'Manage user identities including creating users, editing user information, viewing user logs, password resets and deleting users.',
   create: 'Add user',
   create_subtitle: 'Provide at least one of the following fields to proceed.',
   error_missing_identifier: 'You must provide at least one identifier to create a user.',
@@ -22,6 +22,8 @@ const users = {
   placeholder_title: 'User management',
   placeholder_description:
     'Each user has a profile containing all user information. It consists of basic data, social identities, and custom data.',
+  dev_tenant_data_retention_notice:
+    'In dev tenants, user accounts older than 90 days are automatically deleted. <a>Learn more</a>',
 };
 
 export default Object.freeze(users);

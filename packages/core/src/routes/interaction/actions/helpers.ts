@@ -1,15 +1,10 @@
-import { defaults, parseAffiliateData } from '@logto/affiliate';
-import { adminTenantId, type CreateUser, type User } from '@logto/schemas';
-import { conditional, trySafe } from '@silverhand/essentials';
-import { type IRouterContext } from 'koa-router';
+import { type CreateUser, type User } from '@logto/schemas';
+import { conditional } from '@silverhand/essentials';
 
-import { EnvSet } from '#src/env-set/index.js';
-import { type CloudConnectionLibrary } from '#src/libraries/cloud-connection.js';
 import { type ConnectorLibrary } from '#src/libraries/connector.js';
 import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import type Queries from '#src/tenants/Queries.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
-import { getConsoleLogFromContext } from '#src/utils/console.js';
 import { type OmitAutoSetFields } from '#src/utils/sql.js';
 
 import {
@@ -53,7 +48,7 @@ const getSocialSyncProfile = async (
 
 /* Parse the user profile from the new linked Social identity */
 const parseNewSocialProfile = async (
-  { users: { hasUserWithEmail, hasUserWithPhone } }: Queries,
+  { users: { hasUserWithEmail, hasUserWithNormalizedPhone } }: Queries,
   { getLogtoConnectorById }: ConnectorLibrary,
   socialIdentifier: SocialIdentifier,
   user?: User
@@ -78,7 +73,9 @@ const parseNewSocialProfile = async (
       // Sync the email only if the email is not used by other users
       ...conditional(email && !(await hasUserWithEmail(email)) && { primaryEmail: email }),
       // Sync the phone only if the phone is not used by other users
-      ...conditional(phone && !(await hasUserWithPhone(phone)) && { primaryPhone: phone }),
+      ...conditional(
+        phone && !(await hasUserWithNormalizedPhone(phone)) && { primaryPhone: phone }
+      ),
     };
   }
 
@@ -124,30 +121,6 @@ export const parseUserProfile = async (
     ...conditional(user && (await getSocialSyncProfile(connectors, authIdentifiers))),
     lastSignInAt: Date.now(),
   };
-};
-
-/* Post affiliate data to the cloud service. */
-export const postAffiliateLogs = async (
-  ctx: IRouterContext,
-  cloudConnection: CloudConnectionLibrary,
-  userId: string,
-  tenantId: string
-) => {
-  if (!EnvSet.values.isCloud || tenantId !== adminTenantId) {
-    return;
-  }
-
-  const affiliateData = trySafe(() =>
-    parseAffiliateData(JSON.parse(decodeURIComponent(ctx.cookies.get(defaults.cookieName) ?? '')))
-  );
-
-  if (affiliateData) {
-    const client = await cloudConnection.getClient();
-    await client.post('/api/affiliate-logs', {
-      body: { userId, ...affiliateData },
-    });
-    getConsoleLogFromContext(ctx).info('Affiliate logs posted', userId);
-  }
 };
 
 /* Verify if user has updated profile */

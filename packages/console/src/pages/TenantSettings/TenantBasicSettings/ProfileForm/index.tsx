@@ -1,3 +1,4 @@
+import { ReservedPlanId } from '@logto/schemas';
 import { useFormContext } from 'react-hook-form';
 
 import FormCard from '@/components/FormCard';
@@ -8,7 +9,9 @@ import useCurrentTenantScopes from '@/hooks/use-current-tenant-scopes';
 
 import { type TenantSettingsForm } from '../types.js';
 
+import EnterpriseSso from './EnterpriseSso/index.js';
 import TenantEnvironment from './TenantEnvironment/index.js';
+import TenantMfa, { useTenantMfaFeature } from './TenantMfa/index.js';
 import TenantRegion from './TenantRegion/index.js';
 
 type Props = {
@@ -24,6 +27,7 @@ function ProfileForm({ currentTenantId }: Props) {
     formState: { errors },
     getValues,
   } = useFormContext<TenantSettingsForm>();
+  const { shouldShowPaywallTag } = useTenantMfaFeature();
 
   return (
     <FormCard title="tenants.settings.title" description="tenants.settings.description">
@@ -42,6 +46,20 @@ function ProfileForm({ currentTenantId }: Props) {
       </FormField>
       <FormField title="tenants.settings.tenant_type">
         <TenantEnvironment tag={getValues('profile.tag')} />
+      </FormField>
+      {canManageTenant && (
+        <FormField
+          title="tenants.settings.tenant_mfa"
+          featureTag={{
+            isVisible: shouldShowPaywallTag,
+            plan: ReservedPlanId.Pro,
+          }}
+        >
+          <TenantMfa />
+        </FormField>
+      )}
+      <FormField title="tenants.settings.enterprise_sso">
+        <EnterpriseSso />
       </FormField>
     </FormCard>
   );

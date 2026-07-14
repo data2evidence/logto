@@ -1,30 +1,48 @@
 const tenants = {
   title: '設定',
   description: 'テナントの設定を効率的に管理し、ドメインをカスタマイズします。',
+  oss_description:
+    'こちらでアカウント設定を変更し、個人情報を管理して、アカウントの安全性を確保してください。',
   tabs: {
     settings: '設定',
     members: 'メンバー',
     domains: 'ドメイン',
+    oidc_configs: 'OIDC 設定',
     subscription: 'プランと請求',
     billing_history: '請求履歴',
+  },
+  members: {
+    card_title: 'Logto Cloud でテナントをより安全に管理',
+    card_description:
+      '1つの管理者アカウントを共有せずに、テナントに管理者やコラボレーターを追加できます。',
+    card_action: 'Logto Cloud を見る',
   },
   settings: {
     title: '設定',
     description: 'テナント名を設定し、ホストされているデータの地域とテナントタイプを表示します。',
     tenant_id: 'テナントID',
     tenant_name: 'テナント名',
+    tenant_instance: 'インスタンスを選択してください',
+    tenant_instance_description:
+      'テナントをホストする場所を選択してください。パブリック共有インフラストラクチャの Logto Cloud を選択するか、専用リソース用のプライベートインスタンスを選択します。',
     tenant_region: 'データがホストされている地域',
     tenant_region_description:
       'テナントリソース（ユーザー、アプリなど）がホストされている物理的な場所です。作成後に変更することはできません。',
-    tenant_region_tip: 'テナントのリソースは{{region}}にホストされています。 <a>詳細</a>',
+    tenant_region_tip: 'テナントのリソースは {{region}} にホストされています。 <a>詳細</a>',
     environment_tag_development: '開発',
     environment_tag_production: '本番',
     tenant_type: 'テナントタイプ',
     development_description:
-      'テスト用であり、本番で使用すべきではありません。サブスクリプションは必要ありません。すべてのプロの機能がありますが、サインインバナーなどの制限があります。<a>詳細</a>',
+      'テスト用であり、本番で使用すべきではありません。サブスクリプションは必要ありません。すべてのプロの機能がありますが、サインインバナーなどの制限があります。',
     production_description:
-      'エンドユーザーに使用することを意図しており、有料のサブスクリプションが必要なアプリ向け。<a>詳細</a>',
+      'エンドユーザーに使用することを意図しており、有料のサブスクリプションが必要なアプリ向け。',
     tenant_info_saved: 'テナント情報は正常に保存されました。',
+    tenant_mfa: '多要素認証',
+    tenant_mfa_description:
+      'メンバーがこのテナントにアクセスするために多要素認証を設定することを要求します。',
+    enterprise_sso: 'エンタープライズ SSO',
+    enterprise_sso_description:
+      '有料プランで利用可能です。お問い合わせいただくと、すべてのメンバーが組織のアイデンティティプロバイダーを使用して Logto Cloud コンソールにサインインできるようになります。',
   },
   full_env_tag: {
     development: '開発',
@@ -48,9 +66,11 @@ const tenants = {
   create_modal: {
     title: 'テナントを作成する',
     subtitle: '隔離されたリソースとユーザーを持つ新しいテナントを作成します。',
+    tenant_id: 'テナントID',
     tenant_usage_purpose: 'このテナントを使用する目的は何ですか？',
     development_description:
       'テスト用であり、本番で使用すべきではありません。サブスクリプションは必要ありません。',
+    development_description_for_private_regions: 'テスト用であり、本番で使用すべきではありません。',
     development_hint: 'すべてのプロの機能がありますが、サインインバナーなどの制限があります。',
     production_description:
       'エンドユーザーに使用することを意図しており、有料のサブスクリプションが必要なアプリ向け。',
@@ -61,6 +81,11 @@ const tenants = {
     invitation_failed:
       '一部の招待を送信できませんでした。後で設定 -> メンバーで再試行してください。',
     tenant_type_description: '作成後に変更することはできません。',
+    tenant_id_invalid:
+      'テナントIDには小文字、数字、ハイフンのみ使用でき、{{max}}文字を超えることはできません。',
+    tenant_id_placeholder: 'テナントID',
+    tenant_id_tip:
+      'テナントIDをカスタマイズします。空のままにすると、Logtoがデフォルトのidを生成します。テナントIDは作成後に変更できません。',
   },
   dev_tenant_migration: {
     title: '新しい「開発テナント」を作成して、プロの機能を無料でお試しできます！',
@@ -97,8 +122,7 @@ const tenants = {
   },
   status: {
     mau_exceeded: 'MAUの制限を超えました',
-    /** UNTRANSLATED */
-    token_exceeded: 'Token exceeded',
+    token_exceeded: 'トークンを超えました',
     suspended: '一時停止中',
     overdue: '期限切れ',
   },

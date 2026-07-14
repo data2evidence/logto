@@ -79,9 +79,7 @@ const { triggerInteractionHooks, triggerTestHook, triggerDataHooks } = createHoo
   })
 );
 
-const { DataHookContextManager, InteractionHookContextManager } = await import(
-  './context-manager.js'
-);
+const { HookContextManager, InteractionHookContextManager } = await import('./context-manager.js');
 
 describe('triggerInteractionHooks()', () => {
   afterEach(() => {
@@ -97,11 +95,14 @@ describe('triggerInteractionHooks()', () => {
       sessionId: 'some_jti',
     });
 
-    interactionHookContext.assignInteractionHookResult({
+    interactionHookContext.assignReleaseOnSuccessInteractionHookResult({
       userId: '123',
     });
 
-    await triggerInteractionHooks(new ConsoleLog(), interactionHookContext);
+    await triggerInteractionHooks(
+      new ConsoleLog(),
+      interactionHookContext.getReleaseOnSuccessDispatchContext()
+    );
 
     expect(findAllHooks).toHaveBeenCalled();
     expect(findApplicationById).toHaveBeenCalledWith('some_client');
@@ -138,6 +139,114 @@ describe('triggerInteractionHooks()', () => {
     expect(calledPayload).toHaveProperty('payload.response.statusCode', 200);
     expect(calledPayload).toHaveProperty('payload.response.body.message', 'ok');
     jest.useRealTimers();
+  });
+
+  it('should trigger adaptive MFA interaction webhook without dropping post sign-in webhook', async () => {
+    const adaptiveMfaHook: Hook = {
+      ...hook,
+      id: 'adaptive-mfa-hook',
+      event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+      events: [InteractionHookEvent.PostSignInAdaptiveMfaTriggered],
+    };
+
+    findAllHooks.mockResolvedValueOnce([hook, adaptiveMfaHook, dataHook]);
+
+    const interactionHookContext = new InteractionHookContextManager({
+      interactionEvent: InteractionEvent.SignIn,
+      applicationId: 'some_client',
+      sessionId: 'some_jti',
+    });
+
+    interactionHookContext.assignReleaseAnywayInteractionHookResult({
+      event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+      payload: {
+        adaptiveMfaResult: {
+          requiresMfa: true,
+          triggeredRules: [{ rule: 'untrusted_ip' }],
+        },
+        event: InteractionHookEvent.PostRegister,
+        userId: 'override-user-id',
+        sessionId: 'override-session-id',
+      } as unknown as never,
+      userId: '123',
+    });
+    interactionHookContext.assignReleaseOnSuccessInteractionHookResult({
+      userId: '123',
+    });
+
+    await triggerInteractionHooks(new ConsoleLog(), {
+      metadata: interactionHookContext.metadata,
+      hookEvent: interactionHookContext.hookEvent,
+      interactionHookResults: interactionHookContext.interactionHookResults,
+    });
+
+    expect(sendWebhookRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hookConfig: adaptiveMfaHook.config,
+        payload: expect.objectContaining({
+          event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+          interactionEvent: InteractionEvent.SignIn,
+          adaptiveMfaResult: {
+            requiresMfa: true,
+            triggeredRules: [{ rule: 'untrusted_ip' }],
+          },
+        }) as unknown,
+      })
+    );
+
+    expect(sendWebhookRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hookConfig: hook.config,
+        payload: expect.objectContaining({
+          event: InteractionHookEvent.PostSignIn,
+          interactionEvent: InteractionEvent.SignIn,
+        }) as unknown,
+      })
+    );
+  });
+
+  it('should not allow custom payload to override reserved interaction fields', async () => {
+    const adaptiveMfaHook: Hook = {
+      ...hook,
+      id: 'adaptive-mfa-hook',
+      event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+      events: [InteractionHookEvent.PostSignInAdaptiveMfaTriggered],
+    };
+
+    findAllHooks.mockResolvedValueOnce([adaptiveMfaHook]);
+
+    const interactionHookContext = new InteractionHookContextManager({
+      interactionEvent: InteractionEvent.SignIn,
+      applicationId: 'some_client',
+      sessionId: 'some_jti',
+    });
+
+    interactionHookContext.assignReleaseAnywayInteractionHookResult({
+      event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+      payload: {
+        adaptiveMfaResult: {
+          requiresMfa: true,
+          triggeredRules: [{ rule: 'untrusted_ip' }],
+        },
+      },
+      userId: '123',
+    });
+
+    await triggerInteractionHooks(
+      new ConsoleLog(),
+      interactionHookContext.getReleaseAnywayDispatchContext()
+    );
+
+    expect(sendWebhookRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+          userId: '123',
+          interactionEvent: InteractionEvent.SignIn,
+          sessionId: 'some_jti',
+        }) as unknown,
+      })
+    );
   });
 });
 
@@ -197,8 +306,8 @@ describe('triggerDataHooks()', () => {
     const metadata = { userAgent: 'ua', ip: 'ip' };
     const hookData = { path: '/test', method: 'POST', data: { success: true } };
 
-    const hooksManager = new DataHookContextManager(metadata);
-    hooksManager.appendContext('Role.Created', hookData);
+    const hooksManager = new HookContextManager(metadata);
+    hooksManager.appendDataHookContext('Role.Created', hookData);
 
     await triggerDataHooks(new ConsoleLog(), hooksManager);
 
@@ -252,9 +361,9 @@ describe('triggerDataHooks()', () => {
       sessionId: 'some_jti',
     };
 
-    const hooksManager = new DataHookContextManager(metadata);
+    const hooksManager = new HookContextManager(metadata);
 
-    hooksManager.appendContext('Role.Created', {
+    hooksManager.appendDataHookContext('Role.Created', {
       data: { id: 'user_id', username: 'user' },
     });
 

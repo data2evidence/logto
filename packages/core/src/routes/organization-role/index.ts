@@ -1,22 +1,23 @@
 import {
   OrganizationRoles,
   organizationRoleWithScopesGuard,
+  ProductEvent,
+  RoleType,
   type CreateOrganizationRole,
   type OrganizationRole,
   type OrganizationRoleKeys,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
-import { condArray } from '@silverhand/essentials';
 import { z } from 'zod';
 
 import { buildManagementApiContext } from '#src/libraries/hook/utils.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import koaPagination from '#src/middleware/koa-pagination.js';
-import { koaReportSubscriptionUpdates, koaQuotaGuard } from '#src/middleware/koa-quota-guard.js';
 import { organizationRoleSearchKeys } from '#src/queries/organization/index.js';
 import SchemaRouter from '#src/utils/SchemaRouter.js';
 import { parseSearchOptions } from '#src/utils/search.js';
 
+import { captureEvent } from '../../utils/posthog.js';
 import { errorHandler } from '../organization/utils.js';
 import {
   type ManagementApiRouter,
@@ -28,6 +29,7 @@ export default function organizationRoleRoutes<T extends ManagementApiRouter>(
   ...[
     originalRouter,
     {
+      id: tenantId,
       queries: {
         organizations: {
           roles,
@@ -45,17 +47,14 @@ export default function organizationRoleRoutes<T extends ManagementApiRouter>(
     unknown,
     ManagementApiRouterContext
   >(OrganizationRoles, roles, {
-    middlewares: condArray(
-      koaQuotaGuard({ key: 'organizationsLimit', quota, methods: ['POST', 'PUT'] }),
-      koaReportSubscriptionUpdates({
-        key: 'organizationsLimit',
-        quota,
-        methods: ['POST', 'PUT', 'DELETE'],
-      })
-    ),
+    middlewares: [],
     disabled: { get: true, post: true },
     errorHandler,
     searchFields: ['name'],
+    hooks: {
+      afterDelete: (ctx) =>
+        captureEvent({ tenantId, request: ctx.req }, ProductEvent.OrganizationRoleDeleted),
+    },
   });
 
   router.get(
@@ -98,10 +97,17 @@ export default function organizationRoleRoutes<T extends ManagementApiRouter>(
     koaGuard({
       body: createGuard,
       response: OrganizationRoles.guard,
-      status: [201, 422],
+      status: [201, 422, 403],
     }),
     async (ctx, next) => {
       const { organizationScopeIds, resourceScopeIds, ...data } = ctx.guard.body;
+
+      await quota.guardTenantUsageByKey(
+        data.type === RoleType.MachineToMachine
+          ? 'organizationMachineToMachineRolesLimit'
+          : 'organizationUserRolesLimit'
+      );
+
       const role = await roles.insert({ id: generateStandardId(), ...data });
 
       if (organizationScopeIds.length > 0) {
@@ -133,12 +139,15 @@ export default function organizationRoleRoutes<T extends ManagementApiRouter>(
         });
       }
 
+      captureEvent({ tenantId, request: ctx.req }, ProductEvent.OrganizationRoleCreated, {
+        type: data.type,
+      });
       return next();
     }
   );
 
-  router.addRelationRoutes(rolesScopes, 'scopes');
-  router.addRelationRoutes(rolesResourceScopes, 'resource-scopes');
+  router.addRelationRoutes(rolesScopes, 'scopes', { isPaginationOptional: true });
+  router.addRelationRoutes(rolesResourceScopes, 'resource-scopes', { isPaginationOptional: true });
 
   originalRouter.use(router.routes());
 }

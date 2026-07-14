@@ -1,17 +1,20 @@
-import { AgreeToTermsPolicy, SignInMode } from '@logto/schemas';
+import { AgreeToTermsPolicy, experience, ExtraParamsKey, SignInMode } from '@logto/schemas';
 import { useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 
 import LandingPageLayout from '@/Layout/LandingPageLayout';
 import SingleSignOnFormModeContextProvider from '@/Providers/SingleSignOnFormModeContextProvider';
 import SingleSignOnFormModeContext from '@/Providers/SingleSignOnFormModeContextProvider/SingleSignOnFormModeContext';
+import WebAuthnContextProvider from '@/Providers/WebAuthnContextProvider';
+import PasskeySignInButton from '@/components/Button/PasskeySignInButton';
 import Divider from '@/components/Divider';
 import GoogleOneTap from '@/components/GoogleOneTap';
 import TextLink from '@/components/TextLink';
 import SocialSignInList from '@/containers/SocialSignInList';
 import TermsAndPrivacyCheckbox from '@/containers/TermsAndPrivacyCheckbox';
 import TermsAndPrivacyLinks from '@/containers/TermsAndPrivacyLinks';
+import useNavigateWithPreservedSearchParams from '@/hooks/use-navigate-with-preserved-search-params';
 import { useSieMethods } from '@/hooks/use-sie';
 import useTerms from '@/hooks/use-terms';
 
@@ -23,10 +26,16 @@ import styles from './index.module.scss';
 const SignInFooters = () => {
   const { t } = useTranslation();
   const { termsValidation, agreeToTermsPolicy } = useTerms();
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPreservedSearchParams();
 
-  const { signInMethods, signUpMethods, socialConnectors, signInMode, singleSignOnEnabled } =
-    useSieMethods();
+  const {
+    signInMethods,
+    signUpMethods,
+    socialConnectors,
+    signInMode,
+    singleSignOnEnabled,
+    passkeySignIn,
+  } = useSieMethods();
 
   const { showSingleSignOnForm } = useContext(SingleSignOnFormModeContext);
 
@@ -87,6 +96,7 @@ const SignInFooters = () => {
           </>
         )
       }
+      {passkeySignIn?.enabled && passkeySignIn.showPasskeyButton && <PasskeySignInButton />}
     </>
   );
 };
@@ -94,6 +104,7 @@ const SignInFooters = () => {
 const SignIn = () => {
   const { signInMethods, socialConnectors, signInMode } = useSieMethods();
   const { agreeToTermsPolicy } = useTerms();
+  const [params] = useSearchParams();
 
   if (!signInMode) {
     return <ErrorPage />;
@@ -103,13 +114,24 @@ const SignIn = () => {
     return <Navigate to="/register" />;
   }
 
+  if (params.get(ExtraParamsKey.OneTimeToken)) {
+    return (
+      <Navigate
+        replace
+        to={{ pathname: `/${experience.routes.oneTimeToken}`, search: `?${params.toString()}` }}
+      />
+    );
+  }
+
   return (
     <LandingPageLayout title="description.sign_in_to_your_account">
       <GoogleOneTap context="signin" />
-      <SingleSignOnFormModeContextProvider>
-        <Main signInMethods={signInMethods} socialConnectors={socialConnectors} />
-        <SignInFooters />
-      </SingleSignOnFormModeContextProvider>
+      <WebAuthnContextProvider>
+        <SingleSignOnFormModeContextProvider>
+          <Main signInMethods={signInMethods} socialConnectors={socialConnectors} />
+          <SignInFooters />
+        </SingleSignOnFormModeContextProvider>
+      </WebAuthnContextProvider>
       {
         // Only show terms and privacy links for sign in page if the agree to terms policy is `Automatic` or `ManualRegistrationOnly`
         agreeToTermsPolicy !== AgreeToTermsPolicy.Manual && (

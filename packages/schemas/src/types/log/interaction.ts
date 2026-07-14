@@ -1,5 +1,6 @@
-import { type VerificationType, type MfaFactor } from '../../foundations/index.js';
+import { type MfaFactor } from '../../foundations/index.js';
 import type { InteractionEvent } from '../interactions.js';
+import { type VerificationType } from '../verification-records/index.js';
 
 export type Prefix = 'Interaction';
 
@@ -11,8 +12,11 @@ export enum Field {
   Identifier = 'Identifier',
   Profile = 'Profile',
   BindMfa = 'BindMfa',
+  /** @deprecated */
   Mfa = 'Mfa',
   Verification = 'Verification',
+  Captcha = 'Captcha',
+  SignInPasskey = 'SignInPasskey',
 }
 
 /** Method to verify the identifier */
@@ -35,6 +39,33 @@ export enum Action {
   /** Change an entity to the end state. (E.g. end an interaction) */
   End = 'End',
 }
+
+/**
+ * @deprecated Deprecated interaction log keys used in legacy interaction endpoints.
+ */
+export type DeprecatedInteractionLogKey =
+  // Profile update log keys used in legacy interaction endpoints
+  | `${Prefix}.${InteractionEvent}.${Field.Profile}.${Action.Create | Action.Delete}`
+  // Identifier verification log keys used in legacy interaction endpoints
+  | `${Prefix}.${Exclude<
+      InteractionEvent,
+      InteractionEvent.ForgotPassword
+    >}.${Field.Identifier}.${Exclude<Method, Method.Password>}.${Action.Create | Action.Submit}`
+  // Identifier password verification log keys used in legacy interaction endpoints
+  | `${Prefix}.${Exclude<
+      InteractionEvent,
+      InteractionEvent.ForgotPassword
+    >}.${Field.Identifier}.${Method.Password}.${Action.Submit}`
+  // Forgot password identifier verification log keys used in legacy interaction endpoints
+  | `${Prefix}.${InteractionEvent.ForgotPassword}.${Field.Identifier}.${Method.VerificationCode}.${
+      | Action.Create
+      | Action.Submit}`
+  // Create Bind MFA verification log keys used in legacy interaction endpoints
+  | `${Prefix}.${InteractionEvent}.${Field.BindMfa}.${MfaFactor}.${Action.Create}`
+  // Legacy SignIn MFA verification log keys used in legacy interaction endpoints
+  | `${Prefix}.${InteractionEvent.SignIn}.${Field.Mfa}.${MfaFactor}.${
+      | Action.Submit
+      | Action.Create}`;
 
 /**
  * The union type of all available log keys for interaction.
@@ -75,27 +106,13 @@ export enum Action {
  */
 export type LogKey =
   | `${Prefix}.${Action.Create | Action.End}`
+  | `${Prefix}.${Action.Create}.${Field.Captcha}`
   | `${Prefix}.${InteractionEvent}.${Action.Create | Action.Update | Action.Submit}`
-  | `${Prefix}.${InteractionEvent}.${Field.Profile}.${
-      | Action.Update // PATCH profile
-      | Action.Create // PUT profile
-      | Action.Delete}`
-  | `${Prefix}.${Exclude<
-      InteractionEvent,
-      InteractionEvent.ForgotPassword
-    >}.${Field.Identifier}.${Exclude<Method, Method.Password>}.${Action.Create | Action.Submit}`
-  | `${Prefix}.${Exclude<
-      InteractionEvent,
-      InteractionEvent.ForgotPassword
-    >}.${Field.Identifier}.${Method.Password}.${Action.Submit}`
-  | `${Prefix}.${InteractionEvent.ForgotPassword}.${Field.Identifier}.${Method.VerificationCode}.${
-      | Action.Create
-      | Action.Submit}`
-  | `${Prefix}.${InteractionEvent}.${Field.BindMfa}.${MfaFactor}.${Action.Submit | Action.Create}`
-  | `${Prefix}.${InteractionEvent.SignIn}.${Field.Mfa}.${MfaFactor}.${
-      | Action.Submit
-      | Action.Create}`
+  | `${Prefix}.${InteractionEvent}.${Field.Profile}.${Action.Update}`
+  | `${Prefix}.${InteractionEvent}.${Field.BindMfa}.${MfaFactor}.${Action.Submit}`
+  | `${Prefix}.${InteractionEvent}.${Field.SignInPasskey}.${Action.Submit}`
   | `${Prefix}.${InteractionEvent}.${Field.Verification}.${VerificationType}.${Action}`
   | `${Prefix}.${InteractionEvent}.${Field.Identifier}.${Action.Submit}`
   // IdpInitiatedSingleSignOn log, used upon receiving a SAML request from the IdP
-  | `${Prefix}.${InteractionEvent.SignIn}.${Field.Verification}.IdpInitiatedSso.${Action.Create}`;
+  | `${Prefix}.${InteractionEvent.SignIn}.${Field.Verification}.IdpInitiatedSso.${Action.Create}`
+  | DeprecatedInteractionLogKey;

@@ -1,6 +1,7 @@
 import { InteractionEvent, MfaFactor, SignInIdentifier } from '@logto/schemas';
 
 import { createUserMfaVerification } from '#src/api/admin-user.js';
+import { updateSignInExperience } from '#src/api/sign-in-experience.js';
 import { initExperienceClient } from '#src/helpers/client.js';
 import { identifyUserWithUsernamePassword } from '#src/helpers/experience/index.js';
 import { successfullyCreateAndVerifyTotp } from '#src/helpers/experience/totp-verification.js';
@@ -52,7 +53,9 @@ describe('Bind MFA APIs sad path', () => {
     it('should throw not supported error when binding TOTP on ForgotPassword interaction', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
       await userApi.create({ username, password });
-      const client = await initExperienceClient(InteractionEvent.ForgotPassword);
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.ForgotPassword,
+      });
 
       await expectRejects(client.skipMfaBinding(), {
         code: 'session.not_supported_for_forgot_password',
@@ -103,6 +106,7 @@ describe('Bind MFA APIs sad path', () => {
   describe('Mandatory TOTP and Backup Code', () => {
     beforeAll(async () => {
       await enableMandatoryMfaWithTotpAndBackupCode();
+      await updateSignInExperience({ adaptiveMfa: { enabled: false } });
     });
 
     it('should throw if user has a TOTP in record', async () => {

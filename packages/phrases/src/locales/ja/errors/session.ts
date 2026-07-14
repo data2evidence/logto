@@ -43,9 +43,31 @@ const session = {
     invalid_backup_code: '無効なバックアップコード。',
     mfa_policy_not_user_controlled: 'MFA ポリシーはユーザーによって管理されていません。',
     mfa_factor_not_enabled: 'MFA は有効になっていません。',
+    suggest_additional_mfa:
+      'より強力な保護のため、別のMFA方法の追加を検討してください。この手順はスキップして続行できます。',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      '保留中のパスキーサインイン情報が見つかりません。サインインフローを再開始してください。',
+    conflict_rp_id: 'Relying Party ID が一致しません。正しいクライアントでサインインしてください。',
+    sso_users_not_allowed: 'パスキーサインインオプションは SSO ユーザーには利用できません。',
   },
   sso_enabled:
     'このメールアドレスではシングルサインオンが有効になっています。SSO でサインインしてください。',
+  captcha_required: 'Captcha が必要です。',
+  captcha_failed: 'Captcha 検証に失敗しました。',
+  email_blocklist: {
+    disposable_email_validation_failed: 'メールアドレスの検証に失敗しました。',
+    invalid_email: '無効なメールアドレス。',
+    email_subaddressing_not_allowed: 'メールのサブアドレッシングは許可されていません。',
+    email_not_allowed:
+      'メールアドレス "{{email}}" は制限されています。別のものを選択してください。',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Google One Tap クッキーが一致しません。',
+    invalid_id_token: '無効な Google ID トークン。',
+    unverified_email: '未検証のメール。',
+  },
 };
 
 export default Object.freeze(session);

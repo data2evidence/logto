@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: '升級計劃',
   compare_plans: '比較計劃',
+  try_with_product_name: '立即試用 {{productName}}',
   view_plans: '查看計劃',
   create_tenant: {
     title: '選擇您的租戶計劃',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: '更新計劃',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: '令牌使用超過限制，請升級您的計劃。',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      '您的<planName/>令牌使用已超過限制。用戶將無法正常訪問 Logto 服務。請儘快升級您的計劃至高級，以避免任何不便。',
   },
   payment_overdue_modal: {
     title: '賬單逾期未付',
@@ -50,6 +49,21 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: '你即將把開發租戶轉換為生產租戶',
+    description: '準備好上線了嗎？將此開發租戶轉換為生產租戶以解鎖全部功能',
+    benefits: {
+      stable_environment: '對終端用戶：提供穩定的實際使用環境。',
+      keep_pro_features: '保留專業版功能：你將訂閱專業版計劃。 <a>查看專業版功能。</a>',
+      no_dev_restrictions: '沒有開發限制：移除實體和資源系統限制及登錄橫幅。',
+    },
+    cards: {
+      dev_description: '測試用途',
+      prod_description: '實際生產',
+      convert_label: '轉換',
+    },
+    button: '轉換為生產租戶',
+  },
 };
 
 export default Object.freeze(upsell);

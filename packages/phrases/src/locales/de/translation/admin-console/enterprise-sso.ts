@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'Unternehmens-SSO',
   title: 'Unternehmens-SSO',
-  subtitle:
-    'Verbinden Sie den Unternehmensidentitätsanbieter und aktivieren Sie das SP-gesteuerte Single Sign-On.',
+  subtitle: 'Verbinden Sie den Unternehmensidentitätsanbieter und aktivieren Sie Single Sign-On.',
   create: 'Unternehmensconnector hinzufügen',
   col_connector_name: 'Connector-Name',
   col_type: 'Typ',
@@ -19,7 +18,7 @@ const enterprise_sso = {
   },
   guide: {
     subtitle: 'Ein schrittweiser Leitfaden zur Verbindung des Unternehmensidentitätsanbieters.',
-    finish_button_text: 'Continue',
+    finish_button_text: 'Fortfahren',
   },
   basic_info: {
     title: 'Konfigurieren Sie Ihren Dienst im IdP',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       'Erstellen Sie eine neue Anwendungsintegration per SAML 2.0 in Ihrem {{name}}-Identitätsanbieter. Fügen Sie dann den folgenden Wert hinzu.',
     saml: {
       acs_url_field_name: 'Zieldienst-URL für Assertionsverbrauch (Antwort-URL)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: 'Empfänger-URI (SP-Entitäts-ID)',
+      entity_id_field_name: 'Dienstanbieter (SP) Entitäts-ID',
+      entity_id_field_tooltip:
+        'Die SP-Entitäts-ID kann in jedem Zeichenfolgenformat vorliegen, typischerweise wird ein URI- oder URL-Format als Bezeichner verwendet, aber dies ist nicht zwingend erforderlich.',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'Weiterleitungs-URI (Callback-URL)',
+      redirect_uri_field_description:
+        'Die Redirect-URI ist die Adresse, zu der Benutzer nach der SSO-Authentifizierung zurückgeleitet werden. Fügen Sie diese URI zur Konfiguration Ihres IdP hinzu.',
+      redirect_uri_field_custom_domain_description:
+        'Wenn Sie in Logto mehrere <a>benutzerdefinierte Domains</a> verwenden, fügen Sie alle entsprechenden Callback-URIs zu Ihrem IdP hinzu, damit SSO in jeder Domain funktioniert.\n\nDie standardmäßige Logto-Domain (*.logto.app) ist immer gültig – fügen Sie sie nur hinzu, wenn Sie auch SSO unter dieser Domain unterstützen möchten.',
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Client-Geheimnis',
       issuer_field_name: 'Herausgeber',
       scope_field_name: 'Umfang',
+      scope_field_placeholder: 'Geben Sie die Bereiche ein (durch ein Leerzeichen getrennt)',
     },
   },
 };

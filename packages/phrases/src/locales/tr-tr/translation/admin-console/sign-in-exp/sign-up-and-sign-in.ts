@@ -10,25 +10,40 @@ const sign_up_and_sign_in = {
     title: 'KAYDOL',
     sign_up_identifier: 'Kayıt tanımlayıcı',
     identifier_description:
-      'Hesap oluşturmak için kayıt tanımlayıcı gereklidir ve giriş ekranınıza dahil edilmelidir.',
+      'Yeni bir hesap oluştururken seçilen tüm kayıt tanımlayıcılar gereklidir.',
     sign_up_authentication: 'Kaydolma doğrulama ayarları',
+    verification_tip:
+      'Kullanıcılar, kaydolma sırasında bir doğrulama kodu girerek yapılandırdığınız e-posta veya telefon numarasını doğrulamalıdır.',
     authentication_description:
       'Seçilen tüm işlemler, kullanıcıların akışı tamamlamaları zorunlu olacaktır.',
     set_a_password_option: 'Şifrenizi oluşturun',
     verify_at_sign_up_option: 'Kaydolduğunuzda doğrulayın',
     social_only_creation_description: '(Bu sadece sosyal hesap yaratımı için geçerlidir)',
+    collect_user_profile: 'Kullanıcı profili topla',
+    add_profile_fields: 'Profil alanları ekle',
+    profile_fields_hint: {
+      not_in_list: 'Listede yok mu?',
+      set_up: 'Ayarla',
+      go_to: 'diğer profil alanlarını şimdi.',
+    },
   },
   sign_in: {
     title: 'OTURUM AÇIN',
     sign_in_identifier_and_auth: 'Oturum açma tanımlayıcısı ve doğrulama ayarları',
-    description:
-      'Kullanıcılar mevcut seçeneklerden herhangi biriyle oturum açabilir. Aşağıdaki seçenekleri sürükleyip bırakarak düzenleyin.',
+    description: 'Kullanıcılar mevcut seçeneklerden herhangi biriyle oturum açabilir.',
     add_sign_in_method: 'Oturum açma yöntemi ekle',
+    add_sign_up_method: 'Kayıt yöntemi ekle',
     password_auth: 'Şifre',
     verification_code_auth: 'Doğrulama kodu',
     auth_swap_tip:
       'Akışta ilk olarak hangisinin göründüğünü belirlemek için seçeneklerin yerlerini değiştirin.',
     require_auth_factor: 'En az bir doğrulama faktörü seçmeniz gerekiyor.',
+    forgot_password: 'Parolamı unuttum',
+    forgot_password_description:
+      'Kullanıcılar, mevcut olan herhangi bir doğrulama yöntemi kullanarak şifrelerini sıfırlayabilir.',
+    add_verification_method: 'Doğrulama yöntemi ekle',
+    email_verification_code: 'E-posta doğrulama kodu',
+    phone_verification_code: 'Telefon doğrulama kodu',
   },
   social_sign_in: {
     title: 'SOSYAL MEDYA İLE OTURUM AÇIN',
@@ -41,9 +56,25 @@ const sign_up_and_sign_in = {
       set_up_more: 'Daha fazlasını kur',
       go_to: 'şimdi farklı sosyal bağlantı noktalarına.',
     },
-    automatic_account_linking: 'Otomatik hesap bağlantısı',
-    automatic_account_linking_label:
-      'Açıkken, bir kullanıcı sisteme yeni bir sosyal kimlikle giriş yaparsa ve aynı tanımlayıcıya (örn., e-posta) sahip yalnızca bir mevcut hesap varsa, Logto kullanıcıdan hesap bağlantısı istemek yerine hesabı otomatik olarak sosyal kimlikle bağlar.',
+    settings_title: 'Sosyal oturum açma deneyimi',
+    automatic_account_linking: 'Aynı tanımlayıcıya sahip hesapları otomatik olarak bağla',
+    automatic_account_linking_tip:
+      'Etkinleştirildiğinde, bir kullanıcı yeni bir sosyal kimlikle oturum açarsa ve aynı tanımlayıcıya sahip (örneğin, e-posta adresi) tam olarak bir mevcut hesap varsa, Logto sosyal kimliği otomatik olarak o hesaba bağlayacaktır. Kullanıcıya hesapları bağlamak isteyip istemediği sorulmaz.',
+    required_sign_up_identifiers: 'Kullanıcılardan eksik kayıt tanımlayıcıyı sağlamalarını isteyin',
+    required_sign_up_identifiers_tip:
+      'Etkinleştirildiğinde, sosyal sağlayıcılar aracılığıyla oturum açan kullanıcıların, oturum açmayı tamamlamadan önce eksik olan zorunlu kayıt tanımlayıcılarını (örneğin e-posta) doldurmaları gerekmektedir.\n\nDevre dışı bırakıldığında, kullanıcılar eksik tanımlayıcıları sağlamadan devam edebilirler, hatta sosyal hesap bu tanımlayıcıları senkronize etmemiş olsa bile.',
+  },
+  passkey_sign_in: {
+    title: 'PASSKEY İLE OTURUM AÇMA',
+    passkey_sign_in: 'Passkey ile oturum açma',
+    enable_passkey_sign_in_description:
+      'Kullanıcıların biyometri veya güvenlik anahtarı vb. kullanarak Passkey (WebAuthn) aracılığıyla uygulamaya hızlı ve güvenli bir şekilde erişmesini sağlayın.',
+    prompts: 'Passkey istemleri',
+    show_passkey_button: 'Oturum açma sayfasında "Passkey ile devam et" düğmesini göster',
+    show_passkey_button_tip:
+      '"Passkey ile devam et" düğmesini devre dışı bırakmak, oturum açma akışını tanımlayıcı öncelikli yapar ve bir sonraki adımda şifre ve Passkey seçeneklerini gösterir.',
+    allow_autofill:
+      "Tanımlayıcı alanlarında kayıtlı Passkey'lerin istemini ve otomatik doldurmasını izin ver",
   },
   tip: {
     set_a_password: 'Kullanıcı adınıza benzersiz bir şifre belirlemek şarttır.',
@@ -53,7 +84,13 @@ const sign_up_and_sign_in = {
       'Bu, kaydolma işlemi sırasında bir şifre belirleme seçeneğini etkinleştirdiğiniz için önemlidir.',
     verification_code_auth:
       'Bu, yalnızca doğrulama kodu sağlama seçeneğini etkinleştirdiğiniz için önemlidir. Kayıt işlemi sırasında şifre oluşturma izni verildiğinde kutuyu kaldırabilirsiniz.',
+    email_mfa_enabled:
+      'E-posta doğrulama kodu zaten MFA için etkin, bu yüzden güvenlik için birincil oturum açma yöntemi olarak tekrar kullanılamaz.',
+    phone_mfa_enabled:
+      'Telefon doğrulama kodu zaten MFA için etkin, bu yüzden güvenlik için birincil oturum açma yöntemi olarak tekrar kullanılamaz.',
     delete_sign_in_method: 'Bu, {{identifier}} gerekliliğini belirlediğiniz için önemlidir.',
+    password_disabled_notification:
+      'Kullanıcı adı ile kaydolma için "Şifrenizi oluşturun" seçeneği devre dışı bırakıldı, bu da kullanıcıların oturum açmasını engelleyebilir. Kaydetmeye devam etmek için onaylayın.',
   },
   advanced_options: {
     title: 'GELİŞMİŞ SEÇENEKLER',
@@ -68,11 +105,9 @@ const sign_up_and_sign_in = {
     enable_user_registration: 'Kullanıcı Kaydını Etkinleştir',
     enable_user_registration_description:
       'Kullanıcı kaydını etkinleştir veya devre dışı bırak. Devre dışı bırakıldığında, kullanıcılar yönetici konsolunda hala eklenilebilir, ancak kullanıcılar artık oturum açma arayüzü üzerinden hesap oluşturamaz.',
-    /** UNTRANSLATED */
-    unknown_session_redirect_url: 'Unknown session redirect URL',
-    /** UNTRANSLATED */
+    unknown_session_redirect_url: "Bilinmeyen oturum yönlendirme URL'si",
     unknown_session_redirect_url_tip:
-      'Sometimes, Logto may not recognize a user’s session on the sign-in page, like when a session expires or the user bookmarks or shares the sign-in link. By default, an “unknown session” 404 error appears. To enhance user experience, set a fallback URL to redirect users back to your app and restart authentication.',
+      "Bazen oturumun süresi dolduğunda veya kullanıcı oturum açma bağlantısını yer imlerine eklediğinde ya da paylaştığında Logto, kullanıcının oturumunu oturum açma sayfasında tanımayabilir. Varsayılan olarak, “bilinmeyen oturum” 404 hatası görünür. Kullanıcı deneyimini geliştirmek için, kullanıcıları uygulamanıza geri yönlendirmek ve kimlik doğrulamasını yeniden başlatmak için bir geri dönüş URL'si ayarlayın.",
   },
 };
 

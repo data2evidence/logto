@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: '升級計劃',
   compare_plans: '比較計劃',
+  try_with_product_name: '立即試用 {{productName}}',
   view_plans: '查看計劃',
   create_tenant: {
     title: '選擇您的租戶計劃',
@@ -26,16 +27,14 @@ const upsell = {
     update_plan: '更新計劃',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'Token 使用超出限制。請升級您的計劃。',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      '你已超出<planName/>的 Token 使用限制。用戶將無法正常訪問 Logto 服務。請及時升級你的計劃至高級，以避免任何不便。',
   },
   payment_overdue_modal: {
     title: '賬單逾期未付',
     notification:
-      '糟糕！租戶<span>{{name}}</span>的賬單支付失敗。請儘快支付賬單，以避免Logto服務中止。',
+      '糟糕！租戶<span>{{name}}</span>的賬單支付失敗。請儘快支付賬單，以避免 Logto 服務中止。',
     unpaid_bills: '未付賬單',
     update_payment: '更新支付',
   },
@@ -46,10 +45,25 @@ const upsell = {
     tenant_member: '租戶成員',
   },
   charge_notification_for_quota_limit:
-    '您已超出{{item}}配額限制。Logto將為超出配額限制的使用添加費用。計費將從新的附加定價設計發布當天開始。 <a>了解更多</a>',
+    '您已超出{{item}}配額限制。Logto 將為超出配額限制的使用添加費用。計費將從新的附加定價設計發布當天開始。 <a>了解更多</a>',
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: '你將要把開發租戶轉換為生產租戶',
+    description: '準備好上線了嗎？將此開發租戶轉換為生產租戶將解鎖完整功能',
+    benefits: {
+      stable_environment: '給終端用戶：一個穩定的真實使用環境。',
+      keep_pro_features: '保持 Pro 功能：你將訂閱 Pro 計劃。<a>查看 Pro 功能。</a>',
+      no_dev_restrictions: '無開發限制：移除實體和資源系統限制以及登入橫幅。',
+    },
+    cards: {
+      dev_description: '測試用途',
+      prod_description: '真實生產',
+      convert_label: '轉換',
+    },
+    button: '轉換為生產租戶',
+  },
 };
 
 export default Object.freeze(upsell);

@@ -1,8 +1,9 @@
-import type { SignInExperience as SignInExperienceType } from '@logto/schemas';
-import type { ReactNode } from 'react';
+import type { AccountCenter, SignInExperience as SignInExperienceType } from '@logto/schemas';
+import { useMemo, type ReactNode } from 'react';
 import useSWR from 'swr';
 
 import RequestDataError from '@/components/RequestDataError';
+import { authFlows } from '@/consts';
 import { isCloud } from '@/consts/env';
 import CardTitle from '@/ds-components/CardTitle';
 import type { RequestError } from '@/hooks/use-api';
@@ -25,9 +26,10 @@ function PageWrapper({ children }: PageWrapperProps) {
     <SignInExperienceContextProvider>
       <div className={styles.container}>
         <CardTitle
+          className={styles.cardTitle}
           title="sign_in_exp.title"
           subtitle="sign_in_exp.description"
-          className={styles.cardTitle}
+          learnMoreLink={{ href: authFlows }}
         />
         {children}
       </div>
@@ -37,11 +39,18 @@ function PageWrapper({ children }: PageWrapperProps) {
 
 function SignInExperience() {
   const {
-    data,
-    error,
+    data: signInExperienceData,
+    error: signInExperienceError,
     isLoading: isLoadingSignInExperience,
-    mutate,
+    mutate: mutateSignInExperience,
   } = useSWR<SignInExperienceType, RequestError>('api/sign-in-exp');
+
+  const {
+    data: accountCenter,
+    error: accountCenterError,
+    isLoading: isLoadingAccountCenter,
+    mutate: mutateAccountCenter,
+  } = useSWR<AccountCenter, RequestError>('api/account-center');
 
   const { isLoading: isUserAssetsServiceLoading } = useUserAssetsService();
 
@@ -56,13 +65,25 @@ function SignInExperience() {
 
   const { error: languageError, isLoading: isLoadingLanguages } = useUiLanguages();
 
-  const requestError = error ?? configsError ?? languageError;
+  const requestError = signInExperienceError ?? configsError ?? languageError ?? accountCenterError;
 
   const isLoading =
     isLoadingSignInExperience ||
     isLoadingConfig ||
     isLoadingLanguages ||
+    isLoadingAccountCenter ||
     isUserAssetsServiceLoading;
+
+  const data = useMemo(() => {
+    if (!signInExperienceData || !accountCenter) {
+      return;
+    }
+
+    return {
+      ...signInExperienceData,
+      accountCenter,
+    };
+  }, [accountCenter, signInExperienceData]);
 
   if (isLoading) {
     return <Skeleton />;
@@ -76,7 +97,8 @@ function SignInExperience() {
           error={requestError}
           onRetry={() => {
             void mutateConfigs();
-            void mutate();
+            void mutateSignInExperience();
+            void mutateAccountCenter();
           }}
         />
       </PageWrapper>
@@ -89,7 +111,8 @@ function SignInExperience() {
         <Welcome
           mutate={() => {
             void mutateConfigs();
-            void mutate();
+            void mutateSignInExperience();
+            void mutateAccountCenter();
           }}
         />
       </PageWrapper>
@@ -98,7 +121,13 @@ function SignInExperience() {
 
   return (
     <PageWrapper>
-      {data && <PageContent data={data} onSignInExperienceUpdated={mutate} />}
+      {data && (
+        <PageContent
+          data={data}
+          onSignInExperienceUpdated={mutateSignInExperience}
+          onAccountCenterUpdated={mutateAccountCenter}
+        />
+      )}
     </PageWrapper>
   );
 }

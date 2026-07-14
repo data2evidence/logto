@@ -2,6 +2,7 @@ import UriInputField from '@/mdx-components/UriInputField';
 import InlineNotification from '@/ds-components/InlineNotification';
 import Steps from '@/mdx-components/Steps';
 import Step from '@/mdx-components/Step';
+import CustomDomainEndpointNotice from '@/mdx-components/CustomDomainEndpointNotice';
 import RedirectUrisNative from '../../fragments/_redirect-uris-native.mdx';
 import Checkpoint from '../../fragments/_checkpoint.md';
 
@@ -28,7 +29,7 @@ Add Logto Android SDK to your dependencies:
 
 ```kotlin title="build.gradle.kts"
 dependencies {
-    implementation("io.logto.sdk:android:1.1.3")
+    implementation("io.logto.sdk:android:2.0.2")
 }
 ```
 
@@ -54,8 +55,8 @@ Since the SDK needs internet access, you need to add the following permission to
 
 Create a `LogtoViewModel.kt` and init `LogtoClient` in this view model:
 
-```kotlin title="LogtoViewModel.kt"
-//...with other imports
+<Code title="LogtoViewModel.kt" className="language-kotlin">
+    {`//...with other imports
 import io.logto.sdk.android.LogtoClient
 import io.logto.sdk.android.type.LogtoConfig
 
@@ -83,8 +84,12 @@ class LogtoViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-}
-```
+}`}
+</Code>
+
+<br/>
+
+<CustomDomainEndpointNotice />
 
 then, create a `LogtoViewModel` for your `MainActivity.kt`:
 

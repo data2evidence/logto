@@ -13,21 +13,27 @@ import {
   validateConfig,
   ConnectorType,
   parseJson,
+  getConfigTemplateByType,
 } from '@logto/connector-kit';
 
 import { defaultMetadata } from './constant.js';
 import { sendSms } from './single-send-text.js';
 import type { Template } from './types.js';
 import { aliyunSmsConfigGuard, sendSmsResponseGuard } from './types.js';
+import { isChinaNumber } from './utils.js';
 
-const isChinaNumber = (to: string) => /^(\+86|0086|86)?\d{11}$/.test(to);
-
-const getTemplateCode = ({ templateCode }: Template, to: string) => {
+const getTemplateCode = (
+  { templateCode }: Template,
+  to: string,
+  strictPhoneRegionNumberCheck?: boolean
+) => {
   if (typeof templateCode === 'string') {
     return templateCode;
   }
 
-  return isChinaNumber(to) ? templateCode.china : templateCode.overseas;
+  return isChinaNumber(to, strictPhoneRegionNumberCheck)
+    ? templateCode.china
+    : templateCode.overseas;
 };
 
 const sendMessage =
@@ -36,8 +42,9 @@ const sendMessage =
     const { to, type, payload } = data;
     const config = inputConfig ?? (await getConfig(defaultMetadata.id));
     validateConfig(config, aliyunSmsConfigGuard);
-    const { accessKeyId, accessKeySecret, signName, templates } = config;
-    const template = templates.find(({ usageType }) => usageType === type);
+    const { accessKeyId, accessKeySecret, signName, strictPhoneRegionNumberCheck } = config;
+
+    const template = getConfigTemplateByType(type, config);
 
     assert(
       template,
@@ -47,14 +54,18 @@ const sendMessage =
       )
     );
 
+    // Aliyun SMS verification API only accepts [a-zA-Z0-9] values in the payload.
+    // We need to filter out the locale key from the payload as it may contain special characters e.g. zh-CN.
+    const { locale, ...filteredPayload } = payload;
+
     try {
       const httpResponse = await sendSms(
         {
           AccessKeyId: accessKeyId,
           PhoneNumbers: to,
           SignName: signName,
-          TemplateCode: getTemplateCode(template, to),
-          TemplateParam: JSON.stringify(payload),
+          TemplateCode: getTemplateCode(template, to, strictPhoneRegionNumberCheck),
+          TemplateParam: JSON.stringify(filteredPayload),
         },
         accessKeySecret
       );

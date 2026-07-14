@@ -1,10 +1,12 @@
+import concurrent_device_limit from './concurrent-device-limit.js';
+
 const application_details = {
   page_title: 'Detalles de la aplicación',
   back_to_applications: 'Volver a Aplicaciones',
   check_guide: 'Revisar Guía',
   settings: 'Configuraciones',
   settings_description:
-    'An "Application" is a registered software or service that can access user info or act for a user. Applications help recognize who’s asking for what from Logto and handle the sign-in and permission. Fill in the required fields for authentication.',
+    'Una "aplicación" es un software o servicio registrado que puede acceder a la información del usuario o actuar en su nombre. Las aplicaciones ayudan a Logto a reconocer quién solicita qué y gestionan el inicio de sesión y los permisos. Completa los campos obligatorios para la autenticación.',
   integration: 'Integración',
   integration_description:
     'Despliega con los trabajadores seguros de Logto, potenciados por la red global de Cloudflare para un rendimiento de primer nivel y arranques instantáneos de 0ms a nivel mundial.',
@@ -24,6 +26,7 @@ const application_details = {
   description_placeholder: 'Ingresa la descripción de tu aplicación',
   config_endpoint: 'Endpoint de configuración del proveedor OpenID',
   issuer_endpoint: 'Punto de emisión',
+  jwks_uri: 'URI de JWKS',
   authorization_endpoint: 'Endpoint de Autorización',
   authorization_endpoint_tip:
     'El endpoint para la autenticación y autorización. Se utiliza para OpenID Connect <a>Autenticación</a>.',
@@ -41,9 +44,10 @@ const application_details = {
   redirect_uri_placeholder_native: 'io.logto://callback',
   redirect_uri_tip:
     'El URI hacia donde se redirecciona después de que un usuario inicie sesión (correctamente o no). Consulta OpenID Connect <a>AuthRequest</a> para más información.',
-  /** UNTRANSLATED */
   mixed_redirect_uri_warning:
-    'Your application type is not compatible with at least one of the redirect URIs. It does not follow best practices and we strongly recommend keeping the redirect URIs consistent.',
+    'Tu tipo de aplicación no es compatible con al menos uno de los URIs de redireccionamiento. No sigue las mejores prácticas y recomendamos encarecidamente mantener los URIs de redireccionamiento consistentes.',
+  wildcard_redirect_uri_warning:
+    'Los URIs de redireccionamiento con comodín no son estándar OIDC y pueden aumentar la superficie de ataque. Úsalos con cuidado y prefiere URIs de redireccionamiento exactos siempre que sea posible.',
   post_sign_out_redirect_uri: 'Post Sign-out URI de Redireccionamiento',
   post_sign_out_redirect_uris: 'Post Sign-out URIs de Redireccionamiento',
   post_sign_out_redirect_uri_placeholder: 'https://tu.pagina.com/home',
@@ -67,9 +71,8 @@ const application_details = {
   rotate_refresh_token: 'Rotar el token de refresco',
   rotate_refresh_token_label:
     'Cuando está habilitado, Logto emitirá un nuevo token de refresco para las solicitudes de token cuando ha pasado el 70 % del tiempo de vida útil (TTL) original o se cumplen ciertas condiciones. <a>Más información</a>',
-  /** UNTRANSLATED */
   rotate_refresh_token_label_for_public_clients:
-    'When enabled, Logto will issue a new refresh token for each token request. <a>Learn more</a>',
+    'Cuando está habilitado, Logto emitirá un nuevo token de refresco para cada solicitud de token. <a>Más información</a>',
   backchannel_logout: 'Cierre de sesión por backchannel',
   backchannel_logout_description:
     'Configure el punto de cierre de sesión por backchannel de OpenID Connect y si la sesión es requerida para esta aplicación.',
@@ -77,6 +80,18 @@ const application_details = {
   backchannel_logout_uri_session_required: '¿Es necesaria la sesión?',
   backchannel_logout_uri_session_required_description:
     'Cuando está habilitado, el RP requiere que una reclamación `sid` (ID de sesión) se incluya en el token de cierre de sesión para identificar la sesión del RP con el OP cuando se usa el `backchannel_logout_uri`.',
+  token_exchange: 'Intercambio de tokens',
+  token_exchange_description:
+    'Gestiona la configuración de intercambio de tokens para esta aplicación.',
+  allow_token_exchange: 'Permitir intercambio de tokens',
+  allow_token_exchange_description:
+    'Permite que esta aplicación inicie solicitudes de intercambio de tokens. Esto es necesario para la <impersonationLink>suplantación de usuario</impersonationLink> y los <patLink>tokens de acceso personal</patLink>.',
+  allow_token_exchange_public_client_warning:
+    'No se recomienda habilitar el intercambio de tokens para clientes públicos (aplicación de una sola página / aplicación nativa). Los clientes públicos no pueden almacenar credenciales de forma segura, lo que puede exponer tu aplicación a riesgos de suplantación de tokens.',
+  device_flow_tag: 'Flujo de dispositivo',
+  device_flow_notification:
+    'Esta aplicación habilita el flujo de autorización de dispositivos OAuth 2.0 (Device Authorization Flow) para dispositivos con entrada limitada o aplicaciones sin interfaz (p. ej., televisores, CLI). Los usuarios completan el inicio de sesión en un dispositivo separado ingresando un código de dispositivo o escaneando un código QR. <a>Más información</a>',
+  device_flow_try_demo: 'Probar la demo',
   delete_description:
     'Esta acción no se puede deshacer. Eliminará permanentemente la aplicación. Ingresa el nombre de la aplicación <span>{{name}}</span> para confirmar.',
   enter_your_application_name: 'Ingresa el nombre de tu aplicación',
@@ -98,6 +113,8 @@ const application_details = {
   protect_origin_server: 'Proteger tu servidor de origen',
   protect_origin_server_description:
     'Asegúrate de proteger tu servidor de origen contra el acceso directo. Consulta la guía para obtener más <a>instrucciones detalladas</a>.',
+  third_party_settings_description:
+    'Integra aplicaciones de terceros con Logto como tu Proveedor de Identidad (IdP) usando OIDC / OAuth 2.0, con una pantalla de consentimiento para la autorización del usuario.',
   session_duration: 'Duración de la sesión (días)',
   try_it: 'Probar',
   no_organization_placeholder: 'No se encontró organización. <a>Ir a organizaciones</a>',
@@ -158,6 +175,18 @@ const application_details = {
     organization_description:
       'Selecciona los permisos solicitados por la aplicación de terceros para acceder a datos específicos de la organización.',
     grant_organization_level_permissions: 'Conceder permisos de datos de organización',
+    oidc_title: 'OIDC',
+    oidc_description:
+      'Los permisos OIDC principales se configuran automáticamente para tu aplicación. Estos scopes son esenciales para la autenticación y no se muestran en la pantalla de consentimiento del usuario.',
+    default_oidc_permissions: 'Permisos OIDC predeterminados',
+    permission_column: 'Permiso',
+    guide_column: 'Guía',
+    openid_permission: 'openid',
+    openid_permission_guide:
+      "Opcional para el acceso a recursos OAuth.\nObligatorio para la autenticación OIDC. Concede acceso a un token de ID y permite acceder al 'userinfo_endpoint'.",
+    offline_access_permission: 'offline_access',
+    offline_access_permission_guide:
+      'Opcional. Obtiene tokens de actualización para acceso prolongado o tareas en segundo plano.',
   },
   roles: {
     assign_button: 'Asignar roles de máquina a máquina',
@@ -185,12 +214,9 @@ const application_details = {
     create_new_secret: 'Crear nuevo secreto',
     delete_confirmation:
       'Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar este secreto?',
-    /** UNTRANSLATED */
-    deleted: 'The secret has been successfully deleted.',
-    /** UNTRANSLATED */
-    activated: 'The secret has been successfully activated.',
-    /** UNTRANSLATED */
-    deactivated: 'The secret has been successfully deactivated.',
+    deleted: 'El secreto ha sido eliminado exitosamente.',
+    activated: 'El secreto ha sido activado exitosamente.',
+    deactivated: 'El secreto ha sido desactivado exitosamente.',
     legacy_secret: 'Secreto heredado',
     expired: 'Expirado',
     expired_tooltip: 'Este secreto expiró el {{date}}.',
@@ -202,10 +228,8 @@ const application_details = {
         'El secreto nunca expirará. Recomendamos establecer una fecha de expiración para mayor seguridad.',
       days: '{{count}} día',
       days_other: '{{count}} días',
-      /** UNTRANSLATED */
-      years: '{{count}} year',
-      /** UNTRANSLATED */
-      years_other: '{{count}} years',
+      years: '{{count}} año',
+      years_other: '{{count}} años',
       created: 'El secreto {{name}} se ha creado exitosamente.',
     },
     edit_modal: {
@@ -214,92 +238,58 @@ const application_details = {
     },
   },
   saml_idp_config: {
-    /** UNTRANSLATED */
-    title: 'SAML IdP metadata',
-    /** UNTRANSLATED */
+    title: 'Metadatos del IdP SAML',
     description:
-      'Use the following metadata and certificate to configure the SAML IdP in your application.',
-    /** UNTRANSLATED */
-    metadata_url_label: 'IdP metadata URL',
-    /** UNTRANSLATED */
-    single_sign_on_service_url_label: 'Single sign-on service URL',
-    /** UNTRANSLATED */
-    idp_entity_id_label: 'IdP entity ID',
+      'Utiliza los siguientes metadatos y certificado para configurar el IdP SAML en tu aplicación.',
+    metadata_url_label: 'URL de metadatos del IdP',
+    single_sign_on_service_url_label: 'URL del servicio de inicio de sesión único',
+    idp_entity_id_label: 'ID de entidad del IdP',
   },
   saml_idp_certificates: {
-    /** UNTRANSLATED */
-    title: 'SAML signing certificate',
-    /** UNTRANSLATED */
-    expires_at: 'Expires at',
-    /** UNTRANSLATED */
-    finger_print: 'Fingerprint',
-    /** UNTRANSLATED */
-    status: 'Status',
-    /** UNTRANSLATED */
-    active: 'Active',
-    /** UNTRANSLATED */
-    inactive: 'Inactive',
+    title: 'Certificado de firma SAML',
+    expires_at: 'Expira en',
+    finger_print: 'Huella digital',
+    status: 'Estado',
+    active: 'Activo',
+    inactive: 'Inactivo',
   },
   saml_idp_name_id_format: {
-    /** UNTRANSLATED */
-    title: 'Name ID format',
-    /** UNTRANSLATED */
-    description: 'Select the name ID format of the SAML IdP.',
-    /** UNTRANSLATED */
-    persistent: 'Persistent',
-    /** UNTRANSLATED */
-    persistent_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    transient: 'Transient',
-    /** UNTRANSLATED */
-    transient_description: 'Use one-time user ID as Name ID',
-    /** UNTRANSLATED */
-    unspecified: 'Unspecified',
-    /** UNTRANSLATED */
-    unspecified_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    email_address: 'Email address',
-    /** UNTRANSLATED */
-    email_address_description: 'Use email address as Name ID',
+    title: 'Formato de ID de Nombre',
+    description: 'Selecciona el formato de ID de nombre del IdP SAML.',
+    persistent: 'Persistente',
+    persistent_description: 'Usar el ID de usuario de Logto como ID de Nombre',
+    transient: 'Transitorio',
+    transient_description: 'Usar un ID de usuario de una sola vez como ID de Nombre',
+    unspecified: 'No especificado',
+    unspecified_description: 'Usar el ID de usuario de Logto como ID de Nombre',
+    email_address: 'Dirección de correo electrónico',
+    email_address_description: 'Usar dirección de correo electrónico como ID de Nombre',
   },
   saml_encryption_config: {
-    /** UNTRANSLATED */
-    encrypt_assertion: 'Encrypt SAML assertion',
-    /** UNTRANSLATED */
-    encrypt_assertion_description: 'By enabling this option, the SAML assertion will be encrypted.',
-    /** UNTRANSLATED */
-    encrypt_then_sign: 'Encrypt then sign',
-    /** UNTRANSLATED */
+    encrypt_assertion: 'Encriptar afirmación SAML',
+    encrypt_assertion_description: 'Al habilitar esta opción, la afirmación SAML será encriptada.',
+    encrypt_then_sign: 'Encriptar y luego firmar',
     encrypt_then_sign_description:
-      'By enabling this option, the SAML assertion will be encrypted and then signed; otherwise, the SAML assertion will be signed and then encrypted.',
-    /** UNTRANSLATED */
-    certificate: 'Certificate',
-    /** UNTRANSLATED */
+      'Al habilitar esta opción, la afirmación SAML será encriptada y luego firmada; de lo contrario, la afirmación SAML será firmada y luego encriptada.',
+    certificate: 'Certificado',
     certificate_tooltip:
-      'Copy and paste the x509 certificate you get from your service provider to encrypt the SAML assertion.',
-    /** UNTRANSLATED */
+      'Copia y pega el certificado x509 que recibes de tu proveedor de servicios para encriptar la afirmación SAML.',
     certificate_placeholder:
       '-----BEGIN CERTIFICATE-----\nMIICYDCCAcmgAwIBA...\n-----END CERTIFICATE-----\n',
-    /** UNTRANSLATED */
-    certificate_missing_error: 'Certificate is required.',
-    /** UNTRANSLATED */
+    certificate_missing_error: 'Se requiere un certificado.',
     certificate_invalid_format_error:
-      'Invalid certificate format detected. Please check the certificate format and try again.',
+      'Se detectó un formato de certificado inválido. Por favor, revisa el formato del certificado e intenta nuevamente.',
   },
   saml_app_attribute_mapping: {
-    /** UNTRANSLATED */
-    name: 'Attribute mappings',
-    /** UNTRANSLATED */
-    title: 'Base attribute mappings',
-    /** UNTRANSLATED */
-    description: 'Add attribute mappings to sync user profile from Logto to your application.',
-    /** UNTRANSLATED */
-    col_logto_claims: 'Value of Logto',
-    /** UNTRANSLATED */
-    col_sp_claims: 'Value name of your application',
-    /** UNTRANSLATED */
-    add_button: 'Add another',
+    name: 'Mapeo de atributos',
+    title: 'Mapeo de atributos base',
+    description:
+      'Añade mapeo de atributos para sincronizar el perfil de usuario desde Logto a tu aplicación.',
+    col_logto_claims: 'Valor de Logto',
+    col_sp_claims: 'Nombre del valor de tu aplicación',
+    add_button: 'Añadir otro',
   },
+  concurrent_device_limit,
 };
 
 export default Object.freeze(application_details);

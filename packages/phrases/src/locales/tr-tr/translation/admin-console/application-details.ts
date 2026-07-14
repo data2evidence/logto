@@ -1,10 +1,12 @@
+import concurrent_device_limit from './concurrent-device-limit.js';
+
 const application_details = {
   page_title: 'Uygulama detayları',
   back_to_applications: 'Uygulamalara geri dön',
   check_guide: 'Kılavuza Göz At',
   settings: 'Ayarlar',
   settings_description:
-    'Bir "Uygulama", kullanıcı bilgilerine erişebilen veya bir kullanıcı adına hareket edebilen kayıtlı bir yazılım veya hizmettir. Uygulamalar, Kimin Logto\'dan ne istediğini tanımaya yardımcı olur ve giriş yapma ve izinleri işlemek için yardımcı olur. Kimlik doğrulaması için gerekli alanları doldurun.',
+    '"Uygulama", kullanıcı bilgilerine erişebilen veya bir kullanıcı adına işlem yapabilen kayıtlı yazılım ya da hizmettir. Uygulamalar, Logto\'nun kimin ne talep ettiğini anlamasına yardımcı olur ve oturum açma ile izin süreçlerini yönetir. Kimlik doğrulaması için gerekli alanları doldurun.',
   integration: 'Entegrasyon',
   integration_description:
     "Cloudflare'ın kenar ağı tarafından desteklenen ve dünya çapında en üst düzey performans ve 0ms soğuk başlangıçlarla Logto güvenli çalışanlarla dağıtım yapın.",
@@ -23,6 +25,7 @@ const application_details = {
   description_placeholder: 'Uygulama açıklamasını giriniz',
   config_endpoint: 'OpenID Sağlayıcı yapılandırma bitiş noktası',
   issuer_endpoint: 'Yayımlayıcı bitiş noktası',
+  jwks_uri: 'JWKS URI',
   authorization_endpoint: 'Yetkilendirme bitiş noktası',
   authorization_endpoint_tip:
     'Kimlik doğrulama ve yetkilendirme için bir bitiş noktası. OpenID Connect <a>Authentication</a> için kullanılır.',
@@ -40,9 +43,10 @@ const application_details = {
   redirect_uri_placeholder_native: 'io.logto://callback',
   redirect_uri_tip:
     'Kullanıcının oturum açma işlemi tamamlandıktan sonra (başarılı olsa da olmasa da) yönlendirilen bir URI. Daha fazla bilgi için OpenID Connect <a>AuthRequesta</a> bakınız.',
-  /** UNTRANSLATED */
   mixed_redirect_uri_warning:
-    'Your application type is not compatible with at least one of the redirect URIs. It does not follow best practices and we strongly recommend keeping the redirect URIs consistent.',
+    'Uygulama türünüz en az bir yönlendirme URIı ile uyumlu değil. Bu, en iyi uygulamaları takip etmez ve yönlendirme URIlarını tutarlı tutmanızı şiddetle öneriyoruz.',
+  wildcard_redirect_uri_warning:
+    'Joker karakter içeren yönlendirme URIları standart OIDC değildir ve saldırı yüzeyini artırabilir. Dikkatli kullanın ve mümkün olduğunca tam yönlendirme URIlarını tercih edin.',
   post_sign_out_redirect_uri: 'Oturumdan Çıkış sonrası yönlendirme URIı',
   post_sign_out_redirect_uris: 'Oturumdan Çıkış sonrası yönlendirme URIları',
   post_sign_out_redirect_uri_placeholder: 'https://siteniz.com/anasayfa',
@@ -66,9 +70,8 @@ const application_details = {
   rotate_refresh_token: 'Yenileme Belirteci değiştir',
   rotate_refresh_token_label:
     "Bu seçenek etkinleştirildiğinde, Logto Yenileme Belirteği Bitiş Süresinin %70'i geçildiğinde veya belirli koşullar sağlandığında yeni bir Yenileme Belirteği verecektir. <a>Daha fazlası için tıklayın</a>",
-  /** UNTRANSLATED */
   rotate_refresh_token_label_for_public_clients:
-    'When enabled, Logto will issue a new refresh token for each token request. <a>Learn more</a>',
+    'Etkinleştirildiğinde, Logto her belirteç isteğinde yeni bir yenileme belirteci verecektir. <a>Daha fazlasını öğrenin</a>',
   backchannel_logout: 'Arka kanal oturumu kapatma',
   backchannel_logout_description:
     'OpenID Connect arka kanal oturumu kapatma bitiş noktasını yapılandırın ve bu uygulama için oturumun gerekli olup olmadığını ayarlayın.',
@@ -76,6 +79,17 @@ const application_details = {
   backchannel_logout_uri_session_required: 'Oturum gerekli mi?',
   backchannel_logout_uri_session_required_description:
     'Etkinleştirildiğinde, RP, `sid` (oturum IDsi) talebinin oturumu kapatma belirtecinde bulunmasını ve `backchannel_logout_uri` kullanıldığında RP oturumunu OP ile tanımlamak için dahil edilmesini isteyecektir.',
+  token_exchange: 'Token değişimi',
+  token_exchange_description: 'Bu uygulama için token değişimi ayarlarını yönetin.',
+  allow_token_exchange: 'Token değişimine izin ver',
+  allow_token_exchange_description:
+    "Bu uygulamanın token değişimi istekleri başlatmasına izin verin. Bu, <impersonationLink>kullanıcı kimliğine bürünme</impersonationLink> ve <patLink>kişisel erişim token'ları</patLink> için gereklidir.",
+  allow_token_exchange_public_client_warning:
+    'Genel istemciler (tek sayfa uygulama / yerel uygulama) için token değişimini etkinleştirmek önerilmez. Genel istemciler kimlik bilgilerini güvenli şekilde saklayamaz; bu da uygulamanızı token kimliğine bürünme risklerine maruz bırakabilir.',
+  device_flow_tag: 'Cihaz akışı',
+  device_flow_notification:
+    "Bu uygulama, giriş kısıtlı cihazlar veya arayüzsüz uygulamalar (ör. TV'ler, CLI) için OAuth 2.0 Device Authorization Flow'u etkinleştirir. Kullanıcılar, bir cihaz kodu girerek veya QR kodu tarayarak ayrı bir cihazda oturum açmayı tamamlar. <a>Daha fazla bilgi</a>",
+  device_flow_try_demo: 'Demoyu dene',
   delete_description:
     'Bu eylem geri alınamaz. Uygulama kalıcı olarak silinecektir. Lütfen onaylamak için uygulama adı <span>{{name}}</span> girin.',
   enter_your_application_name: 'Uygulama adı giriniz',
@@ -97,6 +111,8 @@ const application_details = {
   protect_origin_server: 'Orjın sunucunu koru',
   protect_origin_server_description:
     'Orjın sunucunuzu doğrudan erişimden korumaya emin olun. Daha fazla <a>açıklamalı talimatlar</a> için kılavuza bakın.',
+  third_party_settings_description:
+    "Logto'yu Kimlik Sağlayıcı (IdP) olarak kullanarak üçüncü taraf uygulamaları OIDC / OAuth 2.0 ile entegre edin ve kullanıcı yetkilendirmesi için bir izin ekranı özelliği bulunmaktadır.",
   session_duration: 'Oturum süresi (gün cinsinden)',
   try_it: 'Deneyin',
   no_organization_placeholder: 'Organizasyon bulunamadı. <a>Organizasyonlara git</a>',
@@ -155,6 +171,18 @@ const application_details = {
     organization_description:
       'Üçüncü taraf uygulamanın belirli organizasyon verilerine erişmek için istediği izinleri seçin.',
     grant_organization_level_permissions: 'Organizasyon veri izinlerini ver',
+    oidc_title: 'OIDC',
+    oidc_description:
+      'Temel OIDC izinleri uygulamanız için otomatik olarak yapılandırılır. Bu kapsamlar kimlik doğrulama için gereklidir ve kullanıcı onay ekranında gösterilmez.',
+    default_oidc_permissions: 'Varsayılan OIDC izinleri',
+    permission_column: 'İzin',
+    guide_column: 'Kılavuz',
+    openid_permission: 'openid',
+    openid_permission_guide:
+      "OAuth kaynak erişimi için isteğe bağlıdır.\nOIDC kimlik doğrulaması için gereklidir. Bir ID token'a erişim sağlar ve 'userinfo_endpoint'e erişime izin verir.",
+    offline_access_permission: 'offline_access',
+    offline_access_permission_guide:
+      'İsteğe bağlıdır. Uzun süreli erişim veya arka plan görevleri için yenileme belirteçleri (refresh token) alır.',
   },
   roles: {
     assign_button: 'Makineden makineye rolleri atayın',
@@ -181,12 +209,9 @@ const application_details = {
     never: 'Asla',
     create_new_secret: 'Yeni sır oluştur',
     delete_confirmation: 'Bu işlem geri alınamaz. Bu sırrı silmek istediğinizden emin misiniz?',
-    /** UNTRANSLATED */
-    deleted: 'The secret has been successfully deleted.',
-    /** UNTRANSLATED */
-    activated: 'The secret has been successfully activated.',
-    /** UNTRANSLATED */
-    deactivated: 'The secret has been successfully deactivated.',
+    deleted: 'Sır başarıyla silindi.',
+    activated: 'Sır başarıyla etkinleştirildi.',
+    deactivated: 'Sır başarıyla devre dışı bırakıldı.',
     legacy_secret: 'Eski sır',
     expired: 'Süresi doldu',
     expired_tooltip: 'Bu sır {{date}} tarihinde süresi dolmuştu.',
@@ -198,10 +223,8 @@ const application_details = {
         'Sırın süresi asla dolmaz. Gelişmiş güvenlik için bir son kullanma tarihi ayarlamanızı öneririz.',
       days: '{{count}} gün',
       days_other: '{{count}} gün',
-      /** UNTRANSLATED */
-      years: '{{count}} year',
-      /** UNTRANSLATED */
-      years_other: '{{count}} years',
+      years: '{{count}} yıl',
+      years_other: '{{count}} yıl',
       created: 'Sır {{name}} başarıyla oluşturuldu.',
     },
     edit_modal: {
@@ -210,92 +233,58 @@ const application_details = {
     },
   },
   saml_idp_config: {
-    /** UNTRANSLATED */
     title: 'SAML IdP metadata',
-    /** UNTRANSLATED */
     description:
-      'Use the following metadata and certificate to configure the SAML IdP in your application.',
-    /** UNTRANSLATED */
+      'Aşağıdaki meta verileri ve sertifikayı kullanarak uygulamanızda SAML IdPyi yapılandırın.',
     metadata_url_label: 'IdP metadata URL',
-    /** UNTRANSLATED */
-    single_sign_on_service_url_label: 'Single sign-on service URL',
-    /** UNTRANSLATED */
-    idp_entity_id_label: 'IdP entity ID',
+    single_sign_on_service_url_label: 'Tek oturum açma hizmet URLsi',
+    idp_entity_id_label: 'IdP varlık IDsi',
   },
   saml_idp_certificates: {
-    /** UNTRANSLATED */
-    title: 'SAML signing certificate',
-    /** UNTRANSLATED */
-    expires_at: 'Expires at',
-    /** UNTRANSLATED */
-    finger_print: 'Fingerprint',
-    /** UNTRANSLATED */
-    status: 'Status',
-    /** UNTRANSLATED */
-    active: 'Active',
-    /** UNTRANSLATED */
-    inactive: 'Inactive',
+    title: 'SAML imzalama sertifikası',
+    expires_at: 'Bitiş tarihi',
+    finger_print: 'Parmak izi',
+    status: 'Durum',
+    active: 'Aktif',
+    inactive: 'Pasif',
   },
   saml_idp_name_id_format: {
-    /** UNTRANSLATED */
-    title: 'Name ID format',
-    /** UNTRANSLATED */
-    description: 'Select the name ID format of the SAML IdP.',
-    /** UNTRANSLATED */
-    persistent: 'Persistent',
-    /** UNTRANSLATED */
-    persistent_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    transient: 'Transient',
-    /** UNTRANSLATED */
-    transient_description: 'Use one-time user ID as Name ID',
-    /** UNTRANSLATED */
-    unspecified: 'Unspecified',
-    /** UNTRANSLATED */
-    unspecified_description: 'Use Logto user ID as Name ID',
-    /** UNTRANSLATED */
-    email_address: 'Email address',
-    /** UNTRANSLATED */
-    email_address_description: 'Use email address as Name ID',
+    title: 'Ad ID formatı',
+    description: 'SAML IdPnin ad ID formatını seçin.',
+    persistent: 'Kalıcı',
+    persistent_description: 'Logto kullanıcı kimliğini Ad ID olarak kullan',
+    transient: 'Geçici',
+    transient_description: 'Tek kullanımlık kullanıcı kimliğini Ad ID olarak kullan',
+    unspecified: 'Belirtilmemiş',
+    unspecified_description: 'Logto kullanıcı kimliğini Ad ID olarak kullan',
+    email_address: 'E-posta adresi',
+    email_address_description: 'E-posta adresini Ad ID olarak kullan',
   },
   saml_encryption_config: {
-    /** UNTRANSLATED */
-    encrypt_assertion: 'Encrypt SAML assertion',
-    /** UNTRANSLATED */
-    encrypt_assertion_description: 'By enabling this option, the SAML assertion will be encrypted.',
-    /** UNTRANSLATED */
-    encrypt_then_sign: 'Encrypt then sign',
-    /** UNTRANSLATED */
+    encrypt_assertion: 'SAML beyanını şifrele',
+    encrypt_assertion_description: 'Bu seçeneği etkinleştirerek SAML beyanı şifrelenir.',
+    encrypt_then_sign: 'Şifrele ve sonra imzala',
     encrypt_then_sign_description:
-      'By enabling this option, the SAML assertion will be encrypted and then signed; otherwise, the SAML assertion will be signed and then encrypted.',
-    /** UNTRANSLATED */
-    certificate: 'Certificate',
-    /** UNTRANSLATED */
+      'Bu seçeneği etkinleştirerek SAML beyanı şifrelenir ve sonra imzalanır; aksi takdirde SAML beyanı imzalanır ve ardından şifrelenir.',
+    certificate: 'Sertifika',
     certificate_tooltip:
-      'Copy and paste the x509 certificate you get from your service provider to encrypt the SAML assertion.',
-    /** UNTRANSLATED */
+      'SAML beyanını şifrelemek için hizmet sağlayıcınızdan aldığınız x509 sertifikasını kopyalayıp yapıştırın.',
     certificate_placeholder:
       '-----BEGIN CERTIFICATE-----\nMIICYDCCAcmgAwIBA...\n-----END CERTIFICATE-----\n',
-    /** UNTRANSLATED */
-    certificate_missing_error: 'Certificate is required.',
-    /** UNTRANSLATED */
+    certificate_missing_error: 'Sertifika gereklidir.',
     certificate_invalid_format_error:
-      'Invalid certificate format detected. Please check the certificate format and try again.',
+      'Geçersiz sertifika formatı tespit edildi. Lütfen sertifika formatını kontrol edin ve tekrar deneyin.',
   },
   saml_app_attribute_mapping: {
-    /** UNTRANSLATED */
-    name: 'Attribute mappings',
-    /** UNTRANSLATED */
-    title: 'Base attribute mappings',
-    /** UNTRANSLATED */
-    description: 'Add attribute mappings to sync user profile from Logto to your application.',
-    /** UNTRANSLATED */
-    col_logto_claims: 'Value of Logto',
-    /** UNTRANSLATED */
-    col_sp_claims: 'Value name of your application',
-    /** UNTRANSLATED */
-    add_button: 'Add another',
+    name: 'Özellik eşlemeleri',
+    title: 'Temel özellik eşlemeleri',
+    description:
+      'Logto kullanıcı profilini uygulamanıza senkronize etmek için özellik eşlemeleri ekleyin.',
+    col_logto_claims: 'Logto değeri',
+    col_sp_claims: 'Uygulamanızın değer adı',
+    add_button: 'Başka bir eklenti',
   },
+  concurrent_device_limit,
 };
 
 export default Object.freeze(application_details);

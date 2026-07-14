@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import Button from '@/components/Button';
-import VerificationCodeInput from '@/components/VerificationCode';
+import Button from '@/shared/components/Button';
+import VerificationCodeInput from '@/shared/components/VerificationCode';
 import { type UserMfaFlow } from '@/types';
 
 import styles from './index.module.scss';
@@ -42,13 +42,17 @@ const TotpCodeVerification = <T extends UserMfaFlow>(props: Props<T>) => {
 
   const handleSubmit = useCallback(
     async (code: string[]) => {
+      if (isSubmitting) {
+        return;
+      }
+
       setInputErrorMessage(undefined);
       setIsSubmitting(true);
 
       await onSubmit(code.join(''), props);
       setIsSubmitting(false);
     },
-    [onSubmit, props]
+    [onSubmit, isSubmitting, props]
   );
 
   return (

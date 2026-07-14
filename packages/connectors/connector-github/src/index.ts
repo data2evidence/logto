@@ -13,6 +13,8 @@ import type {
   SocialConnector,
   CreateConnector,
   GetConnectorConfig,
+  GetTokenResponseAndUserInfo,
+  GetAccessTokenByRefreshToken,
 } from '@logto/connector-kit';
 import ky, { HTTPError } from 'ky';
 
@@ -37,14 +39,14 @@ import {
 
 const getAuthorizationUri =
   (getConfig: GetConnectorConfig): GetAuthorizationUri =>
-  async ({ state, redirectUri }) => {
+  async ({ state, redirectUri, scope }) => {
     const config = await getConfig(defaultMetadata.id);
     validateConfig(config, githubConfigGuard);
     const queryParameters = new URLSearchParams({
       client_id: config.clientId,
       redirect_uri: redirectUri,
       state,
-      scope: config.scope ?? defaultScope,
+      scope: scope ?? config.scope ?? defaultScope,
     });
 
     return `${authorizationEndpoint}?${queryParameters.toString()}`;
@@ -101,74 +103,143 @@ export const getAccessToken = async (config: GithubConfig, codeObject: { code: s
 
   assert(accessToken, new ConnectorError(ConnectorErrorCodes.SocialAuthCodeInvalid));
 
-  return { accessToken };
+  return result.data;
 };
+
+/**
+ * {@link https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/refreshing-user-access-tokens#refreshing-a-user-access-token-with-a-refresh-token}
+ */
+const _getAccessTokenByRefreshToken = async (config: GithubConfig, refreshToken: string) => {
+  const { clientId: client_id, clientSecret: client_secret } = config;
+
+  const httpResponse = await ky
+    .post(accessTokenEndpoint, {
+      body: new URLSearchParams({
+        client_id,
+        client_secret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+      timeout: defaultTimeout,
+    })
+    .json();
+
+  const result = accessTokenResponseGuard.safeParse(httpResponse);
+
+  if (!result.success) {
+    throw new ConnectorError(ConnectorErrorCodes.InvalidResponse, result.error);
+  }
+
+  const { access_token } = result.data;
+
+  assert(access_token, new ConnectorError(ConnectorErrorCodes.SocialAuthCodeInvalid));
+
+  return result.data;
+};
+
+const handleAuthorizationCallback = async (getConfig: GetConnectorConfig, data: unknown) => {
+  const { code } = await authorizationCallbackHandler(data);
+  const config = await getConfig(defaultMetadata.id);
+  validateConfig(config, githubConfigGuard);
+  return getAccessToken(config, { code });
+};
+
+const _getUserInfo = async (accessToken: string) => {
+  const authedApi = ky.create({
+    timeout: defaultTimeout,
+    hooks: {
+      beforeRequest: [
+        (request) => {
+          request.headers.set('Authorization', `Bearer ${accessToken}`);
+        },
+      ],
+    },
+  });
+
+  try {
+    /**
+     * If user(s) is using GitHub Apps (instead of OAuth Apps), they can customize
+     * "Account permissions" and restrict the "email addresses" visibility, and GitHub
+     * hence throws error instead of returning an empty array.
+     *
+     * We try catch the error and return an empty array instead.
+     */
+    const [userInfo, userEmails = []] = await Promise.all([
+      authedApi.get(userInfoEndpoint).json(),
+      trySafe(authedApi.get(userEmailsEndpoint).json()),
+    ]);
+
+    const userInfoResult = userInfoResponseGuard.safeParse(userInfo);
+    const userEmailsResult = emailAddressGuard.array().safeParse(userEmails);
+
+    if (!userInfoResult.success) {
+      throw new ConnectorError(ConnectorErrorCodes.InvalidResponse, userInfoResult.error);
+    }
+
+    if (!userEmailsResult.success) {
+      throw new ConnectorError(ConnectorErrorCodes.InvalidResponse, userEmailsResult.error);
+    }
+
+    const { id, avatar_url: avatar, email: publicEmail, name } = userInfoResult.data;
+
+    return {
+      id: String(id),
+      avatar: conditional(avatar),
+      email: conditional(
+        publicEmail ??
+          userEmailsResult.data.find(({ verified, primary }) => verified && primary)?.email
+      ),
+      name: conditional(name),
+      rawData: jsonGuard.parse({
+        userInfo,
+        userEmails,
+      }),
+    };
+  } catch (error: unknown) {
+    if (error instanceof HTTPError) {
+      const { status, body: rawBody } = error.response;
+
+      if (status === 401) {
+        throw new ConnectorError(ConnectorErrorCodes.SocialAccessTokenInvalid);
+      }
+
+      throw new ConnectorError(ConnectorErrorCodes.General, JSON.stringify(rawBody));
+    }
+
+    throw error;
+  }
+};
+
+const getTokenResponseAndUserInfo =
+  (getConfig: GetConnectorConfig): GetTokenResponseAndUserInfo =>
+  async (data) => {
+    const tokenResponse = await handleAuthorizationCallback(getConfig, data);
+    const userInfo = await _getUserInfo(tokenResponse.access_token);
+
+    return {
+      tokenResponse,
+      userInfo,
+    };
+  };
 
 const getUserInfo =
   (getConfig: GetConnectorConfig): GetUserInfo =>
   async (data) => {
-    const { code } = await authorizationCallbackHandler(data);
+    const { access_token: accessToken } = await handleAuthorizationCallback(getConfig, data);
+    return _getUserInfo(accessToken);
+  };
+
+const getAccessTokenByRefreshToken =
+  (getConfig: GetConnectorConfig): GetAccessTokenByRefreshToken =>
+  async (refreshToken: string) => {
     const config = await getConfig(defaultMetadata.id);
     validateConfig(config, githubConfigGuard);
-    const { accessToken } = await getAccessToken(config, { code });
-
-    const authedApi = ky.create({
-      timeout: defaultTimeout,
-      hooks: {
-        beforeRequest: [
-          (request) => {
-            request.headers.set('Authorization', `Bearer ${accessToken}`);
-          },
-        ],
-      },
-    });
 
     try {
-      /**
-       * If user(s) is using GitHub Apps (instead of OAuth Apps), they can customize
-       * "Account permissions" and restrict the "email addresses" visibility, and GitHub
-       * hence throws error instead of returning an empty array.
-       *
-       * We try catch the error and return an empty array instead.
-       */
-      const [userInfo, userEmails = []] = await Promise.all([
-        authedApi.get(userInfoEndpoint).json(),
-        trySafe(authedApi.get(userEmailsEndpoint).json()),
-      ]);
-
-      const userInfoResult = userInfoResponseGuard.safeParse(userInfo);
-      const userEmailsResult = emailAddressGuard.array().safeParse(userEmails);
-
-      if (!userInfoResult.success) {
-        throw new ConnectorError(ConnectorErrorCodes.InvalidResponse, userInfoResult.error);
-      }
-
-      if (!userEmailsResult.success) {
-        throw new ConnectorError(ConnectorErrorCodes.InvalidResponse, userEmailsResult.error);
-      }
-
-      const { id, avatar_url: avatar, email: publicEmail, name } = userInfoResult.data;
-
-      return {
-        id: String(id),
-        avatar: conditional(avatar),
-        email: conditional(
-          publicEmail ??
-            userEmailsResult.data.find(({ verified, primary }) => verified && primary)?.email
-        ),
-        name: conditional(name),
-        rawData: jsonGuard.parse({
-          userInfo,
-          userEmails,
-        }),
-      };
+      return await _getAccessTokenByRefreshToken(config, refreshToken);
     } catch (error: unknown) {
       if (error instanceof HTTPError) {
-        const { status, body: rawBody } = error.response;
-
-        if (status === 401) {
-          throw new ConnectorError(ConnectorErrorCodes.SocialAccessTokenInvalid);
-        }
+        const { body: rawBody } = error.response;
 
         throw new ConnectorError(ConnectorErrorCodes.General, JSON.stringify(rawBody));
       }
@@ -184,6 +255,8 @@ const createGithubConnector: CreateConnector<SocialConnector> = async ({ getConf
     configGuard: githubConfigGuard,
     getAuthorizationUri: getAuthorizationUri(getConfig),
     getUserInfo: getUserInfo(getConfig),
+    getTokenResponseAndUserInfo: getTokenResponseAndUserInfo(getConfig),
+    getAccessTokenByRefreshToken: getAccessTokenByRefreshToken(getConfig),
   };
 };
 

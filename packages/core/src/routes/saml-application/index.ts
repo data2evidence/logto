@@ -1,5 +1,6 @@
 import {
   ApplicationType,
+  ProductEvent,
   samlApplicationCreateGuard,
   samlApplicationPatchGuard,
   samlApplicationResponseGuard,
@@ -14,7 +15,7 @@ import { EnvSet, getTenantEndpoint } from '#src/env-set/index.js';
 import RequestError from '#src/errors/RequestError/index.js';
 import {
   calculateCertificateFingerprints,
-  ensembleSamlApplication,
+  assembleSamlApplication,
   validateAcsUrl,
 } from '#src/libraries/saml-application/utils.js';
 import koaGuard from '#src/middleware/koa-guard.js';
@@ -24,12 +25,20 @@ import { generateInternalSecret } from '#src/routes/applications/application-sec
 import type { ManagementApiRouter, RouterInitArgs } from '#src/routes/types.js';
 import { getSamlAppCallbackUrl } from '#src/saml-application/SamlApplication/utils.js';
 import assertThat from '#src/utils/assert-that.js';
+import { parseSearchParamsForSearch } from '#src/utils/search.js';
+
+import { captureEvent } from '../../utils/posthog.js';
 
 export default function samlApplicationRoutes<T extends ManagementApiRouter>(
   ...[router, { id: tenantId, queries, libraries }]: RouterInitArgs<T>
 ) {
   const {
-    applications: { insertApplication, findApplicationById, deleteApplicationById },
+    applications: {
+      countApplications,
+      insertApplication,
+      findApplicationById,
+      deleteApplicationById,
+    },
     samlApplicationConfigs: { insertSamlApplicationConfig },
     samlApplicationSecrets: {
       deleteSamlApplicationSecretById,
@@ -49,7 +58,29 @@ export default function samlApplicationRoutes<T extends ManagementApiRouter>(
 
   router.post(
     '/saml-applications',
-    koaQuotaGuard({ key: 'samlApplicationsLimit', quota }),
+    EnvSet.values.isCloud
+      ? koaQuotaGuard({ key: 'samlApplicationsLimit', quota })
+      : // OSS can create at most 3 SAML apps.
+        async (ctx, next) => {
+          const { searchParams } = ctx.URL;
+          // This will only parse the `search` query param, other params will be ignored. Please use query guard to validate them.
+          const search = parseSearchParamsForSearch(searchParams);
+          const { count: samlAppCount } = await countApplications({
+            search,
+            types: [ApplicationType.SAML],
+          });
+
+          assertThat(
+            samlAppCount < 3,
+            new RequestError({
+              code: 'application.saml.reach_oss_limit',
+              status: 403,
+              limit: 3,
+            })
+          );
+
+          return next();
+        },
     koaGuard({
       body: samlApplicationCreateGuard,
       response: samlApplicationResponseGuard,
@@ -65,6 +96,7 @@ export default function samlApplicationRoutes<T extends ManagementApiRouter>(
       const id = generateStandardId();
       // Set the default redirect URI for SAML apps when creating a new SAML app.
       const redirectUri = getSamlAppCallbackUrl(
+        // Do not apply custom domain directly to the redirect URI, since the custom domain can be removed or changed, we still want the default redirect URI to work.
         getTenantEndpoint(tenantId, EnvSet.values),
         id
       ).toString();
@@ -99,13 +131,18 @@ export default function samlApplicationRoutes<T extends ManagementApiRouter>(
           }),
         ]);
 
+        void quota.reportSubscriptionUpdatesUsage('samlApplicationsLimit');
+
         ctx.status = 201;
-        ctx.body = ensembleSamlApplication({ application, samlConfig });
+        ctx.body = assembleSamlApplication({ application, samlConfig });
       } catch (error) {
         await deleteApplicationById(application.id);
         throw error;
       }
 
+      captureEvent({ tenantId, request: ctx.req }, ProductEvent.AppCreated, {
+        type: ApplicationType.SAML,
+      });
       return next();
     }
   );
@@ -170,16 +207,19 @@ export default function samlApplicationRoutes<T extends ManagementApiRouter>(
       );
 
       await deleteApplicationById(id);
+      void quota.reportSubscriptionUpdatesUsage('samlApplicationsLimit');
 
       ctx.status = 204;
 
+      captureEvent({ tenantId, request: ctx.req }, ProductEvent.AppDeleted, {
+        type: ApplicationType.SAML,
+      });
       return next();
     }
   );
 
   router.post(
     '/saml-applications/:id/secrets',
-    koaQuotaGuard({ key: 'samlApplicationsLimit', quota }),
     koaGuard({
       params: z.object({ id: z.string() }),
       // The life span of the SAML app secret is in years (at least 1 year), and for security concern, secrets which never expire are not recommended.

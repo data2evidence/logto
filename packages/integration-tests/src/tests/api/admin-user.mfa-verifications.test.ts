@@ -4,7 +4,9 @@ import {
   createUserMfaVerification,
   deleteUser,
   deleteUserMfaVerification,
+  getUserLogtoConfig,
   getUserMfaVerifications,
+  updateUserLogtoConfig,
 } from '#src/api/index.js';
 import { createUserByAdmin } from '#src/helpers/index.js';
 
@@ -52,6 +54,55 @@ describe('admin console user management (mfa verifications)', () => {
       const mfaVerifications2 = await getUserMfaVerifications(user.id);
       expect(mfaVerifications2.length).toBe(0);
     }
+    await deleteUser(user.id);
+  });
+
+  it('should update logto_config MFA skip state successfully', async () => {
+    const user = await createUserByAdmin();
+
+    const config = await getUserLogtoConfig(user.id);
+    expect(config).toEqual({
+      mfa: { skipped: false, skipMfaOnSignIn: false },
+      passkeySignIn: { skipped: false },
+    });
+
+    const response = await updateUserLogtoConfig(user.id, {
+      mfa: { skipped: true, skipMfaOnSignIn: false },
+      passkeySignIn: { skipped: false },
+    });
+    expect(response).toEqual({
+      mfa: { skipped: true, skipMfaOnSignIn: false },
+      passkeySignIn: { skipped: false },
+    });
+
+    const updatedConfig = await getUserLogtoConfig(user.id);
+    expect(updatedConfig.mfa.skipped).toBe(true);
+    expect(updatedConfig.mfa.skipMfaOnSignIn).toBe(false);
+
+    const response2 = await updateUserLogtoConfig(user.id, {
+      mfa: { skipped: false, skipMfaOnSignIn: true },
+      passkeySignIn: { skipped: true },
+    });
+    expect(response2).toEqual({
+      mfa: { skipped: false, skipMfaOnSignIn: true },
+      passkeySignIn: { skipped: true },
+    });
+
+    const updatedConfig2 = await getUserLogtoConfig(user.id);
+    expect(updatedConfig2.mfa.skipped).toBe(false);
+    expect(updatedConfig2.mfa.skipMfaOnSignIn).toBe(true);
+    expect(updatedConfig2.passkeySignIn.skipped).toBe(true);
+
+    // Reset all flags
+    const response3 = await updateUserLogtoConfig(user.id, {
+      mfa: { skipped: false, skipMfaOnSignIn: false },
+      passkeySignIn: { skipped: false },
+    });
+    expect(response3).toEqual({
+      mfa: { skipped: false, skipMfaOnSignIn: false },
+      passkeySignIn: { skipped: false },
+    });
+
     await deleteUser(user.id);
   });
 });

@@ -9,7 +9,8 @@ const quota_table = {
     title: 'Applications',
     total: 'Total des applications',
     m2m: 'Machine-à-machine',
-    third_party: 'Applications tierces',
+    third_party: 'Applications tierces OIDC/OAuth',
+    saml_app: 'Applications SAML',
   },
   resource: {
     title: 'Ressources API',
@@ -86,7 +87,7 @@ const quota_table = {
   unlimited: 'Illimité',
   contact: 'Contact',
   monthly_price: '${{value, number}}/mois',
-  days_one: '{{count, number}} jour',
+  days: '{{count, number}} jour',
   days_other: '{{count, number}} jours',
   add_on: 'Module complémentaire',
   tier: 'Niveau{{value, number}} :',

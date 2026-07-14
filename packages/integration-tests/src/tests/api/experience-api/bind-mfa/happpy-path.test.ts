@@ -1,7 +1,12 @@
 import { InteractionEvent, MfaFactor, SignInIdentifier } from '@logto/schemas';
 import { authenticator } from 'otplib';
 
-import { createUserMfaVerification, deleteUser } from '#src/api/admin-user.js';
+import {
+  createUserMfaVerification,
+  deleteUser,
+  getUserLogtoConfig,
+  updateUserLogtoConfig,
+} from '#src/api/admin-user.js';
 import { initExperienceClient, logoutClient, processSession } from '#src/helpers/client.js';
 import {
   identifyUserWithUsernamePassword,
@@ -44,7 +49,9 @@ describe('Bind MFA APIs happy path', () => {
 
     it('should bind TOTP on register', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
-      const client = await initExperienceClient(InteractionEvent.Register);
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
 
       const { verificationId } = await client.createNewPasswordIdentityVerification({
         identifier: {
@@ -129,9 +136,31 @@ describe('Bind MFA APIs happy path', () => {
       await enableUserControlledMfaWithTotp();
     });
 
+    it('should persist mfa.enabled as false by default right after identification during register', async () => {
+      const { username, password } = generateNewUserProfile({ username: true, password: true });
+
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
+
+      await client.updateProfile({ type: SignInIdentifier.Username, value: username });
+      await client.updateProfile({ type: 'password', value: password });
+      await client.identifyUser();
+
+      const { userId } = await client.getInteractionData();
+      expect(userId).toBeDefined();
+
+      const config = await getUserLogtoConfig(userId!);
+      expect(config.mfa.enabled).toBe(false);
+
+      await deleteUser(userId!);
+    });
+
     it('should able to skip MFA binding on register', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
-      const client = await initExperienceClient(InteractionEvent.Register);
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
 
       const { verificationId } = await client.createNewPasswordIdentityVerification({
         identifier: {
@@ -144,7 +173,7 @@ describe('Bind MFA APIs happy path', () => {
       await client.identifyUser({ verificationId });
 
       await expectRejects(client.submitInteraction(), {
-        code: 'user.missing_mfa',
+        code: 'user.suggest_mfa',
         status: 422,
       });
 
@@ -165,6 +194,61 @@ describe('Bind MFA APIs happy path', () => {
       await deleteUser(userId);
     });
 
+    it('should prompt again after resetting skip state via management API', async () => {
+      const { username, password } = generateNewUserProfile({ username: true, password: true });
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
+
+      const { verificationId } = await client.createNewPasswordIdentityVerification({
+        identifier: {
+          type: SignInIdentifier.Username,
+          value: username,
+        },
+        password,
+      });
+
+      await client.identifyUser({ verificationId });
+
+      await expectRejects(client.submitInteraction(), {
+        code: 'user.suggest_mfa',
+        status: 422,
+      });
+
+      await client.skipMfaBinding();
+
+      const { redirectTo } = await client.submitInteraction();
+      const userId = await processSession(client, redirectTo);
+      await logoutClient(client);
+
+      const skippedConfig = await getUserLogtoConfig(userId);
+      expect(skippedConfig.mfa.skipped).toBe(true);
+
+      await signInWithPassword({
+        identifier: {
+          type: SignInIdentifier.Username,
+          value: username,
+        },
+        password,
+      });
+
+      await updateUserLogtoConfig(userId, {
+        mfa: { skipped: false, skipMfaOnSignIn: false },
+        passkeySignIn: { skipped: false },
+      });
+      const resetConfig = await getUserLogtoConfig(userId);
+      expect(resetConfig.mfa.skipped).toBe(false);
+
+      const client2 = await initExperienceClient();
+      await identifyUserWithUsernamePassword(client2, username, password);
+      await expectRejects(client2.submitInteraction(), {
+        code: 'user.suggest_mfa',
+        status: 422,
+      });
+
+      await deleteUser(userId);
+    });
+
     it('should able to skip MFA binding on sign-in', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
       await userApi.create({ username, password });
@@ -173,7 +257,7 @@ describe('Bind MFA APIs happy path', () => {
       await identifyUserWithUsernamePassword(client, username, password);
 
       await expectRejects(client.submitInteraction(), {
-        code: 'user.missing_mfa',
+        code: 'user.suggest_mfa',
         status: 422,
       });
 
@@ -182,6 +266,29 @@ describe('Bind MFA APIs happy path', () => {
       const { redirectTo } = await client.submitInteraction();
       await processSession(client, redirectTo);
       await logoutClient(client);
+    });
+
+    it('should persist mfa.enabled as true after binding any MFA factor', async () => {
+      const { username, password } = generateNewUserProfile({ username: true, password: true });
+      const user = await userApi.create({ username, password });
+
+      const client = await initExperienceClient();
+      await identifyUserWithUsernamePassword(client, username, password);
+
+      await expectRejects(client.submitInteraction(), {
+        code: 'user.suggest_mfa',
+        status: 422,
+      });
+
+      const verificationId = await successfullyCreateAndVerifyTotp(client);
+      await client.bindMfa(MfaFactor.TOTP, verificationId);
+
+      const { redirectTo } = await client.submitInteraction();
+      await processSession(client, redirectTo);
+      await logoutClient(client);
+
+      const config = await getUserLogtoConfig(user.id);
+      expect(config.mfa.enabled).toBe(true);
     });
   });
 
@@ -192,7 +299,9 @@ describe('Bind MFA APIs happy path', () => {
 
     it('should able to register without MFA', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
-      const client = await initExperienceClient(InteractionEvent.Register);
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
 
       const { verificationId } = await client.createNewPasswordIdentityVerification({
         identifier: {
@@ -217,7 +326,7 @@ describe('Bind MFA APIs happy path', () => {
       await identifyUserWithUsernamePassword(client, username, password);
 
       await expectRejects(client.submitInteraction(), {
-        code: 'user.missing_mfa',
+        code: 'user.suggest_mfa',
         status: 422,
       });
 
@@ -236,7 +345,9 @@ describe('Bind MFA APIs happy path', () => {
 
     it('should able to register without MFA', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
-      const client = await initExperienceClient(InteractionEvent.Register);
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
 
       const { verificationId } = await client.createNewPasswordIdentityVerification({
         identifier: {
@@ -272,7 +383,9 @@ describe('Bind MFA APIs happy path', () => {
 
     it('should bind TOTP and backup codes on register', async () => {
       const { username, password } = generateNewUserProfile({ username: true, password: true });
-      const client = await initExperienceClient(InteractionEvent.Register);
+      const client = await initExperienceClient({
+        interactionEvent: InteractionEvent.Register,
+      });
 
       const { verificationId } = await client.createNewPasswordIdentityVerification({
         identifier: {
@@ -321,7 +434,7 @@ describe('Bind MFA APIs happy path', () => {
       const client = await initExperienceClient();
       await identifyUserWithUsernamePassword(client, username, password);
       await expectRejects(client.submitInteraction(), {
-        code: 'user.missing_mfa',
+        code: 'user.suggest_mfa',
         status: 422,
       });
       await client.skipMfaBinding();

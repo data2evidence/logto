@@ -1,21 +1,21 @@
 import {
   InteractionEvent,
   SignInIdentifier,
-  SignInMode,
   type VerificationCodeIdentifier,
 } from '@logto/schemas';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 
 import { identifyWithVerificationCode, registerWithVerifiedIdentifier } from '@/apis/experience';
 import useApi from '@/hooks/use-api';
-import { useConfirmModal } from '@/hooks/use-confirm-modal';
+import { usePromiseConfirmModal } from '@/hooks/use-confirm-modal';
 import type { ErrorHandlers } from '@/hooks/use-error-handler';
 import useErrorHandler from '@/hooks/use-error-handler';
 import useGlobalRedirectTo from '@/hooks/use-global-redirect-to';
-import usePreSignInErrorHandler from '@/hooks/use-pre-sign-in-error-handler';
+import useNavigateWithPreservedSearchParams from '@/hooks/use-navigate-with-preserved-search-params';
 import { useSieMethods } from '@/hooks/use-sie';
+import useSubmitInteractionErrorHandler from '@/hooks/use-submit-interaction-error-handler';
+import useTerms from '@/hooks/use-terms';
 import { formatPhoneNumberWithCountryCallingCode } from '@/utils/country-code';
 
 import useGeneralVerificationCodeErrorHandler from './use-general-verification-code-error-handler';
@@ -27,10 +27,11 @@ const useSignInFlowCodeVerification = (
   errorCallback?: () => void
 ) => {
   const { t } = useTranslation();
-  const { show } = useConfirmModal();
-  const navigate = useNavigate();
+  const { show } = usePromiseConfirmModal();
+  const { termsValidation } = useTerms();
+  const navigate = useNavigateWithPreservedSearchParams();
   const redirectTo = useGlobalRedirectTo();
-  const { signInMode, signUpMethods } = useSieMethods();
+  const { isVerificationCodeEnabledForSignUp } = useSieMethods();
   const handleError = useErrorHandler();
   const registerWithIdentifierAsync = useApi(registerWithVerifiedIdentifier);
   const asyncSignInWithVerificationCodeIdentifier = useApi(identifyWithVerificationCode);
@@ -38,10 +39,11 @@ const useSignInFlowCodeVerification = (
   const { errorMessage, clearErrorMessage, generalVerificationCodeErrorHandlers } =
     useGeneralVerificationCodeErrorHandler();
 
-  const preSignInErrorHandler = usePreSignInErrorHandler({ replace: true });
-
-  const preRegisterErrorHandler = usePreSignInErrorHandler({
-    interactionEvent: InteractionEvent.Register,
+  const preSignInErrorHandler = useSubmitInteractionErrorHandler(InteractionEvent.SignIn, {
+    replace: true,
+  });
+  const preRegisterErrorHandler = useSubmitInteractionErrorHandler(InteractionEvent.Register, {
+    replace: true,
   });
 
   const showIdentifierErrorAlert = useIdentifierErrorAlert();
@@ -49,43 +51,60 @@ const useSignInFlowCodeVerification = (
   const identifierNotExistErrorHandler = useCallback(async () => {
     const { type, value } = identifier;
 
-    // Should not redirect user to register if is sign-in only mode or bind social flow
-    if (signInMode === SignInMode.SignIn || !signUpMethods.includes(type)) {
+    // Should not redirect user to register if is sign-in only mode
+    if (!isVerificationCodeEnabledForSignUp(type)) {
       void showIdentifierErrorAlert(IdentifierErrorType.IdentifierNotExist, type, value);
 
       return;
     }
 
-    show({
-      confirmText: 'action.create',
+    const [confirmed] = await show({
+      confirmText: 'action.continue',
       ModalContent: t('description.sign_in_id_does_not_exist', {
-        type: t(`description.${type === SignInIdentifier.Email ? 'email' : 'phone_number'}`),
         value:
           type === SignInIdentifier.Phone ? formatPhoneNumberWithCountryCallingCode(value) : value,
       }),
-      onConfirm: async () => {
-        const [error, result] = await registerWithIdentifierAsync(verificationId);
-
-        if (error) {
-          await handleError(error, preRegisterErrorHandler);
-
-          return;
-        }
-
-        if (result?.redirectTo) {
-          await redirectTo(result.redirectTo);
-        }
-      },
-      onCancel: () => {
-        navigate(-1);
-      },
     });
+
+    if (!confirmed) {
+      navigate(-1);
+      return;
+    }
+
+    /**
+     * The user has confirmed to create a new account, which turns this sign-in attempt into a
+     * registration. Validate the terms agreement before submitting so policies that require
+     * agreement on registration (`Manual` and `ManualRegistrationOnly`) are still enforced on
+     * this path. `termsValidation` is a no-op when the policy is `Automatic`, the terms are not
+     * configured, or the user has already agreed.
+     *
+     * If the user declines the terms, navigate back to the identifier page (same as cancelling
+     * the confirmation above). The verification code has already been consumed by the failed
+     * sign-in attempt, so keeping the user on this page would only let them retry with a dead
+     * code and hit a confusing `verification_code.not_found` error.
+     */
+    if (!(await termsValidation())) {
+      navigate(-1);
+      return;
+    }
+
+    const [error, result] = await registerWithIdentifierAsync(verificationId);
+
+    if (error) {
+      await handleError(error, preRegisterErrorHandler);
+
+      return;
+    }
+
+    if (result?.redirectTo) {
+      await redirectTo(result.redirectTo);
+    }
   }, [
     identifier,
-    signInMode,
-    signUpMethods,
+    isVerificationCodeEnabledForSignUp,
     show,
     t,
+    termsValidation,
     showIdentifierErrorAlert,
     registerWithIdentifierAsync,
     verificationId,

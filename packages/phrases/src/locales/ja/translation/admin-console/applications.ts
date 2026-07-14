@@ -2,11 +2,13 @@ const applications = {
   page_title: 'アプリケーション ',
   title: 'アプリケーション ',
   subtitle:
-    'ネイティブ、シングルページ、マシン・トゥ・マシン、または従来のアプリケーションにLogto認証を設定する',
+    'ネイティブ、シングルページ、マシン・トゥ・マシン、または従来のアプリケーションに Logto 認証を設定する',
   subtitle_with_app_type: 'あなたの {{name}} アプリケーションに Logto 認証を設定する',
+  create_device_flow_description:
+    'OAuth 2.0 デバイス認可グラントを使用するネイティブアプリケーションを作成します。入力制限のあるデバイスやヘッドレスアプリ向けです。',
   create: 'アプリケーションを作成する',
-  create_subtitle_third_party:
-    'LogtoをIdentity Provider（IdP）として使用し、サードパーティアプリケーションと簡単に統合できます',
+  create_third_party: 'サードパーティアプリケーションを作成する',
+  create_thrid_party_modal_title: 'サードパーティアプリを作成する（{{type}}）',
   application_name: 'アプリケーション名',
   application_name_placeholder: '私のアプリ',
   application_description: 'アプリケーションの説明',
@@ -23,16 +25,16 @@ const applications = {
     native: {
       title: 'ネイティブアプリ',
       subtitle: 'ネイティブ環境で実行されるアプリケーション',
-      description: '例：iOSアプリ、Androidアプリ',
+      description: '例：iOSアプリ、Androidアプリ、デスクトップアプリ、テレビ、CLI',
     },
     spa: {
       title: 'シングルページアプリ',
-      subtitle: 'Webブラウザで実行され、データを動的に更新するアプリケーション',
-      description: '例：React DOMアプリ、Vueアプリ',
+      subtitle: 'Web ブラウザで実行され、データを動的に更新するアプリケーション',
+      description: '例：React DOM アプリ、Vue アプリ',
     },
     traditional: {
-      title: '従来的なWeb',
-      subtitle: 'Webサーバーのみでページをレンダリングおよび更新するアプリケーション',
+      title: '従来的な Web',
+      subtitle: 'Web サーバーのみでページをレンダリングおよび更新するアプリケーション',
       description: '例：Next.js、PHP',
     },
     machine_to_machine: {
@@ -42,26 +44,46 @@ const applications = {
     },
     protected: {
       title: 'Protected App',
-      subtitle: 'Logtoによって保護されたアプリ',
+      subtitle: 'Logto によって保護されたアプリ',
       description: 'N/A',
     },
     saml: {
-      /** UNTRANSLATED */
-      title: 'SAML App',
-      /** UNTRANSLATED */
-      subtitle: 'An app that is used as an SAML IdP connector',
-      /** UNTRANSLATED */
-      description: 'E.g., SAML',
+      title: 'SAML アプリ',
+      subtitle: 'SAML IdP コネクターとして使用されるアプリ',
+      description: '例：SAML',
     },
     third_party: {
       title: 'Third-party App',
-      subtitle: 'サードパーティIdPコネクターとして使用されるアプリ',
+      subtitle: 'サードパーティ IdP コネクターとして使用されるアプリ',
       description: '例：OIDC、SAML',
+    },
+  },
+  authorization_flow: {
+    title: '認可フロー',
+    tooltip: 'アプリケーションの認可フローを選択してください。一度設定すると変更できません。',
+    authorization_code: {
+      title: 'Authorization code',
+      description:
+        'デフォルトで最も一般的な認可タイプです。ユーザーはサインインページにリダイレクトされ、直接アクセスを認可します。',
+    },
+    device_flow: {
+      title: 'Device flow',
+      description:
+        '入力制限のあるデバイスやヘッドレスアプリ（テレビ、CLIなど）向けです。ユーザーはデバイスコードの入力または QR コードのスキャンにより、別のデバイスでログインを完了します。',
     },
   },
   placeholder_title: '続行するにはアプリケーションタイプを選択してください',
   placeholder_description:
-    'LogtoはOIDCのためにアプリケーションエンティティを使用して、アプリケーションの識別、サインインの管理、監査ログの作成などのタスクをサポートします。',
+    'Logto は OIDC のためにアプリケーションエンティティを使用して、アプリケーションの識別、サインインの管理、監査ログの作成などのタスクをサポートします。',
+  third_party_application_placeholder_description:
+    'Logto を ID プロバイダーとして使用して、サードパーティのサービスに OAuth 承認を提供します。 \n リソースアクセスのための事前構築されたユーザー同意画面が含まれています。<a>詳細を確認</a>',
+  guide: {
+    third_party: {
+      title: 'サードパーティアプリケーションを統合する',
+      description:
+        'Logto を ID プロバイダーとして使用して、サードパーティのサービスに OAuth 承認を提供します。安全なリソースアクセスのための事前構築されたユーザー同意画面が含まれています。<a>詳細はこちら</a>',
+    },
+  },
 };
 
 export default Object.freeze(applications);

@@ -37,6 +37,11 @@ const connector = {
     'Вы не можете иметь несколько социальных коннекторов с одной и той же целью и платформой.',
   cannot_overwrite_metadata_for_non_standard_connector:
     'Метаданные этого коннектора не могут быть перезаписаны.',
+  email_connector: {
+    bulk_deletion_no_filter:
+      'Для массового удаления по характеристикам необходимо предоставить хотя бы одно условие фильтрации. Поддерживаемые свойства: {{properties, list(type:conjunction)}}.',
+  },
+  token_storage_not_supported: 'Этот коннектор не поддерживает хранение токенов. ',
 };
 
 export default Object.freeze(connector);

@@ -1,4 +1,4 @@
-import { parseJson } from '@logto/connector-kit';
+import { parseJson, tokenResponseGuard, type TokenResponse } from '@logto/connector-kit';
 import { assert } from '@silverhand/essentials';
 import camelcaseKeys, { type CamelCaseKeys } from 'camelcase-keys';
 import { got, HTTPError } from 'got';
@@ -56,25 +56,23 @@ export const fetchOidcConfig = async (
   }
 };
 
+type HandleTokenExchangePayload = {
+  code: string;
+  clientId: string;
+  clientSecret: string;
+  redirectUri?: string;
+};
+
 export const handleTokenExchange = async (
   tokenEndpoint: string,
-  {
-    code,
-    clientId,
-    clientSecret,
-    redirectUri,
-  }: {
-    code: string;
-    clientId: string;
-    clientSecret: string;
-    redirectUri?: string;
-  }
+  { code, clientId, clientSecret, redirectUri }: HandleTokenExchangePayload
 ) => {
   const tokenRequestParameters = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
-    client_id: clientId,
     ...(redirectUri ? { redirect_uri: redirectUri } : {}),
+    // No need to pass `client_id` and `client_secret` as it is already in the Authorization header
+    // For some providers like Okta, passing `client_id` in the body while using client credentials authorization header will cause an error
   });
 
   const headers = {
@@ -100,7 +98,7 @@ export const fetchToken = async (
   { tokenEndpoint, clientId, clientSecret }: BaseOidcConfig,
   data: unknown,
   redirectUri: string
-): Promise<CamelCaseKeys<OidcTokenResponse>> => {
+): Promise<OidcTokenResponse> => {
   const result = oidcAuthorizationResponseGuard.safeParse(data);
 
   if (!result.success) {
@@ -129,7 +127,7 @@ export const fetchToken = async (
       });
     }
 
-    return camelcaseKeys(exchangeResult.data);
+    return exchangeResult.data;
   } catch (error: unknown) {
     if (error instanceof SsoConnectorError) {
       throw error;
@@ -165,7 +163,7 @@ export const getIdTokenClaims = async (
       });
     }
 
-    const result = idTokenProfileStandardClaimsGuard.safeParse(payload);
+    const result = idTokenProfileStandardClaimsGuard.catchall(z.unknown()).safeParse(payload);
 
     if (!result.success) {
       throw new SsoConnectorError(SsoConnectorErrorCodes.AuthorizationFailed, {
@@ -236,6 +234,49 @@ export const getUserInfo = async (accessToken: string, userinfoEndpoint: string)
 
     throw new SsoConnectorError(SsoConnectorErrorCodes.AuthorizationFailed, {
       message: 'Fail to fetch user info',
+      error: error instanceof HTTPError ? error.response.body : error,
+    });
+  }
+};
+
+export const getTokenByRefreshToken = async (
+  { tokenEndpoint, clientId, clientSecret }: BaseOidcConfig,
+  refreshToken: string
+): Promise<TokenResponse> => {
+  const tokenRequestParameters = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  });
+
+  const headers = {
+    Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`, 'utf8').toString('base64')}`,
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+
+  try {
+    const httpResponse = await got.post(tokenEndpoint, {
+      body: tokenRequestParameters.toString(),
+      headers,
+    });
+
+    const result = tokenResponseGuard.safeParse(parseJson(httpResponse.body));
+
+    if (!result.success) {
+      throw new SsoConnectorError(SsoConnectorErrorCodes.AuthorizationFailed, {
+        message: 'Invalid token response',
+        response: result.data,
+        error: result.error.flatten(),
+      });
+    }
+
+    return result.data;
+  } catch (error: unknown) {
+    if (error instanceof SsoConnectorError) {
+      throw error;
+    }
+
+    throw new SsoConnectorError(SsoConnectorErrorCodes.AuthorizationFailed, {
+      message: 'Fail to fetch token',
       error: error instanceof HTTPError ? error.response.body : error,
     });
   }

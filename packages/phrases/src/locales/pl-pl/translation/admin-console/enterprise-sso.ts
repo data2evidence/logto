@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'Jednolite logowanie dla przedsiębiorstw',
   title: 'Jednolite logowanie dla przedsiębiorstw',
-  subtitle:
-    'Połącz dostawcę tożsamości przedsiębiorstwa i włącz jednostronne logowanie jednolitego.',
+  subtitle: 'Podłącz dostawcę tożsamości przedsiębiorstwa i włącz jednokrotne logowanie.',
   create: 'Dodaj łącznik przedsiębiorstwa',
   col_connector_name: 'Nazwa łącznika',
   col_type: 'Typ',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       'Utwórz nową integrację aplikacji za pomocą SAML 2.0 w dostawcy tożsamości {{name}}. Następnie wklej poniższą wartość.',
     saml: {
       acs_url_field_name: 'Adres URL usługi konsumenta twierdzeń (Adres URL odpowiedzi)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: 'URI odbiorcy (SP Entity ID)',
+      entity_id_field_name: 'Identyfikator jednostki dostawcy usług (SP Entity ID)',
+      entity_id_field_tooltip:
+        'Identyfikator jednostki dostawcy usług może przybierać dowolny format tekstowy, zazwyczaj używa formy URI lub URL jako identyfikatora, ale nie jest to obowiązkowe.',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'Adres URL przekierowania (Adres URL wywołania zwrotnego)',
+      redirect_uri_field_description:
+        'URI przekierowania to miejsce, do którego użytkownicy są kierowani po uwierzytelnieniu SSO. Dodaj ten adres URI do konfiguracji swojego IdP.',
+      redirect_uri_field_custom_domain_description:
+        'Jeśli używasz w Logto wielu <a>domen niestandardowych</a>, dodaj wszystkie odpowiadające im adresy URI zwrotu do IdP, aby SSO działało w każdej domenie.\n\nDomyślna domena Logto (*.logto.app) jest zawsze ważna – uwzględnij ją tylko wtedy, gdy chcesz obsługiwać SSO także w tej domenie.',
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Tajny klucz klienta',
       issuer_field_name: 'Wydawca',
       scope_field_name: 'Zakres',
+      scope_field_placeholder: 'Wprowadź zakresy (oddzielone spacją)',
     },
   },
 };

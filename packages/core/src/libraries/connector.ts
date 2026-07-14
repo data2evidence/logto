@@ -3,9 +3,15 @@ import type {
   AllConnector,
   ConnectorPlatform,
   EmailConnector,
+  GetI18nEmailTemplate,
   SmsConnector,
 } from '@logto/connector-kit';
-import { validateConfig, ServiceConnector, ConnectorType } from '@logto/connector-kit';
+import {
+  validateConfig,
+  ServiceConnector,
+  ConnectorType,
+  TemplateType,
+} from '@logto/connector-kit';
 import { type Nullable, conditional, pick, trySafe } from '@silverhand/essentials';
 
 import RequestError from '#src/errors/RequestError/index.js';
@@ -83,7 +89,8 @@ export const createConnectorLibrary = (
           const { rawConnector, rawMetadata } = await buildRawConnector(
             connectorFactory,
             async () => getConnectorConfig(id),
-            conditional(connectorFactory.metadata.id === ServiceConnector.Email && getClient)
+            conditional(connectorFactory.metadata.id === ServiceConnector.Email && getClient),
+            conditional(connectorFactory.type === ConnectorType.Email && getI18nEmailTemplate)
           );
 
           const connector: AllConnector = {
@@ -164,6 +171,45 @@ export const createConnectorLibrary = (
     return connector;
   };
 
+  const getI18nEmailTemplate: GetI18nEmailTemplate = async (templateType, languageTag) => {
+    const { signInExperiences, emailTemplates } = queries;
+
+    // If the language tag is provided, try to get the template with the language tag.
+    if (languageTag) {
+      const template = await emailTemplates.findByLanguageTagAndTemplateType(
+        templateType,
+        languageTag
+      );
+
+      if (template) {
+        return template.details;
+      }
+    }
+
+    const {
+      languageInfo: { fallbackLanguage },
+    } = await signInExperiences.findDefaultSignInExperience();
+
+    // If the language tag is not provided or the template with the language tag is not available,
+    // fallback to the template with the fallback language.
+    const fallbackTemplate = await emailTemplates.findByLanguageTagAndTemplateType(
+      templateType,
+      fallbackLanguage
+    );
+
+    if (fallbackTemplate) {
+      return fallbackTemplate.details;
+    }
+
+    // If the fallback template is also not available, finally fallback to the generic template type.
+    const genericTemplate = await emailTemplates.findByLanguageTagAndTemplateType(
+      TemplateType.Generic,
+      fallbackLanguage
+    );
+
+    return genericTemplate?.details;
+  };
+
   return {
     getConnectorConfig,
     getLogtoConnectors,
@@ -178,5 +224,6 @@ export const createConnectorLibrary = (
      * @throws {RequestError} If no connector can send message of the given type (status 500).
      */
     getMessageConnector,
+    getI18nEmailTemplate,
   };
 };

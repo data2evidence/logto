@@ -1,9 +1,10 @@
-import { ConsoleLog, GlobalValues } from '@logto/shared';
+import { ConsoleLog, GlobalValues, TtlCache } from '@logto/shared';
 import type { Optional } from '@silverhand/essentials';
 import { appendPath } from '@silverhand/essentials';
 import type { DatabasePool } from '@silverhand/slonik';
 import chalk from 'chalk';
 
+import { WellKnownCache } from '#src/caches/well-known.js';
 import { createLogtoConfigLibrary } from '#src/libraries/logto-config.js';
 import { createLogtoConfigQueries } from '#src/queries/logto-config.js';
 
@@ -17,6 +18,9 @@ export enum UserApps {
   Api = 'api',
   Oidc = 'oidc',
   DemoApp = 'demo-app',
+  DeviceDemoApp = 'device-demo-app',
+  AccountCenter = 'account',
+  WellKnown = '.well-known',
 }
 
 /** Apps (also paths) ONLY for the admin tenant. */
@@ -38,11 +42,13 @@ export class EnvSet {
     this.dbUrl,
     EnvSet.values.isUnitTest,
     this.values.databasePoolSize,
-    EnvSet.values.databaseConnectionTimeout
+    EnvSet.values.databaseConnectionTimeout,
+    EnvSet.values.databaseStatementTimeout
   );
 
   #pool: Optional<DatabasePool>;
   #oidc: Optional<Awaited<ReturnType<typeof loadOidcValues>>>;
+  #endpoint: Optional<URL>;
 
   constructor(
     public readonly tenantId: string,
@@ -65,26 +71,42 @@ export class EnvSet {
     return this.#oidc;
   }
 
+  get endpoint() {
+    if (!this.#endpoint) {
+      return throwNotLoadedError();
+    }
+
+    return this.#endpoint;
+  }
+
   async load(customDomain?: string) {
     const pool = await createPoolByEnv(
       this.databaseUrl,
       EnvSet.values.isUnitTest,
       EnvSet.values.databasePoolSize,
-      EnvSet.values.databaseConnectionTimeout
+      EnvSet.values.databaseConnectionTimeout,
+      EnvSet.values.databaseStatementTimeout
     );
 
     this.#pool = pool;
 
     const consoleLog = new ConsoleLog(chalk.magenta('env-set'));
-    const { getOidcConfigs } = createLogtoConfigLibrary({
-      logtoConfigs: createLogtoConfigQueries(pool),
+    const wellKnownCache = new WellKnownCache(this.tenantId, new TtlCache(60_000));
+    const logtoConfigQueries = createLogtoConfigQueries(pool, wellKnownCache);
+
+    const { getOidcConfigs, promoteScheduledSigningKeyRotation } = createLogtoConfigLibrary({
+      logtoConfigs: logtoConfigQueries,
+      pool,
+      wellKnownCache,
     });
 
+    await promoteScheduledSigningKeyRotation();
+
     const oidcConfigs = await getOidcConfigs(consoleLog);
-    const endpoint = customDomain
+    this.#endpoint = customDomain
       ? new URL(customDomain)
       : getTenantEndpoint(this.tenantId, EnvSet.values);
-    this.#oidc = await loadOidcValues(appendPath(endpoint, '/oidc').href, oidcConfigs);
+    this.#oidc = await loadOidcValues(appendPath(this.#endpoint, '/oidc').href, oidcConfigs);
   }
 
   async end() {

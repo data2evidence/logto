@@ -35,8 +35,27 @@ const session = {
     invalid_backup_code: '无效的备用代码。',
     mfa_policy_not_user_controlled: 'MFA 策略不受用户控制。',
     mfa_factor_not_enabled: 'MFA 因素未启用。',
+    suggest_additional_mfa: '为更强的安全性，建议添加另一种多因素认证方式。你可以跳过此步骤继续。',
+  },
+  passkey_sign_in: {
+    pending_info_not_found: '未找到待处理的 Passkey 登录信息。请重新发起登录流程。',
+    conflict_rp_id: 'Relying Party ID 不匹配。请使用正确的客户端登录。',
+    sso_users_not_allowed: 'SSO 用户无法使用 Passkey 登录选项。',
   },
   sso_enabled: '该邮箱已开启单点登录，请使用 SSO 登录。',
+  captcha_required: '需要验证码。',
+  captcha_failed: '验证码验证失败。',
+  email_blocklist: {
+    disposable_email_validation_failed: '电子邮件地址验证失败。',
+    invalid_email: '无效的电子邮件地址。',
+    email_subaddressing_not_allowed: '不允许电子邮件子地址。',
+    email_not_allowed: '电子邮件地址 "{{email}}" 受限。请选择其他地址。',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Google One Tap cookie 不匹配。',
+    invalid_id_token: '无效的 Google ID Token。',
+    unverified_email: '邮箱未验证。',
+  },
 };
 
 export default Object.freeze(session);

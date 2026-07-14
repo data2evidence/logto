@@ -1,8 +1,6 @@
 const protected_app = {
   name: '受保护的应用',
   title: '创建受保护的应用：简单快速地添加身份验证',
-  description:
-    '受保护的应用安全地维护用户会话并代理您的应用请求。由 Cloudflare Workers 提供支持，全球范围内享受一流性能和 0 毫秒冷启动。 <a>了解更多</a>',
   fast_create: '快速创建',
   modal_title: '创建受保护的应用',
   modal_subtitle: '点击即可启用安全且快速的保护。轻松为现有 Web 应用添加身份验证。',
@@ -29,6 +27,18 @@ const protected_app = {
       invalid_url: "无效的源 URL 格式：使用 http:// 或 https://。请注意：暂不支持 '/pathname'。",
       localhost: '请首先将本地服务器暴露到互联网上。了解有关<a>本地开发</a>的更多信息。',
     },
+  },
+  id_token_claims: {
+    card_title: 'ID token 声明',
+    card_description:
+      '在受保护的应用登录过程中请求额外的用户 scope，将启用的扩展声明包含在转发的 ID token 中。',
+    field_title: '附加 scope',
+    field_description:
+      '声明仅在 <a>Custom JWT > ID token</a> 中启用且在此处请求了对应 scope 时才会被包含。',
+    table_column_scope: 'Scope',
+    table_column_claims_forwarded: '转发的声明',
+    disabled_claims_hint:
+      '灰色的声明尚未被转发。请在 <a>Custom JWT > ID token</a> 中启用它们，使其包含在 ID token 中。',
   },
   success_message: '🎉 应用身份验证成功启用！尽情探索您网站的新体验。',
 };

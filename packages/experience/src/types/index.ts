@@ -3,9 +3,12 @@ import type {
   Theme,
   WebAuthnRegistrationOptions,
   WebAuthnAuthenticationOptions,
-  FullSignInExperience,
   InteractionEvent,
 } from '@logto/schemas';
+
+import type { SignInExperienceResponse, Platform } from '../shared/types';
+
+export type { SignInExperienceResponse, Platform } from '../shared/types';
 
 export enum UserFlow {
   SignIn = 'sign-in',
@@ -25,11 +28,7 @@ export enum SearchParameters {
   LinkSocial = 'link_social',
 }
 
-export type Platform = 'web' | 'mobile';
-
 export type VerificationCodeIdentifier = SignInIdentifier.Email | SignInIdentifier.Phone;
-
-export type SignInExperienceResponse = Omit<FullSignInExperience, 'socialSignInConnectorTargets'>;
 
 export type PreviewConfig = {
   signInExperience: SignInExperienceResponse;
@@ -39,11 +38,8 @@ export type PreviewConfig = {
   isNative: boolean;
 };
 
-export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends ReadonlyArray<
-  infer ElementType
->
-  ? ElementType
-  : never;
+export type ArrayElement<ArrayType extends readonly unknown[]> =
+  ArrayType extends ReadonlyArray<infer ElementType> ? ElementType : never;
 
 export type WebAuthnOptions = WebAuthnRegistrationOptions | WebAuthnAuthenticationOptions;
 

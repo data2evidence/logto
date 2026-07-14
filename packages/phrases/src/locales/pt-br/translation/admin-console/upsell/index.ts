@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'Atualizar plano',
   compare_plans: 'Comparar planos',
+  try_with_product_name: 'Experimente {{productName}} agora',
   view_plans: 'Ver planos',
   create_tenant: {
     title: 'Selecione o seu plano de inquilino',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'Atualizar plano',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'Uso de token excedeu o limite. Atualize o seu plano.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      'Você excedeu o limite de uso de tokens do seu <planName/>. Os usuários não poderão acessar o serviço da Logto corretamente. Por favor, atualize seu plano para premium prontamente para evitar qualquer inconveniente.',
   },
   payment_overdue_modal: {
     title: 'Pagamento da fatura em atraso',
@@ -50,6 +49,24 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'Você está prestes a mudar seu inquilino de desenvolvimento para inquilino de produção',
+    description:
+      'Pronto para entrar em operação? Converter este inquilino de desenvolvimento para um inquilino de produção desbloqueia todas as funcionalidades',
+    benefits: {
+      stable_environment: 'Para usuários finais: Um ambiente estável para uso real.',
+      keep_pro_features:
+        'Mantenha os recursos Pro: Você está prestes a assinar o plano Pro. <a>Veja os recursos Pro.</a>',
+      no_dev_restrictions:
+        'Sem restrições de desenvolvimento: Remove limites de sistema de entidades e recursos e o banner de login.',
+    },
+    cards: {
+      dev_description: 'Finalidades de teste',
+      prod_description: 'Produção real',
+      convert_label: 'converter',
+    },
+    button: 'Converter para inquilino de produção',
+  },
 };
 
 export default Object.freeze(upsell);

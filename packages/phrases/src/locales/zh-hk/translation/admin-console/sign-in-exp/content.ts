@@ -1,9 +1,10 @@
 const content = {
   terms_of_use: {
     title: 'TERMS',
-    terms_of_use: 'Terms of use URL',
+    description: '添加條款和隱私以滿足合規要求。',
+    terms_of_use: '使用條款 URL',
     terms_of_use_placeholder: 'https://your.terms.of.use/',
-    privacy_policy: 'Privacy policy URL',
+    privacy_policy: '私隱政策 URL',
     privacy_policy_placeholder: 'https://your.privacy.policy/',
     agree_to_terms: '同意條款',
     agree_policies: {
@@ -13,49 +14,39 @@ const content = {
     },
   },
   languages: {
-    title: 'LANGUAGES',
-    enable_auto_detect: 'Enable auto-detect',
+    title: '語言',
+    enable_auto_detect: '啟用自動偵測',
     description:
-      "Your software detects the user's locale setting and switches to the local language. You can add new languages by translating UI from English to another language.",
-    manage_language: 'Manage language',
-    default_language: 'Default language',
-    default_language_description_auto:
-      'The default language will be used when the detected user language isn’t covered in the current language library.',
+      '你的軟件會偵測用戶的地區語言設定並切換至本地語言。你可以把介面由英文翻譯成其他語言以加入新語言。',
+    manage_language: '管理語言',
+    default_language: '預設語言',
+    default_language_description_auto: '當偵測到的用戶語言未涵蓋於現有語言庫時，會使用預設語言。',
     default_language_description_fixed:
-      'When auto-detect is off, the default language is the only language your software will show. Turn on auto-detect for language extension.',
+      '關閉自動偵測時，預設語言是你的軟件唯一會顯示的語言。開啟自動偵測以擴展語言。',
   },
   support: {
-    /** UNTRANSLATED */
-    title: 'SUPPORT',
-    /** UNTRANSLATED */
-    subtitle: 'Display your support channels on error pages for quick user assistance.',
-    /** UNTRANSLATED */
-    support_email: 'Support email',
-    /** UNTRANSLATED */
+    title: '支援',
+    subtitle: '在錯誤頁面上顯示你的支援渠道以便用戶快速獲得幫助。',
+    support_email: '支援電郵',
     support_email_placeholder: 'support@email.com',
-    /** UNTRANSLATED */
-    support_website: 'Support website',
-    /** UNTRANSLATED */
+    support_website: '支援網站',
     support_website_placeholder: 'https://your.website/support',
   },
   manage_language: {
-    title: 'Manage language',
-    subtitle:
-      'Localize the product experience by adding languages and translations. Your contribution can be set as the default language.',
-    add_language: 'Add Language',
-    logto_provided: 'Logto provided',
-    key: 'Key',
-    logto_source_values: 'Logto source values',
-    custom_values: 'Custom values',
-    clear_all_tip: 'Clear all values',
-    unsaved_description: 'Changes won’t be saved if you leave this page without saving.',
-    deletion_tip: 'Delete the language',
-    deletion_title: 'Do you want to delete the added language?',
-    deletion_description:
-      'After deletion, your users won’t be able to browse in that language again.',
-    default_language_deletion_title: 'Default language can’t be deleted.',
-    default_language_deletion_description:
-      '{{language}} is set as your default language and can’t be deleted. ',
+    title: '管理語言',
+    subtitle: '透過加入語言與翻譯來本地化產品體驗。你的貢獻可以設為預設語言。',
+    add_language: '新增語言',
+    logto_provided: '由 Logto 提供',
+    key: '鍵值',
+    logto_source_values: 'Logto 原始值',
+    custom_values: '自訂值',
+    clear_all_tip: '清除所有值',
+    unsaved_description: '若你離開此頁而未儲存，更改將不會被儲存。',
+    deletion_tip: '刪除語言',
+    deletion_title: '你想刪除新增的語言嗎？',
+    deletion_description: '刪除後，用戶將無法再以該語言瀏覽。',
+    default_language_deletion_title: '預設語言無法刪除。',
+    default_language_deletion_description: '{{language}} 已被設為預設語言，無法刪除。',
   },
 };
 

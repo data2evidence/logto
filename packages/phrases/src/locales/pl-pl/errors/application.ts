@@ -3,10 +3,14 @@ const application = {
   role_exists: 'Rola o identyfikatorze {{roleId}} została już dodana do tej aplikacji.',
   invalid_role_type: 'Nie można przypisać roli typu użytkownika do aplikacji maszyna-do-maszyny.',
   invalid_third_party_application_type:
-    'Tylko tradycyjne aplikacje internetowe mogą być oznaczone jako aplikacja zewnętrzna.',
+    'Tylko tradycyjne aplikacje internetowe, jednostronicowe i natywne mogą być oznaczone jako aplikacje zewnętrzne.',
   third_party_application_only: 'Ta funkcja jest dostępna tylko dla aplikacji zewnętrznych.',
+  third_party_application_cannot_enable_token_exchange:
+    'Aplikacje firm trzecich nie mogą włączać wymiany tokenów.',
   user_consent_scopes_not_found: 'Nieprawidłowe zakresy zgody użytkownika.',
   consent_management_api_scopes_not_allowed: 'Nie są dozwolone zakresy API zarządzania.',
+  device_flow_native_only: 'Przepływ urządzenia jest dostępny tylko dla aplikacji natywnych.',
+  device_flow_not_changeable: 'Przepływ urządzenia nie może być zmieniony po utworzeniu aplikacji.',
   protected_app_metadata_is_required: 'Wymagane jest zabezpieczone metadane aplikacji.',
   protected_app_not_configured:
     'Dostawca aplikacji zabezpieczonej nie jest skonfigurowany. Ta funkcja nie jest dostępna dla wersji open source.',
@@ -19,49 +23,34 @@ const application = {
   should_delete_custom_domains_first: 'Należy najpierw usunąć niestandardowe domeny.',
   no_legacy_secret_found: 'Aplikacja nie ma starszego sekretu.',
   secret_name_exists: 'Nazwa sekretu już istnieje.',
+  sync_application_secret_failed: 'Nie udało się zsynchronizować sekretu aplikacji.',
   saml: {
-    /** UNTRANSLATED */
-    use_saml_app_api: 'Use `[METHOD] /saml-applications(/.*)?` API to operate SAML app.',
-    /** UNTRANSLATED */
-    saml_application_only: 'The API is only available for SAML applications.',
-    /** UNTRANSLATED */
+    use_saml_app_api:
+      'Użyj interfejsu API `[METHOD] /saml-applications(/.*)?` aby obsługiwać aplikację SAML.',
+    saml_application_only: 'Interfejs API jest dostępny tylko dla aplikacji SAML.',
+    reach_oss_limit:
+      'NIE możesz utworzyć więcej aplikacji SAML, ponieważ osiągnięto limit {{limit}}.',
     acs_url_binding_not_supported:
-      'Only HTTP-POST binding is supported for receiving SAML assertions.',
-    /** UNTRANSLATED */
-    can_not_delete_active_secret: 'Can not delete the active secret.',
-    /** UNTRANSLATED */
-    no_active_secret: 'No active secret found.',
-    /** UNTRANSLATED */
-    entity_id_required: 'Entity ID is required to generate metadata.',
-    /** UNTRANSLATED */
-    name_id_format_required: 'Name ID format is required.',
-    /** UNTRANSLATED */
-    unsupported_name_id_format: 'Unsupported name ID format.',
-    /** UNTRANSLATED */
-    missing_email_address: 'User does not have an email address.',
-    /** UNTRANSLATED */
-    email_address_unverified: 'User email address is not verified.',
-    /** UNTRANSLATED */
-    invalid_certificate_pem_format: 'Invalid PEM certificate format',
-    /** UNTRANSLATED */
-    acs_url_required: 'Assertion Consumer Service URL is required.',
-    /** UNTRANSLATED */
-    private_key_required: 'Private key is required.',
-    /** UNTRANSLATED */
-    certificate_required: 'Certificate is required.',
-    /** UNTRANSLATED */
-    invalid_saml_request: 'Invalid SAML authentication request.',
-    /** UNTRANSLATED */
+      'Obsługiwane jest tylko wiązanie HTTP-POST do odbierania asercji SAML.',
+    can_not_delete_active_secret: 'Nie można usunąć aktywnego sekretu.',
+    no_active_secret: 'Nie znaleziono aktywnego sekretu.',
+    entity_id_required: 'Do wygenerowania metadanych wymagany jest identyfikator podmiotu.',
+    name_id_format_required: 'Wymagany jest format identyfikatora nazwy.',
+    unsupported_name_id_format: 'Nieobsługiwany format identyfikatora nazwy.',
+    missing_email_address: 'Użytkownik nie ma adresu e-mail.',
+    email_address_unverified: 'Adres e-mail użytkownika nie został zweryfikowany.',
+    invalid_certificate_pem_format: 'Nieprawidłowy format certyfikatu PEM',
+    acs_url_required: 'Wymagany jest URL usługi konsumenta asercji.',
+    private_key_required: 'Wymagany jest klucz prywatny.',
+    certificate_required: 'Wymagany jest certyfikat.',
+    invalid_saml_request: 'Nieprawidłowe żądanie uwierzytelnienia SAML.',
     auth_request_issuer_not_match:
-      'The issuer of the SAML authentication request mismatch with service provider entity ID.',
-    /** UNTRANSLATED */
+      'Podmiot wydający żądanie uwierzytelnienia SAML nie pasuje do identyfikatora podmiotu dostawcy usług.',
     sp_initiated_saml_sso_session_not_found_in_cookies:
-      'Service provider initiated SAML SSO session ID not found in cookies.',
-    /** UNTRANSLATED */
+      'Identyfikator sesji SAML SSO zainicjowanej przez dostawcę usług nie został znaleziony w plikach cookie.',
     sp_initiated_saml_sso_session_not_found:
-      'Service provider initiated SAML SSO session not found.',
-    /** UNTRANSLATED */
-    state_mismatch: '`state` mismatch.',
+      'Sesja SAML SSO zainicjowana przez dostawcę usług nie została znaleziona.',
+    state_mismatch: 'Niezgodność `state`.',
   },
 };
 

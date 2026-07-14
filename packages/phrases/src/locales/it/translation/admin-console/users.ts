@@ -2,7 +2,7 @@ const users = {
   page_title: 'Gestione utenti',
   title: 'Gestione utenti',
   subtitle:
-    "Gestisci le identità degli utenti, inclusa la creazione di utenti, la modifica delle informazioni degli utenti, la visualizzazione dei log degli utenti, il ripristino delle password e l'eliminazione degli utenti",
+    "Gestisci le identità degli utenti, inclusa la creazione di utenti, la modifica delle informazioni degli utenti, la visualizzazione dei log degli utenti, il ripristino delle password e l'eliminazione degli utenti.",
   create: 'Aggiungi utente',
   create_subtitle: 'Fornire almeno uno dei seguenti campi per procedere.',
   error_missing_identifier: 'Devi fornire almeno un identificatore per creare un utente.',
@@ -22,6 +22,8 @@ const users = {
   placeholder_title: 'Gestione utenti',
   placeholder_description:
     "Ogni utente ha un profilo contenente tutte le informazioni dell'utente. È composto da dati di base, identità sociali e dati personalizzati.",
+  dev_tenant_data_retention_notice:
+    'Nei tenant di sviluppo, gli account utente più vecchi di 90 giorni vengono eliminati automaticamente. <a>Scopri di più</a>',
 };
 
 export default Object.freeze(users);

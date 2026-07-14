@@ -24,13 +24,18 @@ import { type AnonymousRouter, type RouterInitArgs } from '../types.js';
 import experienceAnonymousRoutes from './anonymous-routes/index.js';
 import ExperienceInteraction from './classes/experience-interaction.js';
 import { experienceRoutes } from './const.js';
+import koaExperienceAuditLog from './middleware/koa-experience-audit-log.js';
 import { koaExperienceInteractionHooks } from './middleware/koa-experience-interaction-hooks.js';
 import koaExperienceInteraction from './middleware/koa-experience-interaction.js';
 import profileRoutes from './profile-routes.js';
-import { type ExperienceInteractionRouterContext } from './types.js';
+import {
+  sanitizedInteractionStorageGuard,
+  type ExperienceInteractionRouterContext,
+} from './types.js';
 import backupCodeVerificationRoutes from './verification-routes/backup-code-verification.js';
 import enterpriseSsoVerificationRoutes from './verification-routes/enterprise-sso-verification.js';
 import newPasswordIdentityVerificationRoutes from './verification-routes/new-password-identity-verification.js';
+import oneTimeTokenRoutes from './verification-routes/one-time-token.js';
 import passwordVerificationRoutes from './verification-routes/password-verification.js';
 import socialVerificationRoutes from './verification-routes/social-verification.js';
 import totpVerificationRoutes from './verification-routes/totp-verification.js';
@@ -50,7 +55,8 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
     (anonymousRouter as Router<unknown, ExperienceInteractionRouterContext<RouterContext<T>>>).use(
       koaInteractionDetails(provider),
       koaExperienceInteractionHooks(libraries),
-      koaExperienceInteraction(tenant)
+      koaExperienceInteraction(tenant),
+      koaExperienceAuditLog()
     );
 
   experienceRouter.put(
@@ -58,16 +64,24 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
     koaGuard({
       body: z.object({
         interactionEvent: z.nativeEnum(InteractionEvent),
+        captchaToken: z.string().optional(),
       }),
-      status: [204],
+      // 422 is returned if the captcha verification fails
+      status: [204, 422],
     }),
     async (ctx, next) => {
-      const { interactionEvent } = ctx.guard.body;
+      const { interactionEvent, captchaToken } = ctx.guard.body;
       const { createLog } = ctx;
 
       createLog(`Interaction.${interactionEvent}.Create`);
 
       const experienceInteraction = new ExperienceInteraction(ctx, tenant, interactionEvent);
+
+      // Verify the captcha if provided, this is optional,
+      // whether the captcha is required is determined and guarded when submitting the interaction.
+      if (captchaToken) {
+        await experienceInteraction.verifyCaptcha(captchaToken);
+      }
 
       // Save new experience interaction instance.
       // This will overwrite any existing interaction data in the storage.
@@ -167,13 +181,28 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
 
       const log = createLog(`Interaction.${experienceInteraction.interactionEvent}.Submit`);
 
-      await ctx.experienceInteraction.submit();
+      await ctx.experienceInteraction.submit(log);
 
       log.append({
         interaction: ctx.experienceInteraction.toJson(),
         userId: ctx.experienceInteraction.identifiedUserId,
       });
 
+      ctx.status = 200;
+      return next();
+    }
+  );
+
+  experienceRouter.get(
+    `${experienceRoutes.interaction}`,
+    koaGuard({
+      status: [200],
+      response: sanitizedInteractionStorageGuard,
+    }),
+    async (ctx, next) => {
+      const { experienceInteraction } = ctx;
+
+      ctx.body = experienceInteraction.toSanitizedJson();
       ctx.status = 200;
       return next();
     }
@@ -187,6 +216,7 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
   webAuthnVerificationRoute(experienceRouter, tenant);
   backupCodeVerificationRoutes(experienceRouter, tenant);
   newPasswordIdentityVerificationRoutes(experienceRouter, tenant);
+  oneTimeTokenRoutes(experienceRouter, tenant);
 
   profileRoutes(experienceRouter, tenant);
   experienceAnonymousRoutes(experienceRouter, tenant);

@@ -23,24 +23,67 @@ export const storeState = (state: string, connectorId: string) => {
   sessionStorage.setItem(`${storageStateKeyPrefix}:${connectorId}`, state);
 };
 
-/**
- * Validate the state parameter from the social connector callback. If the state parameter is empty
- * or invalid, it will return false.
- */
-export const validateState = (state: string | undefined, connectorId: string): boolean => {
-  if (!state) {
-    return false;
-  }
-
+const deleteState = (connectorId: string) => {
   const storageKey = `${storageStateKeyPrefix}:${connectorId}`;
-  const stateStorage = sessionStorage.getItem(storageKey);
   sessionStorage.removeItem(storageKey);
-
-  return stateStorage === state;
 };
 
-export const validateGoogleOneTapCsrfToken = (csrfToken?: string): boolean =>
+export type StateValidationResult = 'match' | 'missing' | 'mismatch';
+
+/**
+ * Validate the state parameter from the social connector callback.
+ * Returns a tri-state result distinguishing "session lost" from "state mismatch".
+ *
+ * Callers must guard against `undefined` state before calling this function.
+ *
+ * @param state - The state parameter from the callback URL (must be defined).
+ * @param connectorId - The connector id used to look up the stored state.
+ * @returns `'match'` if valid, `'missing'` if session lost, `'mismatch'` if tampered.
+ */
+export const validateState = (state: string, connectorId: string): StateValidationResult => {
+  const storageKey = `${storageStateKeyPrefix}:${connectorId}`;
+  const stateStorage = sessionStorage.getItem(storageKey);
+  deleteState(connectorId);
+
+  if (stateStorage === null) {
+    return 'missing';
+  }
+
+  return stateStorage === state ? 'match' : 'mismatch';
+};
+
+const validateGoogleOneTapCsrfToken = (csrfToken?: string): boolean =>
   Boolean(csrfToken && getCookie(GoogleConnector.oneTapParams.csrfToken) === csrfToken);
+
+/**
+ * Validate a Google One Tap credential (both external and experience-built-in).
+ *
+ * - External credentials (from host website): already verified by Google, always valid.
+ * - Experience built-in: validates the CSRF cookie token.
+ *
+ * @returns A discriminated result — `{ valid: true }` or `{ valid: false, error }`.
+ */
+export const validateGoogleOneTapCredential = ({
+  isExternalCredential,
+  params,
+}: {
+  isExternalCredential: boolean;
+  params: Record<string, string>;
+}): { valid: true } | { valid: false; error: 'invalid_connector_auth' } => {
+  // External Google One Tap — credential already verified by Google
+  if (isExternalCredential) {
+    return { valid: true };
+  }
+
+  // Experience built-in Google One Tap — validate CSRF cookie token
+  const csrfToken = params[GoogleConnector.oneTapParams.csrfToken];
+
+  if (!validateGoogleOneTapCsrfToken(csrfToken)) {
+    return { valid: false, error: 'invalid_connector_auth' };
+  }
+
+  return { valid: true };
+};
 
 /**
  * Native Social Redirect Utility Methods

@@ -1,17 +1,26 @@
 const jwt_claims = {
   title: '自定義 JWT',
-  description: '設置自定義 JWT 聲明以包含在訪問令牌中。這些聲明可用於向應用程序傳遞附加信息。',
+  description: '自定義訪問令牌或ID令牌，為應用程序提供額外信息。',
+  access_token: {
+    card_title: '訪問令牌',
+    card_description: '訪問令牌是API用於授權請求的憑證,僅包含訪問決策所需的聲明。',
+  },
   user_jwt: {
-    card_title: '針對用戶',
     card_field: '用戶訪問令牌',
     card_description: '在發出訪問令牌時添加用戶特定數據。',
     for: '針對用戶',
   },
   machine_to_machine_jwt: {
-    card_title: '針對 M2M',
-    card_field: '機器對機器令牌',
+    card_field: '機器對機器訪問令牌',
     card_description: '在發出機器對機器令牌時添加額外數據。',
     for: '針對 M2M',
+  },
+  id_token: {
+    card_title: 'ID令牌',
+    card_description: 'ID令牌是登入後收到的身份斷言，包含客戶端用於顯示或創建會話的用戶身份聲明。',
+    card_field: '用戶ID令牌',
+    card_field_description:
+      "聲明 'sub'、'email'、'phone'、'profile' 和 'address' 始終可用。其他聲明必須先在此處啟用。在所有情況下，您的應用必須在集成時請求匹配的 scope 才能接收它們。",
   },
   code_editor_title: '自定義 {{token}} 聲明',
   custom_jwt_create_button: '添加自定義聲明',
@@ -23,6 +32,7 @@ const jwt_claims = {
   restore: '恢復默認值',
   restored: '已恢復',
   data_source_tab: '數據源',
+  error_handling_tab: '錯誤處理',
   test_tab: '測試上下文',
   jwt_claims_description: '默認聲明自動包含在 JWT 中，無法覆蓋。',
   user_data: {
@@ -33,6 +43,14 @@ const jwt_claims = {
     title: '授權資料',
     subtitle: '使用 `context.grant` 輸入參數提供重要授權信息，僅適用於令牌交換。',
   },
+  interaction_data: {
+    title: '用戶交互上下文',
+    subtitle: '使用 `context.interaction` 參數訪問當前身份驗證會話的用戶交互詳細信息。',
+  },
+  application_data: {
+    title: '應用程式上下文',
+    subtitle: '使用 `context.application` 輸入參數提供與令牌關聯的應用程式資訊。',
+  },
   token_data: {
     title: '令牌數據',
     subtitle: '使用 `token` 輸入參數獲取當前訪問令牌有效載荷。',
@@ -40,6 +58,18 @@ const jwt_claims = {
   api_context: {
     title: 'API 上下文：訪問控制',
     subtitle: '使用 `api.denyAccess` 方法拒絕令牌請求。',
+  },
+  error_handling: {
+    title: '錯誤處理',
+    subtitle: '控制當腳本執行失敗時是否阻止簽發權杖。',
+    input_field_title: '腳本報錯時的權杖簽發行為',
+    block_issuance_switch: '當腳本報錯時阻止簽發權杖',
+    default_hint_create:
+      '新建立的自訂 claims 腳本在腳本執行失敗時，預設會阻止簽發權杖。如果 API 已經回傳此值，則會優先使用已儲存的值。',
+    default_hint_edit:
+      '未包含此設定的現有自訂 claims 腳本會保持原有行為，在你明確儲存某個值之前，此選項預設仍為關閉。',
+    warning:
+      '啟用後，腳本執行期錯誤會以 `invalid_request` (400) 和本地化的 `error_description` 拒絕權杖請求。呼叫 `api.denyAccess` 仍會返回 `access_denied`。',
   },
   fetch_external_data: {
     title: '提取外部數據',

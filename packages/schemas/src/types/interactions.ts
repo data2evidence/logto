@@ -1,4 +1,5 @@
-import { emailRegEx, phoneRegEx, usernameRegEx } from '@logto/core-kit';
+/* eslint-disable max-lines */
+import { emailRegEx, numberAndAlphabetRegEx, phoneRegEx, usernameRegEx } from '@logto/core-kit';
 import { z } from 'zod';
 
 import {
@@ -61,10 +62,16 @@ export type VerificationCodeIdentifier<
   type: T;
   value: string;
 };
-export const verificationCodeIdentifierGuard = z.object({
-  type: z.enum([SignInIdentifier.Email, SignInIdentifier.Phone]),
-  value: z.string(),
-}) satisfies ToZodObject<VerificationCodeIdentifier>;
+export const verificationCodeIdentifierGuard = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(SignInIdentifier.Email),
+    value: z.string().regex(emailRegEx),
+  }),
+  z.object({
+    type: z.literal(SignInIdentifier.Phone),
+    value: z.string().regex(phoneRegEx),
+  }),
+]) satisfies z.ZodType<VerificationCodeIdentifier>;
 
 // REMARK: API payload guard
 
@@ -72,17 +79,24 @@ export const verificationCodeIdentifierGuard = z.object({
 export type SocialAuthorizationUrlPayload = {
   state: string;
   redirectUri: string;
+  scope?: string;
 };
 export const socialAuthorizationUrlPayloadGuard = z.object({
   state: z.string(),
   redirectUri: z.string(),
+  scope: z.string().optional(),
 }) satisfies ToZodObject<SocialAuthorizationUrlPayload>;
 
 /** Payload type for `POST /api/experience/verification/{social|sso}/:connectorId/verify`. */
 export type SocialVerificationCallbackPayload = {
   /** The callback data from the social connector. */
   connectorData: Record<string, unknown>;
-  /**  The verification ID returned from the authorization URI. Optional for Google one tap callback */
+  /**
+   * Verification ID is used to retrieve the verification record.
+   * Throws an error if the verification record is not found.
+   *
+   * Optional for Google one tap callback as it does not have a pre-created verification record.
+   **/
   verificationId?: string;
 };
 export const socialVerificationCallbackPayloadGuard = z.object({
@@ -103,6 +117,13 @@ export const passwordVerificationPayloadGuard = z.object({
 /** Payload type for `POST /api/experience/verification/totp/verify`. */
 export type TotpVerificationVerifyPayload = {
   code: string;
+  /**
+   * Required for verifying the newly created TOTP secret verification record in the session.
+   * (For new TOTP setup use only)
+   *
+   * If not provided, a new TOTP verification will be generated and validated against the user's existing TOTP secret in their profile.
+   * (For existing TOTP verification use only)
+   */
   verificationId?: string;
 };
 export const totpVerificationVerifyPayloadGuard = z.object({
@@ -118,11 +139,31 @@ export const backupCodeVerificationVerifyPayloadGuard = z.object({
   code: z.string().min(1),
 }) satisfies ToZodObject<BackupCodeVerificationVerifyPayload>;
 
+/** Payload type for `POST /api/experience/verification/one-time-token/verify` */
+export type OneTimeTokenVerificationVerifyPayload = {
+  /**
+   * The email address that the one-time token was sent to. Currently only email identifier is supported.
+   */
+  identifier: InteractionIdentifier<SignInIdentifier.Email>;
+  token: string;
+};
+export const oneTimeTokenVerificationVerifyPayloadGuard = z.object({
+  identifier: z.object({
+    type: z.literal(SignInIdentifier.Email),
+    value: z.string().regex(emailRegEx),
+  }),
+  token: z.string().min(1),
+}) satisfies ToZodObject<OneTimeTokenVerificationVerifyPayload>;
+
 /** Payload type for `POST /api/experience/identification`. */
 export type IdentificationApiPayload = {
   /**
-   * The ID of the verification record that is used to identify the user.
-   * Optional for the register interaction event
+   * SignIn and ForgotPassword interaction events:
+   * Required to retrieve the verification record to validate the user's identity.
+   *
+   * Register interaction event:
+   *  - If provided, new user profiles will be appended to the registration session using the verified information from the verification record.
+   *  - If not provided, the user creation process will be triggered directly using the existing profile information in the current registration session.
    */
   verificationId?: string;
   /**
@@ -139,9 +180,11 @@ export const identificationApiPayloadGuard = z.object({
 /** Payload type for `POST /api/experience`. */
 export type CreateExperienceApiPayload = {
   interactionEvent: InteractionEvent;
+  captchaToken?: string;
 };
 export const CreateExperienceApiPayloadGuard = z.object({
   interactionEvent: z.nativeEnum(InteractionEvent),
+  captchaToken: z.string().optional(),
 }) satisfies ToZodObject<CreateExperienceApiPayload>;
 
 /** Payload type for `POST /api/experience/profile */
@@ -165,6 +208,10 @@ export const updateProfileApiPayloadGuard = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('social'),
     verificationId: z.string(),
+  }),
+  z.object({
+    type: z.literal('extraProfile'),
+    values: z.record(z.string().regex(numberAndAlphabetRegEx), z.unknown()),
   }),
 ]);
 export type UpdateProfileApiPayload = z.infer<typeof updateProfileApiPayloadGuard>;
@@ -261,6 +308,7 @@ export enum MissingProfile {
   phone = 'phone',
   password = 'password',
   emailOrPhone = 'emailOrPhone',
+  extraProfile = 'extraProfile',
 }
 
 export const bindTotpPayloadGuard = z.object({
@@ -372,12 +420,28 @@ export const pendingBackupCodeGuard = z.object({
 
 export type PendingBackupCode = z.infer<typeof pendingBackupCodeGuard>;
 
+export const pendingEmailVerificationCodeGuard = z.object({
+  type: z.literal(MfaFactor.EmailVerificationCode),
+  email: z.string(),
+});
+
+export type PendingEmailVerificationCode = z.infer<typeof pendingEmailVerificationCodeGuard>;
+
+export const pendingPhoneVerificationCodeGuard = z.object({
+  type: z.literal(MfaFactor.PhoneVerificationCode),
+  phone: z.string(),
+});
+
+export type PendingPhoneVerificationCode = z.infer<typeof pendingPhoneVerificationCodeGuard>;
+
 // Some information like TOTP secret should be generated in the backend
 // and stored in the interaction temporarily.
 export const pendingMfaGuard = z.discriminatedUnion('type', [
   pendingTotpGuard,
   pendingWebAuthnGuard,
   pendingBackupCodeGuard,
+  pendingEmailVerificationCodeGuard,
+  pendingPhoneVerificationCodeGuard,
 ]);
 
 export type PendingMfa = z.infer<typeof pendingMfaGuard>;
@@ -388,11 +452,13 @@ export type BindTotp = z.infer<typeof bindTotpGuard>;
 
 export const bindWebAuthnGuard = z.object({
   type: z.literal(MfaFactor.WebAuthn),
+  rpId: z.string(),
   credentialId: z.string(),
   publicKey: z.string(),
   transports: webAuthnTransportGuard.array(),
   counter: z.number(),
   agent: z.string(),
+  name: z.string().optional(),
 });
 
 export type BindWebAuthn = z.infer<typeof bindWebAuthnGuard>;
@@ -416,3 +482,4 @@ export const verifyMfaResultGuard = z.object({
 });
 
 export type VerifyMfaResult = z.infer<typeof verifyMfaResultGuard>;
+/* eslint-enable max-lines */

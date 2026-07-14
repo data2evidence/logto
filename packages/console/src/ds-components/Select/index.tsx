@@ -7,6 +7,7 @@ import Close from '@/assets/icons/close.svg?react';
 import KeyboardArrowDown from '@/assets/icons/keyboard-arrow-down.svg?react';
 import KeyboardArrowUp from '@/assets/icons/keyboard-arrow-up.svg?react';
 import SearchIcon from '@/assets/icons/search.svg?react';
+import Tick from '@/assets/icons/tick.svg?react';
 import useWindowResize from '@/hooks/use-window-resize';
 import { onKeyDownHandler } from '@/utils/a11y';
 
@@ -31,6 +32,8 @@ type Props<T> = {
   readonly isClearable?: boolean;
   readonly size?: 'small' | 'medium' | 'large';
   readonly isSearchEnabled?: boolean;
+  readonly isDropdownFullWidth?: boolean;
+  readonly hasSelectedOptionIndicator?: boolean;
 };
 
 function Select<T extends string>({
@@ -44,6 +47,8 @@ function Select<T extends string>({
   isClearable,
   size = 'large',
   isSearchEnabled,
+  isDropdownFullWidth = true,
+  hasSelectedOptionIndicator,
 }: Props<T>) {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
   const [isOpen, setIsOpen] = useState(false);
@@ -52,11 +57,19 @@ function Select<T extends string>({
   const anchorRef = useRef<HTMLInputElement>(null);
   const current = options.find((option) => value && option.value === value);
   const filteredOptions = useMemo(() => {
-    return searchInputValue
-      ? options.filter(({ value }) =>
-          value.toLocaleLowerCase().includes(searchInputValue.toLocaleLowerCase())
-        )
-      : options;
+    const query = searchInputValue.trim().toLocaleLowerCase();
+    if (!query) {
+      return options;
+    }
+    return options.filter(({ value, title }) => {
+      if (value.toLocaleLowerCase().includes(query)) {
+        return true;
+      }
+      if (typeof title === 'string' && title.toLocaleLowerCase().includes(query)) {
+        return true;
+      }
+      return false;
+    });
   }, [searchInputValue, options]);
 
   const handleSelect = (value: T) => {
@@ -154,7 +167,7 @@ function Select<T extends string>({
         <div className={styles.errorMessage}>{error}</div>
       )}
       <Dropdown
-        isFullWidth
+        isFullWidth={isDropdownFullWidth}
         anchorRef={anchorRef}
         className={styles.dropdown}
         isOpen={isOpen}
@@ -182,11 +195,23 @@ function Select<T extends string>({
             />
           </div>
         )}
-        {filteredOptions.map(({ value, title }) => (
+        {filteredOptions.map(({ value: optionValue, title }) => (
           <DropdownItem
-            key={value}
+            key={optionValue}
+            className={classNames(
+              hasSelectedOptionIndicator && styles.optionWithIndicator,
+              hasSelectedOptionIndicator && value === optionValue && styles.selectedOption
+            )}
+            icon={
+              hasSelectedOptionIndicator && (
+                <Tick
+                  className={classNames(value !== optionValue && styles.hiddenSelectedOptionIcon)}
+                />
+              )
+            }
+            iconClassName={hasSelectedOptionIndicator ? styles.selectedOptionIcon : undefined}
             onClick={() => {
-              handleSelect(value);
+              handleSelect(optionValue);
             }}
           >
             {title}

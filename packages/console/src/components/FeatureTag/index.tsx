@@ -10,23 +10,26 @@ import { isProPlan } from '@/utils/subscription';
 import styles from './index.module.scss';
 
 export { default as BetaTag } from './BetaTag';
+export { default as CloudTag } from './CloudTag';
 
 /**
- * The display tag mapping for each ReservedPlanId.
+ * The display tag mapping for each plan type.
  */
-const planIdTagMap: Record<ReservedPlanId, string> = {
-  [ReservedPlanId.Free]: 'free',
+const planTagMap = {
   [ReservedPlanId.Pro]: 'pro',
   [ReservedPlanId.Pro202411]: 'pro',
-  [ReservedPlanId.Development]: 'dev',
-  [ReservedPlanId.Admin]: 'admin',
-};
+  [ReservedPlanId.Pro202509]: 'pro',
+  enterprise: 'enterprise',
+} as const;
 
 /**
  * The minimum plan required to use the feature.
  * Currently we only have pro plan paywall.
  */
-export type PaywallPlanId = Extract<ReservedPlanId, ReservedPlanId.Pro | ReservedPlanId.Pro202411>;
+export type PaywallPlanId = Extract<
+  ReservedPlanId,
+  ReservedPlanId.Pro | ReservedPlanId.Pro202411 | ReservedPlanId.Pro202509
+>;
 
 export type Props = {
   /**
@@ -35,14 +38,24 @@ export type Props = {
    * tenants.
    */
   readonly isVisible: boolean;
+  readonly className?: string;
+  /**
+   * When set to true, the feature is considered as an enterprise feature,
+   * and the plan field becomes optional as enterprise features are not tied to specific plans.
+   */
+  readonly isEnterprise?: boolean;
+} & (
+  | { readonly isEnterprise: true }
   /**
    * The minimum plan required to use the feature.
    * Currently we only have pro plan paywall.
    * Set the default value to the latest pro plan id we are using.
+   *
+   * Note: This field is required when isEnterprise is false or undefined,
+   * and optional when isEnterprise is true.
    */
-  readonly plan: PaywallPlanId;
-  readonly className?: string;
-};
+  | { readonly isEnterprise?: false; readonly plan: PaywallPlanId }
+);
 
 /**
  * A tag that indicates whether a feature requires a paid plan.
@@ -72,10 +85,10 @@ export type Props = {
  * ```
  */
 function FeatureTag(props: Props) {
-  const { className } = props;
+  const { className, isEnterprise } = props;
   const { isDevTenant } = useContext(TenantsContext);
 
-  const { isVisible, plan } = props;
+  const { isVisible } = props;
 
   // Dev tenant should always see the tag since they have access to almost all features, and it's
   // useful for developers to know which features need to be paid for in production.
@@ -83,16 +96,27 @@ function FeatureTag(props: Props) {
     return null;
   }
 
-  return <div className={classNames(styles.tag, className)}>{planIdTagMap[plan]}</div>;
+  if (isEnterprise) {
+    return <div className={classNames(styles.tag, className)}>{planTagMap.enterprise}</div>;
+  }
+
+  return <div className={classNames(styles.tag, className)}>{planTagMap[props.plan]}</div>;
 }
 
 export default FeatureTag;
 
-type CombinedAddOnAndFeatureTagProps = {
+export const addOnLabels = {
+  addOn: 'Add-on',
+  addOnBundle: 'Add-on (bundle)',
+} as const;
+
+export type CombinedAddOnAndFeatureTagProps = {
   readonly hasAddOnTag?: boolean;
   readonly className?: string;
   /** The minimum plan required to use the feature. */
-  readonly paywall?: Props['plan'];
+  readonly paywall?: PaywallPlanId;
+  /** Customize the add-on lable: currently only used by bundled add-ons  */
+  readonly addOnLabel?: (typeof addOnLabels)[keyof typeof addOnLabels];
 };
 
 /**
@@ -100,7 +124,7 @@ type CombinedAddOnAndFeatureTagProps = {
  * and dev features are enabled. Otherwise, it will be `FeatureTag` with the `paywall` prop.
  */
 export function CombinedAddOnAndFeatureTag(props: CombinedAddOnAndFeatureTagProps) {
-  const { hasAddOnTag, className, paywall } = props;
+  const { hasAddOnTag, className, paywall, addOnLabel = addOnLabels.addOn } = props;
   const {
     currentSubscription: { planId, isEnterprisePlan },
   } = useContext(SubscriptionDataContext);
@@ -113,7 +137,9 @@ export function CombinedAddOnAndFeatureTag(props: CombinedAddOnAndFeatureTagProp
   // Show the "Add-on" tag for Pro plan.
   if (hasAddOnTag && isCloud && isProPlan(planId)) {
     return (
-      <div className={classNames(styles.tag, styles.beta, styles.addOn, className)}>Add-on</div>
+      <div className={classNames(styles.tag, styles.beta, styles.addOn, className)}>
+        {addOnLabel}
+      </div>
     );
   }
 

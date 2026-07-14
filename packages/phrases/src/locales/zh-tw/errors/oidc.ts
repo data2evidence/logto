@@ -6,8 +6,7 @@ const oidc = {
   insufficient_scope: 'Token 缺少範圍 `{{scope}}`。',
   invalid_request: '請求無效',
   invalid_grant: '授權請求無效',
-  /** UNTRANSLATED */
-  invalid_issuer: 'Invalid issuer.',
+  invalid_issuer: '發行者無效。',
   invalid_redirect_uri: '無效返回連結, 该 redirect_uri 未被此應用註冊。',
   access_denied: '拒絕訪問',
   invalid_target: '請求資源無效',
@@ -17,8 +16,15 @@ const oidc = {
   provider_error: 'OIDC 內部錯誤: {{message}}',
   server_error: '發生未知的 OIDC 錯誤。請稍後再試。',
   provider_error_fallback: '發生了一個 OIDC 錯誤: {{code}}。',
+  custom_claims_script_error: '自訂 claims 腳本錯誤：{{error_description}}',
   key_required: '至少需要一個金鑰。',
   key_not_found: '未找到 ID 為 {{id}} 的金鑰。',
+  only_previous_key_can_be_deleted: '僅可刪除上一個金鑰。',
+  invalid_session_payload: '無效的會話負載。',
+  session_not_found: '未找到會話。',
+  invalid_session_account_id: '會話 accountId 不匹配。',
+  failed_to_revoke_grant: '撤銷授權失敗。',
+  failed_to_cleanup_session_authorization: '清理會話授權記錄失敗。',
 };
 
 export default Object.freeze(oidc);

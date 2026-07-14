@@ -6,6 +6,8 @@ const input = {
   confirm_password: 'Confirme a senha',
   search_region_code: 'Pesquisar código de região',
   backup_code: 'Código de backup',
+  code: 'Código',
+  label_with_optional: '{{label}} (Opcional)',
 };
 
 export default Object.freeze(input);

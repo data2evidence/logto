@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'Kurumsal SSO',
   title: 'Kurumsal SSO',
-  subtitle:
-    'Kurumsal kimlik sağlayıcısını bağlayın ve SP başlatmalı Tek Oturum Açmayı etkinleştirin.',
+  subtitle: 'Kurumsal kimlik sağlayıcısını bağlayın ve Tek Oturum Açmayı etkinleştirin.',
   create: 'Kurumsal bağlayıcı ekle',
   col_connector_name: 'Bağlayıcı adı',
   col_type: 'Tür',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       'Yeni bir uygulama entegrasyonu oluşturun, {{name}} kimlik sağlayıcınızda SAML 2.0 ile. Ardından aşağıdaki değeri yapıştırın.',
     saml: {
       acs_url_field_name: 'Assertion consumer service URL (Reply URL)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: "Kitle URI'si (SP Varlık ID'si)",
+      entity_id_field_name: "Hizmet Sağlayıcı (SP) Varlık ID'si",
+      entity_id_field_tooltip:
+        "SP Varlık ID'si herhangi bir dize formatında olabilir, tipik olarak bir URI veya URL formunda bir tanımlayıcı olarak kullanılır, ancak bu zorunlu değildir.",
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: "Yönlendirme URI'si (Geri çağrı URL'si)",
+      redirect_uri_field_description:
+        "Yeniden yönlendirme URI'si, SSO kimlik doğrulamasından sonra kullanıcıların yönlendirildiği yerdir. Bu URI'yi IdP yapılandırmanıza ekleyin.",
+      redirect_uri_field_custom_domain_description:
+        "Logto'da birden fazla <a>özel alan adı</a> kullanıyorsanız, SSO'nun her alan adında çalışması için ilgili tüm geri dönüş URI'lerini IdP'nize eklediğinizden emin olun.\n\nVarsayılan Logto alan adı (*.logto.app) her zaman geçerlidir; yalnızca o alan adı altında SSO'yu desteklemek istiyorsanız ekleyin.",
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Müşteri parolası',
       issuer_field_name: 'Yayıncı',
       scope_field_name: 'Kapsam',
+      scope_field_placeholder: 'Kapsamları girin (bir boşluk ile ayrılmış)',
     },
   },
 };

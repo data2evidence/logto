@@ -1,5 +1,6 @@
 import { RoleType, roleTypeToKey, type RoleResponse } from '@logto/schemas';
 import { conditional } from '@silverhand/essentials';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import useSWR from 'swr';
@@ -10,17 +11,21 @@ import RolesEmpty from '@/assets/images/roles-empty.svg?react';
 import Breakable from '@/components/Breakable';
 import EmptyDataPlaceholder from '@/components/EmptyDataPlaceholder';
 import ItemPreview from '@/components/ItemPreview';
-import ListPage from '@/components/ListPage';
+import PageMeta from '@/components/PageMeta';
 import RoleIcon from '@/components/RoleIcon';
-import { defaultPageSize } from '@/consts';
+import { defaultPageSize, rbac } from '@/consts';
+import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import Button from '@/ds-components/Button';
+import CardTitle from '@/ds-components/CardTitle';
 import Search from '@/ds-components/Search';
+import Table from '@/ds-components/Table';
 import TablePlaceholder from '@/ds-components/Table/TablePlaceholder';
 import type { RequestError } from '@/hooks/use-api';
 import useDocumentationUrl from '@/hooks/use-documentation-url';
 import useSearchParametersWatcher from '@/hooks/use-search-parameters-watcher';
 import useTenantPathname from '@/hooks/use-tenant-pathname';
-import useTheme from '@/hooks/use-theme';
+import pageLayout from '@/scss/page-layout.module.scss';
+import { isPaidPlan } from '@/utils/subscription';
 import { buildUrl, formatSearchKeyword } from '@/utils/url';
 
 import AssignedEntities from './components/AssignedEntities';
@@ -38,7 +43,14 @@ function Roles() {
   const { navigate, match } = useTenantPathname();
   const isCreating = match(createRolePathname);
   const { getDocumentationUrl } = useDocumentationUrl();
-  const theme = useTheme();
+  const {
+    currentSubscription: { planId, isEnterprisePlan },
+    currentSubscriptionBasicQuota: { userRolesLimit, machineToMachineRolesLimit },
+  } = useContext(SubscriptionDataContext);
+
+  const isPaidTenant = isPaidPlan(planId, isEnterprisePlan);
+  // We need to hide the add-on tag for legacy plans who has unlimited roles.
+  const hasRolesIncluded = userRolesLimit === null && machineToMachineRolesLimit === null;
 
   const [{ page, keyword }, updateSearchParameters] = useSearchParametersWatcher({
     page: 1,
@@ -58,28 +70,32 @@ function Roles() {
   const [roles, totalCount] = data ?? [];
 
   return (
-    <ListPage
-      title={{
-        title: 'roles.title',
-        subtitle: 'roles.subtitle',
-        learnMoreLink: {
-          href: 'https://docs.logto.io/docs/recipes/rbac/manage-permissions-and-roles#manage-roles',
-          targetBlank: 'noopener',
-        },
-      }}
-      pageMeta={{ titleKey: 'roles.page_title' }}
-      createButton={{
-        title: 'roles.create',
-        onClick: () => {
-          navigate({ pathname: createRolePathname, search });
-        },
-      }}
-      table={{
-        rowGroups: [{ key: 'roles', data: roles }],
-        rowIndexKey: 'id',
-        isLoading,
-        errorMessage: error?.body?.message ?? error?.message,
-        columns: [
+    <div className={pageLayout.container}>
+      <PageMeta titleKey="roles.page_title" />
+      <div className={pageLayout.headline}>
+        <CardTitle
+          title="roles.title"
+          subtitle="roles.subtitle"
+          learnMoreLink={{ href: rbac }}
+          hasAddOnTag={isPaidTenant && !hasRolesIncluded}
+        />
+        <Button
+          icon={<Plus />}
+          type="primary"
+          size="large"
+          title="roles.create"
+          onClick={() => {
+            navigate({ pathname: createRolePathname, search });
+          }}
+        />
+      </div>
+      <Table
+        className={pageLayout.table}
+        rowGroups={[{ key: 'roles', data: roles }]}
+        rowIndexKey="id"
+        isLoading={isLoading}
+        errorMessage={error?.body?.message ?? error?.message}
+        columns={[
           {
             title: t('roles.col_roles'),
             dataIndex: 'roles',
@@ -123,11 +139,11 @@ function Roles() {
               );
             },
           },
-        ],
-        rowClickHandler: ({ id }) => {
+        ]}
+        rowClickHandler={({ id }) => {
           navigate(buildDetailsPathname(id));
-        },
-        filter: (
+        }}
+        filter={
           <Search
             placeholder={t('roles.search')}
             defaultValue={keyword}
@@ -139,54 +155,54 @@ function Roles() {
               updateSearchParameters({ keyword: '', page: 1 });
             }}
           />
-        ),
-        pagination: {
+        }
+        pagination={{
           page,
           totalCount,
           pageSize,
           onChange: (page) => {
             updateSearchParameters({ page });
           },
-        },
-        placeholder: keyword ? (
-          <EmptyDataPlaceholder />
-        ) : (
-          <TablePlaceholder
-            image={<RolesEmpty />}
-            imageDark={<RolesEmptyDark />}
-            title="roles.placeholder_title"
-            description="roles.placeholder_description"
-            learnMoreLink={{
-              href: getDocumentationUrl(
-                '/docs/recipes/rbac/manage-permissions-and-roles#manage-roles'
-              ),
-              targetBlank: 'noopener',
-            }}
-            action={
-              <Button
-                title="roles.create"
-                type="primary"
-                size="large"
-                icon={<Plus />}
-                onClick={() => {
-                  navigate({ pathname: createRolePathname, search });
-                }}
-              />
-            }
-          />
-        ),
-        onRetry: async () => mutate(undefined, true),
-      }}
-      widgets={
-        isCreating && (
-          <CreateRoleModal
-            onClose={() => {
-              navigate({ pathname: rolesPathname, search });
-            }}
-          />
-        )
-      }
-    />
+        }}
+        placeholder={
+          keyword ? (
+            <EmptyDataPlaceholder />
+          ) : (
+            <TablePlaceholder
+              image={<RolesEmpty />}
+              imageDark={<RolesEmptyDark />}
+              title="roles.placeholder_title"
+              description="roles.placeholder_description"
+              learnMoreLink={{
+                href: getDocumentationUrl(
+                  '/docs/recipes/rbac/manage-permissions-and-roles#manage-roles'
+                ),
+                targetBlank: 'noopener',
+              }}
+              action={
+                <Button
+                  title="roles.create"
+                  type="primary"
+                  size="large"
+                  icon={<Plus />}
+                  onClick={() => {
+                    navigate({ pathname: createRolePathname, search });
+                  }}
+                />
+              }
+            />
+          )
+        }
+        onRetry={async () => mutate(undefined, true)}
+      />
+      {isCreating && (
+        <CreateRoleModal
+          onClose={() => {
+            navigate({ pathname: rolesPathname, search });
+          }}
+        />
+      )}
+    </div>
   );
 }
 

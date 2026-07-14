@@ -6,21 +6,27 @@ const mfa = {
   multi_factors: 'Çoklu faktörler',
   multi_factors_description:
     'Kullanıcılar, 2 aşamalı doğrulama için etkinleştirilmiş faktörlerden birini doğrulamalıdır.',
-  totp: 'Authenticator uygulama OTP',
+  totp: 'Authenticator uygulaması',
   otp_description: 'Google Authenticator vb. bağlayarak tek kullanımlık şifreleri doğrulamak için.',
-  webauthn: 'WebAuthn (Pas anahtarı)',
+  webauthn: 'Passkeys',
   webauthn_description:
     'Tarayıcı tarafından desteklenen yöntemle doğrulama yapın: biyometri, telefon tarama veya güvenlik anahtarı vb.',
   webauthn_native_tip: 'WebAuthn, Native uygulamalar için desteklenmiyor.',
   webauthn_domain_tip:
     'WebAuthn, genel anahtarları belirli bir alanla ilişkilendirir. Hizmet alanınızı değiştirmek, kullanıcıların mevcut geçiş anahtarları aracılığıyla kimlik doğrulamasını engeller.',
-  backup_code: 'Yedek kod',
+  backup_code: 'Yedek kodlar',
   backup_code_description:
     'Kullanıcılar herhangi bir MFA yöntemini ayarladıktan sonra 10 tek kullanımlık yedek kod üretir.',
   backup_code_setup_hint:
     'Kullanıcılar yukarıdaki MFA faktörlerini doğrulayamadığında yedek seçeneğini kullanın.',
   backup_code_error_hint:
     'Bir yedek kodu kullanmak için başarılı kullanıcı kimlik doğrulaması için en az bir daha fazla MFA yönteme ihtiyacınız vardır.',
+  email_verification_code: 'E-posta doğrulama kodu',
+  email_verification_code_description:
+    'Doğrulama kodlarını almak ve doğrulamak için e-posta adresini bağlayın.',
+  phone_verification_code: 'SMS doğrulama kodu',
+  phone_verification_code_description:
+    'SMS doğrulama kodlarını almak ve doğrulamak için telefon numarasını bağlayın.',
   policy: 'Politika',
   policy_description: 'Giriş ve kaydolma akışları için MFA politikasını belirleyin.',
   two_step_sign_in_policy: 'Girişte 2 aşamalı doğrulama politikası',
@@ -31,21 +37,42 @@ const mfa = {
   mandatory: 'Kullanıcılar her zaman girişte MFA kullanmak zorundadır',
   mandatory_tip:
     'Kullanıcılar, ilk kez giriş veya kayıt sırasında MFA kurmalı ve tüm gelecekteki girişlerde kullanmalıdır.',
-  /** UNTRANSLATED */
-  require_mfa: 'Require MFA',
-  /** UNTRANSLATED */
+  require_mfa: 'MFA Gerektir',
   require_mfa_label:
-    'Enable this to make 2-step verification mandatory for accessing your applications. If disabled, users can decide whether to enable MFA for themselves.',
-  /** UNTRANSLATED */
-  set_up_prompt: 'MFA set-up prompt',
-  /** UNTRANSLATED */
-  no_prompt: 'Do not ask users to set up MFA',
-  /** UNTRANSLATED */
+    "Uygulamalarınıza erişim için 2 aşamalı doğrulamayı zorunlu hale getirmek üzere bunu etkinleştirin. Eğer devre dışıysa, kullanıcılar MFA'yı kendileri için etkinleştirip etkinleştirmemeye karar verebilir.",
+  require_mfa_optional:
+    "İsteğe bağlı MFA: Kullanıcıların kendi hesap güvenlikleri için MFA'yı etkinleştirmeyi seçmelerine izin verin",
+  require_mfa_adaptive:
+    'Uyarlanabilir MFA: Yalnızca oturum açma riskli göründüğünde (ör. yeni ülke / uzun süreli hareketsizlik) MFA isteyin',
+  require_mfa_mandatory:
+    "Zorunlu MFA: Tüm kullanıcıların her oturum açışlarında MFA'yı tamamlamasını gerektirir",
+  set_up_prompt: 'MFA kurulum istemi',
+  no_prompt: 'Kullanıcılardan MFA kurmalarını istemeyin',
   prompt_at_sign_in_and_sign_up:
-    'Ask users to set up MFA during registration (skippable, one-time prompt)',
-  /** UNTRANSLATED */
+    'Kaydolurken kullanıcılardan MFA kurmalarını isteyin (atlanabilir, tek seferlik istek)',
   prompt_only_at_sign_in:
-    'Ask users to set up MFA on their next sign-in attempt after registration (skippable, one-time prompt)',
+    'Kayıttan sonraki ilk giriş denemelerinde kullanıcılardan MFA kurmalarını isteyin (atlanabilir, tek seferlik istek)',
+  prompt_at_sign_in_and_sign_up_mandatory:
+    'Kayıt sırasında kullanıcılardan MFA kurmalarını isteyin. (atlanamaz)',
+  prompt_only_at_sign_in_mandatory:
+    'Kayıttan sonraki bir sonraki giriş denemesinde kullanıcılardan MFA kurmalarını isteyin. (atlanamaz)',
+  set_up_organization_required_mfa_prompt:
+    "Organizasyon MFA'yı etkinleştirdikten sonra kullanıcılardan MFA kurmalarını isteyin",
+  prompt_at_sign_in_non_skippable:
+    'Bir sonraki girişte kullanıcılardan MFA kurmalarını isteyin (atlanamaz)',
+  email_primary_method_tip:
+    'E-posta doğrulama kodu zaten birincil oturum açma yönteminizdir. Güvenliği sağlamak için MFA için tekrar kullanılamaz.',
+  phone_primary_method_tip:
+    'SMS doğrulama kodu zaten birincil oturum açma yönteminizdir. Güvenliği sağlamak için MFA için tekrar kullanılamaz.',
+  no_email_connector_warning:
+    'Henüz hiçbir e-posta bağlantısı kurulmamış. Yapılandırma tamamlanmadan önce, kullanıcılar MFA için e-posta doğrulama kodlarını kullanamayacaklar. "Bağlantılar"da <a>{{link}}</a>.',
+  no_sms_connector_warning:
+    'Henüz hiçbir SMS bağlantısı kurulmamış. Yapılandırma tamamlanmadan önce, kullanıcılar MFA için SMS doğrulama kodlarını kullanamayacaklar. "Bağlantılar"da <a>{{link}}</a>.',
+  no_email_connector_error:
+    'E-posta bağlantısı olmadan e-posta doğrulama kodu MFA etkinleştirilemez. Lütfen önce bir e-posta bağlantısı yapılandırın.',
+  no_sms_connector_error:
+    'SMS bağlantısı olmadan SMS doğrulama kodu MFA etkinleştirilemez. Lütfen önce bir SMS bağlantısı yapılandırın.',
+  setup_link: 'Kur',
 };
 
 export default Object.freeze(mfa);

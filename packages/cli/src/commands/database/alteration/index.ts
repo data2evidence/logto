@@ -1,3 +1,5 @@
+import { pathToFileURL } from 'node:url';
+
 import type { AlterationScript } from '@logto/schemas/lib/types/alteration.js';
 import { conditionalString } from '@silverhand/essentials';
 import type { CommonQueryMethods, DatabasePool } from '@silverhand/slonik';
@@ -21,7 +23,7 @@ import { chooseAlterationsByVersion, chooseRevertAlterationsByVersion } from './
 
 const importAlterationScript = async (filePath: string): Promise<AlterationScript> => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const module = await import(filePath);
+  const module = await import(pathToFileURL(filePath).href);
 
   // eslint-disable-next-line no-restricted-syntax
   return module.default as AlterationScript;
@@ -53,39 +55,68 @@ export const getAvailableAlterations = async (
   );
 };
 
+/**
+ * IMPORTANT: Logto Cloud has a parallel implementation of this logic in `CoreAlterationClient`
+ * (logto-cloud repo: `packages/azure-functions/src/utils/core-alteration-client.ts`).
+ * Any changes to the alteration execution behavior here (e.g., new hooks, execution order)
+ * must be synchronized with the Cloud implementation.
+ */
 const deployAlteration = async (
   pool: DatabasePool,
   { path: filePath, filename }: AlterationFile,
   action: 'up' | 'down' = 'up'
 ) => {
-  const { up, down } = await importAlterationScript(filePath);
+  const { up, down, beforeUp, beforeDown } = await importAlterationScript(filePath);
+  const timestamp = getTimestampFromFilename(filename);
 
   try {
-    await pool.transaction(async (connection) => {
-      if (action === 'up') {
-        await up(connection);
-        await updateDatabaseTimestamp(connection, getTimestampFromFilename(filename));
+    if (action === 'up') {
+      if (beforeUp) {
+        await beforeUp(pool);
       }
 
-      if (action === 'down') {
+      await pool.transaction(async (connection) => {
+        await up(connection);
+        await updateDatabaseTimestamp(connection, timestamp);
+      });
+    }
+
+    if (action === 'down') {
+      if (beforeDown) {
+        await beforeDown(pool);
+      }
+
+      await pool.transaction(async (connection) => {
         await down(connection);
 
-        const newTimestamp = getTimestampFromFilename(filename) - 1;
+        const newTimestamp = timestamp - 1;
 
         if (newTimestamp > 0) {
           await updateDatabaseTimestamp(connection, newTimestamp);
         }
-      }
-    });
+      });
+    }
   } catch (error: unknown) {
     consoleLog.error(error);
 
     await pool.end();
-    consoleLog.fatal(
-      `Error ocurred during running alteration ${chalk.blue(filename)}.\n\n` +
-        "  This alteration didn't change anything since it was in a transaction.\n" +
-        '  Try to fix the error and deploy again.'
-    );
+    const hasNonTransactionalSteps =
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      (action === 'up' && beforeUp) || (action === 'down' && beforeDown);
+
+    if (hasNonTransactionalSteps) {
+      consoleLog.fatal(
+        `Error occurred while running alteration ${chalk.blue(filename)}.\n\n` +
+          '  Non-transactional steps (`beforeUp`/`beforeDown`) may have been applied before the failure.\n' +
+          '  Inspect the database state, fix the issue, then rerun the alteration to reconcile state and timestamp.'
+      );
+    } else {
+      consoleLog.fatal(
+        `Error occurred while running alteration ${chalk.blue(filename)}.\n\n` +
+          "  This alteration didn't change anything since it was in a transaction.\n" +
+          '  Fix the error and deploy again.'
+      );
+    }
   }
 
   consoleLog.info(`Run alteration ${filename} \`${action}()\` function succeeded`);

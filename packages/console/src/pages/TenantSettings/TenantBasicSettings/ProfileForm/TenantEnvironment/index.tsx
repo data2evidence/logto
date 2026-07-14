@@ -1,10 +1,15 @@
-import { TenantTag } from '@logto/schemas';
-import { Trans, useTranslation } from 'react-i18next';
+import { type TenantTag } from '@logto/schemas';
+import { useContext, useState } from 'react';
 
+import RocketIcon from '@/assets/icons/rocket.svg?react';
+import ConvertToProductionModal from '@/components/ConvertToProductionModal';
+import LearnMore from '@/components/LearnMore';
 import TenantEnvTag from '@/components/TenantEnvTag';
-import { envTagsFeatureLink } from '@/consts';
-import TextLink from '@/ds-components/TextLink';
-import useDocumentationUrl from '@/hooks/use-documentation-url';
+import { logtoCloudTenantSettings } from '@/consts';
+import { TenantsContext } from '@/contexts/TenantsProvider';
+import Button from '@/ds-components/Button';
+import DynamicT from '@/ds-components/DynamicT';
+import { isDevOnlyRegion } from '@/hooks/use-available-regions';
 
 import styles from './index.module.scss';
 
@@ -13,25 +18,43 @@ type Props = {
 };
 
 function TenantEnvironment({ tag }: Props) {
-  const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
-  const { getDocumentationUrl } = useDocumentationUrl();
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const { currentTenant, isDevTenant } = useContext(TenantsContext);
 
   return (
     <div className={styles.container}>
-      <TenantEnvTag isAbbreviated={false} size="large" tag={tag} />
-      <div className={styles.description}>
-        <Trans
-          components={{
-            a: <TextLink targetBlank="noopener" href={getDocumentationUrl(envTagsFeatureLink)} />,
-          }}
-        >
-          {t(
-            tag === TenantTag.Development
-              ? 'tenants.settings.development_description'
-              : 'tenants.settings.production_description'
-          )}
-        </Trans>
+      <div>
+        <TenantEnvTag isAbbreviated={false} size="large" tag={tag} />
+        <div className={styles.description}>
+          <DynamicT
+            forKey={
+              isDevTenant
+                ? 'tenants.settings.development_description'
+                : 'tenants.settings.production_description'
+            }
+          />
+          {isDevTenant && <LearnMore href={logtoCloudTenantSettings} />}
+        </div>
       </div>
+      {isDevTenant && !isDevOnlyRegion(currentTenant?.regionName) && (
+        <>
+          <Button
+            className={styles.button}
+            type="outline"
+            icon={<RocketIcon />}
+            title="get_started.convert_to_production.convert_button"
+            onClick={() => {
+              setIsConvertModalOpen(true);
+            }}
+          />
+          <ConvertToProductionModal
+            isOpen={isConvertModalOpen}
+            onClose={() => {
+              setIsConvertModalOpen(false);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

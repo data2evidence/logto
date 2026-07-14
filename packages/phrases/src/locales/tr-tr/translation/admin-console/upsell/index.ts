@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'Planı Yükselt',
   compare_plans: 'Planları Karşılaştır',
+  try_with_product_name: '{{productName}} şimdi deneyin',
   view_plans: 'Planları Görüntüle',
   create_tenant: {
     title: 'Kiracı planınızı seçin',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'Planı Güncelle',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'Jeton kullanımı sınırı aştı. Planınızı yükseltin.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      'Belirtilen jeton kullanım sınırınızı <planName/> aştınız. Kullanıcılar Logto hizmetine düzgün bir şekilde erişemeyecektir. Herhangi bir aksaklık yaşamamak için lütfen planınızı premium seviyeye hızlıca yükseltin.',
   },
   payment_overdue_modal: {
     title: 'Fatura ödemesi gecikti',
@@ -50,6 +49,24 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'Geliştirme kiracınızı üretim kiracısına dönüştürüyorsunuz',
+    description:
+      'Yayın yapmaya hazır mısınız? Bu geliştirme kiracısını üretim kiracısına dönüştürmek, tüm işlevselliğin kilidini açar',
+    benefits: {
+      stable_environment: 'Son kullanıcılar için: Gerçek kullanım için kararlı bir ortam.',
+      keep_pro_features:
+        'Pro özelliklerini koruyun: Pro planına abone olacaksınız. <a>Pro özelliklerini görüntüleyin.</a>',
+      no_dev_restrictions:
+        'Geliştirme kısıtlamaları yok: Varlık ve kaynak sistem sınırlarını ve oturum açma bannerını kaldırır.',
+    },
+    cards: {
+      dev_description: 'Test amaçlı',
+      prod_description: 'Gerçek üretim',
+      convert_label: 'dönüştür',
+    },
+    button: 'Üretim kiracısına dönüştür',
+  },
 };
 
 export default Object.freeze(upsell);

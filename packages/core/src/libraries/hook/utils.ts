@@ -92,16 +92,28 @@ export const generateHookTestPayload = (hookId: string, event: HookEvent): HookE
     data: { result: 'success' },
   };
 
-  const isInteractionHookEvent = Object.values<string>(InteractionHookEvent).includes(event);
+  const isInteractionHookEvent = (event: HookEvent): event is InteractionHookEvent =>
+    Object.values<string>(InteractionHookEvent).includes(event);
 
-  return {
+  const basicPayload = {
     hookId,
-    event,
     createdAt: now.toISOString(),
-    sessionId: 'fake-session-id',
     userAgent: 'fake-user-agent',
-    ip: 'fake-user-ip',
-    ...(isInteractionHookEvent ? interactionHookContext : dataHookContext),
+  };
+
+  if (isInteractionHookEvent(event)) {
+    return {
+      event,
+      ...basicPayload,
+      ...interactionHookContext,
+    };
+  }
+
+  // Data hook test payload
+  return {
+    event,
+    ...basicPayload,
+    ...dataHookContext,
   };
 };
 
@@ -126,4 +138,33 @@ export const buildManagementApiContext = (
     params,
     matchedRoute: matchedRoute && String(matchedRoute),
   };
+};
+
+/** Per-array cap. 5000 × ~21-char IDs + JSON overhead ≈ 117KB per array; up to four such arrays per payload. LOG-13492. */
+export const MEMBERSHIP_DELTA_CAP = 5000;
+
+const membershipDeltaFields = [
+  'addedUserIds',
+  'removedUserIds',
+  'addedApplicationIds',
+  'removedApplicationIds',
+] as const;
+
+type MembershipDeltaInput = Partial<
+  Record<(typeof membershipDeltaFields)[number], readonly string[]>
+>;
+
+/** Caps non-empty arrays at {@link MEMBERSHIP_DELTA_CAP}; empty/absent fields are omitted. */
+export const truncateMembershipDelta = (input: MembershipDeltaInput): MembershipDeltaInput => {
+  const result: MembershipDeltaInput = {};
+  for (const key of membershipDeltaFields) {
+    const value = input[key];
+    if (!value || value.length === 0) {
+      continue;
+    }
+    // eslint-disable-next-line @silverhand/fp/no-mutation
+    result[key] =
+      value.length > MEMBERSHIP_DELTA_CAP ? value.slice(0, MEMBERSHIP_DELTA_CAP) : value;
+  }
+  return result;
 };

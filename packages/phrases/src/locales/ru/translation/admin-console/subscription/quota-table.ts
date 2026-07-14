@@ -9,7 +9,8 @@ const quota_table = {
     title: 'Приложения',
     total: 'Всего приложений',
     m2m: 'Приложения "машина-машина"',
-    third_party: 'Приложения третьих сторон',
+    third_party: 'OIDC/OAuth приложения третьих сторон',
+    saml_app: 'SAML приложения',
   },
   resource: {
     title: 'Ресурсы API',
@@ -86,7 +87,7 @@ const quota_table = {
   unlimited: 'Неограниченно',
   contact: 'Связаться',
   monthly_price: '$ {{value, number}} /мес.',
-  days_one: '{{count, number}} день',
+  days: '{{count, number}} день',
   days_other: '{{count, number}} дней',
   add_on: 'Дополнительно',
   tier: 'Уровень {{value, number}}: ',

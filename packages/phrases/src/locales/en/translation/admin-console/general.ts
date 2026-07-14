@@ -9,6 +9,8 @@ const general = {
   search: 'Search',
   search_placeholder: 'Search',
   clear_result: 'Clear results',
+  today: 'Today',
+  clear: 'Clear',
   save: 'Save',
   save_changes: 'Save changes',
   saved: 'Saved',
@@ -49,8 +51,7 @@ const general = {
   continue: 'Continue',
   page_info: '{{min, number}}-{{max, number}} of {{total, number}}',
   learn_more: 'Learn more',
-  /** UNTRANSLATED */
-  tab_error_one: '{{count, number}} error',
+  tab_error: '{{count, number}} error',
   tab_error_other: '{{count, number}} errors',
   skip_for_now: 'Skip for now',
   remove: 'Remove',
@@ -76,6 +77,8 @@ const general = {
   or: 'Or',
   reset: 'Reset',
   generate: 'Generate',
+  manage: 'Manage',
+  live_preview: 'Live preview',
 };
 
 export default Object.freeze(general);

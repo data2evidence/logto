@@ -1,6 +1,7 @@
 const action = {
   sign_in: 'تسجيل الدخول',
   continue: 'متابعة',
+  continue_as: 'المتابعة كـ {{name}}',
   create_account: 'إنشاء حساب',
   create_account_without_linking: 'إنشاء حساب جديد بدلاً من الربط',
   create: 'إنشاء',
@@ -20,6 +21,7 @@ const action = {
   switch_to: 'التبديل إلى {{method}}',
   sign_in_via_passcode: 'تسجيل الدخول باستخدام رمز التحقق',
   sign_in_via_password: 'تسجيل الدخول باستخدام كلمة المرور',
+  sign_in_via_passkey: 'تسجيل الدخول باستخدام مفتاح التحقق',
   change: 'تغيير {{method}}',
   link_another_email: 'ربط بريد إلكتروني آخر',
   link_another_phone: 'ربط هاتف آخر',
@@ -28,9 +30,14 @@ const action = {
   copy: 'نسخ',
   verify_via_passkey: 'التحقق عبر مفتاح التحقق',
   download: 'تحميل',
+  remove: 'إزالة',
+  edit: 'تعديل',
+  save: 'حفظ',
   single_sign_on: 'تسجيل الدخول الموحد',
   authorize: 'التفويض',
   use_another_account: 'استخدام حساب آخر',
+  back_to_current_account: 'الرجوع إلى الحساب الحالي',
+  done: 'تم',
 };
 
 export default Object.freeze(action);

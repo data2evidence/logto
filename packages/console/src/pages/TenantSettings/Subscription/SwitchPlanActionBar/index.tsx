@@ -11,7 +11,6 @@ import { subscriptionPage } from '@/consts/pages';
 import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import { TenantsContext } from '@/contexts/TenantsProvider';
 import Button from '@/ds-components/Button';
-import Spacer from '@/ds-components/Spacer';
 import { useConfirmModal } from '@/hooks/use-confirm-modal';
 import useSubscribe from '@/hooks/use-subscribe';
 import { NotEligibleSwitchSkuModalContent } from '@/pages/TenantSettings/components/NotEligibleSwitchPlanModalContent';
@@ -32,6 +31,7 @@ type SkuButtonProps = {
   readonly loadingSkuId?: string;
   readonly onClick: (targetSkuId: string, isDowngrade: boolean) => Promise<void>;
 };
+
 function SkuButton({
   targetSkuId,
   currentSkuId,
@@ -60,8 +60,8 @@ function SkuButton({
           isCurrentSku
             ? 'subscription.current'
             : isDowngrade
-            ? 'subscription.downgrade'
-            : 'subscription.upgrade'
+              ? 'subscription.downgrade'
+              : 'subscription.upgrade'
         }
         type={isDowngrade ? 'default' : 'primary'}
         disabled={isCurrentSku}
@@ -169,7 +169,7 @@ function SwitchPlanActionBar({ onSubscriptionUpdated, currentSkuId, logtoSkus }:
 
   return (
     <div className={styles.container}>
-      <Spacer />
+      <div className={styles.buttonPlaceholder} />
       {/** Public reserved plan buttons */}
       {logtoSkus.map(({ id: skuId }) => {
         return (

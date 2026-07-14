@@ -1,7 +1,6 @@
 import {
   LogResult,
   userInfoSelectFields,
-  type DataHookEventPayload,
   type Hook,
   type HookConfig,
   type HookEvent,
@@ -10,7 +9,7 @@ import {
   type InteractionHookEventPayload,
 } from '@logto/schemas';
 import { generateStandardId, normalizeError, type ConsoleLog } from '@logto/shared';
-import { conditional, pick, trySafe } from '@silverhand/essentials';
+import { conditional, deduplicate, type Optional, pick, trySafe } from '@silverhand/essentials';
 import { HTTPError } from 'ky';
 import pMap from 'p-map';
 
@@ -19,8 +18,10 @@ import { LogEntry } from '#src/middleware/koa-audit-log.js';
 import type Queries from '#src/tenants/Queries.js';
 
 import {
-  type DataHookContextManager,
-  type InteractionHookContextManager,
+  type HookContextManager,
+  type InteractionHookDispatchContext,
+  type HookMetadata,
+  type HookContext,
 } from './context-manager.js';
 import { generateHookTestPayload, parseResponse, sendWebhookRequest } from './utils.js';
 
@@ -96,95 +97,121 @@ export const createHookLibrary = (queries: Queries) => {
       concurrency: 10,
     });
 
+  const fetchInteractionHookUsersById = async (
+    interactionHookResults: InteractionHookDispatchContext['interactionHookResults']
+  ): Promise<Map<string, Optional<Awaited<ReturnType<typeof findUserById>>>>> => {
+    const userIds = deduplicate(interactionHookResults.map(({ userId }) => userId));
+
+    // Current interaction flow typically yields very few user IDs per request.
+    // If this cardinality grows in the future, switch to pMap with capped concurrency.
+    const users: Array<readonly [string, Optional<Awaited<ReturnType<typeof findUserById>>>]> =
+      await Promise.all(
+        userIds.map(async (userId) => [userId, await trySafe(findUserById(userId))] as const)
+      );
+
+    return new Map(users);
+  };
+
   /**
    * Trigger interaction hooks with the given interaction context and result.
    */
   const triggerInteractionHooks = async (
     consoleLog: ConsoleLog,
-    contextManager: InteractionHookContextManager
+    dispatchContext: InteractionHookDispatchContext
   ) => {
-    if (!contextManager.interactionHookResult) {
+    const { metadata, hookEvent: defaultHookEvent, interactionHookResults } = dispatchContext;
+
+    if (interactionHookResults.length === 0) {
       return;
     }
 
-    const { interactionEvent, sessionId, applicationId, userIp, userAgent } =
-      contextManager.metadata;
-    const { userId } = contextManager.interactionHookResult;
-    const { hookEvent } = contextManager;
+    const { interactionEvent, sessionId, applicationId, userIp, userAgent } = metadata;
 
     const found = await findAllHooks();
 
-    const hooks = found.filter(
-      ({ event, events, enabled }) =>
-        enabled && (events.length > 0 ? events.includes(hookEvent) : event === hookEvent) // For backward compatibility
-    );
-
-    if (hooks.length === 0) {
+    if (found.length === 0) {
       return;
     }
 
-    const [user, application] = await Promise.all([
-      trySafe(findUserById(userId)),
+    const [application, usersById] = await Promise.all([
       trySafe(async () => conditional(applicationId && (await findApplicationById(applicationId)))),
+      fetchInteractionHookUsersById(interactionHookResults),
     ]);
 
-    const payload = {
-      event: hookEvent,
-      interactionEvent,
-      createdAt: new Date().toISOString(),
-      sessionId,
-      userAgent,
-      userId,
-      userIp,
-      user: user && pick(user, ...userInfoSelectFields),
-      application: application && pick(application, 'id', 'type', 'name', 'description'),
-    } satisfies BetterOmit<InteractionHookEventPayload, 'hookId'>;
+    const webhooks: Array<{
+      hook: Hook;
+      payload: BetterOmit<InteractionHookEventPayload, 'hookId'>;
+    }> = [];
 
-    await sendWebhooks(
-      hooks.map((hook) => ({ hook, payload })),
-      consoleLog
-    );
+    for (const interactionHookResult of interactionHookResults) {
+      const { userId, event } = interactionHookResult;
+      const customPayload =
+        'payload' in interactionHookResult ? interactionHookResult.payload : undefined;
+      const hookEvent = event ?? defaultHookEvent;
+
+      const hooks = found.filter(
+        ({ event, events, enabled }) =>
+          enabled && (events.length > 0 ? events.includes(hookEvent) : event === hookEvent) // For backward compatibility
+      );
+
+      if (hooks.length === 0) {
+        continue;
+      }
+
+      const user = usersById.get(userId);
+
+      const payload = {
+        ...customPayload,
+        event: hookEvent,
+        interactionEvent,
+        createdAt: new Date().toISOString(),
+        sessionId,
+        userAgent,
+        userId,
+        userIp,
+        user: user && pick(user, ...userInfoSelectFields),
+        application: application && pick(application, 'id', 'type', 'name', 'description'),
+      } satisfies BetterOmit<InteractionHookEventPayload, 'hookId'>;
+
+      // eslint-disable-next-line @silverhand/fp/no-mutating-methods
+      webhooks.push(...hooks.map((hook) => ({ hook, payload })));
+    }
+
+    if (webhooks.length === 0) {
+      return;
+    }
+
+    await sendWebhooks(webhooks, consoleLog);
   };
 
   /**
    * Trigger data hooks with the given data mutation context. All context objects will be used to trigger hooks.
    */
-  const triggerDataHooks = async (
-    consoleLog: ConsoleLog,
-    contextManager: DataHookContextManager
-  ) => {
-    if (contextManager.contextArray.length === 0) {
+  const triggerDataHooks = async (consoleLog: ConsoleLog, contextManager: HookContextManager) => {
+    if (contextManager.dataHookContextArray.length === 0) {
       return;
     }
 
-    const found = await findAllHooks();
+    const { dataHookContextArray: contextArray, metadata } = contextManager;
 
-    // Fetch application detail if available
-    const { applicationId } = contextManager.metadata;
-    const application = applicationId
-      ? await trySafe(async () => findApplicationById(applicationId))
-      : undefined;
+    const webhooks = await buildWebhooks({ contextArray, metadata });
+    await sendWebhooks(webhooks, consoleLog);
+  };
 
-    // Filter hooks that match each events
-    const webhooks = contextManager.contextArray.flatMap(({ event, ...rest }) => {
-      const hooks = found.filter(
-        ({ event: hookEvent, events, enabled }) =>
-          enabled && (events.length > 0 ? events.includes(event) : event === hookEvent)
-      );
+  /**
+   * Trigger exception hooks with the given exception mutation context. All context objects will be used to trigger hooks.
+   */
+  const triggerExceptionHooks = async (
+    consoleLog: ConsoleLog,
+    contextManager: HookContextManager
+  ) => {
+    if (contextManager.exceptionHookContextArray.length === 0) {
+      return;
+    }
 
-      const payload = {
-        event,
-        createdAt: new Date().toISOString(),
-        ...contextManager.metadata,
-        ...conditional(
-          application && { application: pick(application, 'id', 'type', 'name', 'description') }
-        ),
-        ...rest,
-      } satisfies BetterOmit<DataHookEventPayload, 'hookId'>;
+    const { exceptionHookContextArray: contextArray, metadata } = contextManager;
 
-      return hooks.map((hook) => ({ hook, payload }));
-    });
-
+    const webhooks = await buildWebhooks({ contextArray, metadata });
     await sendWebhooks(webhooks, consoleLog);
   };
 
@@ -223,9 +250,49 @@ export const createHookLibrary = (queries: Queries) => {
     }
   };
 
+  /**
+   * Shared builder to construct webhook invocation list for data-like mutation contexts.
+   */
+  async function buildWebhooks<Event extends HookEvent>({
+    contextArray,
+    metadata,
+  }: {
+    contextArray: Array<HookContext & { event: Event }>;
+    metadata: HookMetadata;
+  }) {
+    const foundHooks = await findAllHooks();
+
+    // Fetch application detail if available
+    const { applicationId } = metadata;
+    const application =
+      foundHooks.length > 0 && applicationId
+        ? await trySafe(async () => findApplicationById(applicationId))
+        : undefined;
+
+    return contextArray.flatMap(({ event, ...rest }) => {
+      const hooks = foundHooks.filter(
+        ({ event: hookEvent, events, enabled }) =>
+          enabled && (events.length > 0 ? events.includes(event) : event === hookEvent)
+      );
+
+      const payload = {
+        event,
+        createdAt: new Date().toISOString(),
+        ...metadata,
+        ...conditional(
+          application && { application: pick(application, 'id', 'type', 'name', 'description') }
+        ),
+        ...rest,
+      };
+
+      return hooks.map((hook) => ({ hook, payload }));
+    });
+  }
+
   return {
     triggerInteractionHooks,
     triggerDataHooks,
+    triggerExceptionHooks,
     triggerTestHook,
   };
 };

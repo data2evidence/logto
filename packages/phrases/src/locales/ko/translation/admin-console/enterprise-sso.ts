@@ -1,7 +1,7 @@
 const enterprise_sso = {
   page_title: '기업 SSO',
   title: '기업 SSO',
-  subtitle: '기업 신원 공급자를 연결하고 SP-initiated 단일 로그인을 활성화합니다.',
+  subtitle: '엔터프라이즈 신원 공급자를 연결하고 SSO를 활성화합니다.',
   create: '기업 커넥터 추가',
   col_connector_name: '커넥터 이름',
   col_type: '유형',
@@ -26,11 +26,19 @@ const enterprise_sso = {
       'SAML 2.0을 사용하여 {{name}} 신원 공급자에서 새로운 응용 프로그램 통합을 만듭니다. 그런 다음 다음 값을 붙여 넣습니다.',
     saml: {
       acs_url_field_name: '단언 소비자 서비스 URL (응답 URL)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: '대상 URI (SP 엔터티 ID)',
+      entity_id_field_name: '서비스 제공자 (SP) 엔터티 ID',
+      entity_id_field_tooltip:
+        'SP 엔터티 ID는 URI 형식이나 URL 형식을 식별자로 사용하는 것이 일반적이지만, 반드시 그런 것은 아닙니다.',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: '리디렉션 URI (콜백 URL)',
+      redirect_uri_field_description:
+        '리디렉션 URI는 SSO 인증 이후 사용자가 다시 이동하는 위치입니다. 이 URI를 IdP 구성에 추가하세요.',
+      redirect_uri_field_custom_domain_description:
+        'Logto에서 여러 <a>사용자 지정 도메인</a>을 사용하는 경우 각 도메인에서 SSO가 동작하도록 모든 해당 콜백 URI를 IdP에 반드시 추가하세요.\n\n기본 Logto 도메인 (*.logto.app)은 항상 유효하므로 해당 도메인에서 SSO를 지원하려는 경우에만 포함하세요.',
     },
   },
   attribute_mapping: {
@@ -66,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: '클라이언트 비밀',
       issuer_field_name: '발급자',
       scope_field_name: '범위',
+      scope_field_placeholder: '범위를 입력하세요 (공백으로 구분)',
     },
   },
 };

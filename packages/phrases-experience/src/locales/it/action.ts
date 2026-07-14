@@ -1,6 +1,7 @@
 const action = {
   sign_in: 'Accedi',
   continue: 'Continua',
+  continue_as: 'Continua come {{name}}',
   create_account: 'Crea account',
   create_account_without_linking: 'Creare uno nuovo invece',
   create: 'Crea',
@@ -20,6 +21,7 @@ const action = {
   switch_to: 'Passa a {{method}}',
   sign_in_via_passcode: 'Accedi con il codice di verifica',
   sign_in_via_password: 'Accedi con la password',
+  sign_in_via_passkey: 'Accedi con passkey',
   change: 'Cambia {{method}}',
   link_another_email: 'Collega un altro indirizzo email',
   link_another_phone: 'Collega un altro numero di telefono',
@@ -28,11 +30,14 @@ const action = {
   copy: 'Copia',
   verify_via_passkey: 'Verifica tramite passkey',
   download: 'Scarica',
+  remove: 'Rimuovi',
+  edit: 'Modifica',
+  save: 'Salva',
   single_sign_on: 'Single Sign-On',
-  /** UNTRANSLATED */
-  authorize: 'Authorize',
-  /** UNTRANSLATED */
-  use_another_account: 'Use another account',
+  authorize: 'Autorizza',
+  use_another_account: 'Usa un altro account',
+  back_to_current_account: "Torna all'account attuale",
+  done: 'Fatto',
 };
 
 export default Object.freeze(action);

@@ -9,7 +9,8 @@ const quota_table = {
     title: 'Uygulamalar',
     total: 'Toplam uygulama sayısı',
     m2m: 'Makine-makine uygulamaları',
-    third_party: 'Üçüncü taraf uygulamalar',
+    third_party: 'OIDC/OAuth üçüncü parti uygulamalar',
+    saml_app: 'SAML uygulamaları',
   },
   resource: {
     title: 'API Kaynakları',
@@ -86,7 +87,7 @@ const quota_table = {
   unlimited: 'Sınırsız',
   contact: 'İletişim',
   monthly_price: '${{value, number}} / ay',
-  days_one: '{{count, number}} gün',
+  days: '{{count, number}} gün',
   days_other: '{{count, number}} gün',
   add_on: 'Ek Hizmet',
   tier: 'Seviye{{value, number}}: ',

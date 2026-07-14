@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'Принесите свой UI',
     not_eligible: 'Удалите свои пользовательские элементы UI',
   },
+  collect_user_profile_enabled: {
+    name: 'Сбор профиля пользователя',
+    limited: 'Сбор профиля пользователя',
+    unlimited: 'Сбор профиля пользователя',
+    not_eligible: 'Удалите поля сбора профиля пользователя',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'Инициированное IDP SSO',
+    limited: 'Инициированное IDP SSO',
+    unlimited: 'Инициированное IDP SSO',
+    not_eligible: 'Инициированное IDP SSO не разрешено',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'SAML приложения',
+    limited: '{{count, number}} SAML приложение',
+    limited_other: '{{count, number}} SAML приложений',
+    unlimited: 'Неограниченное количество SAML приложений',
+    not_eligible: 'Удалите свои SAML приложения',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'Удалите свою CAPTCHA',
+  },
+  security_features_enabled: {
+    name: 'Расширенная безопасность',
+    limited: 'Расширенная безопасность',
+    unlimited: 'Расширенная безопасность',
+    not_eligible: 'Удалите свои настройки расширенной безопасности',
+  },
+  custom_domains_limit: {
+    name: 'Пользовательские домены',
+    limited: '{{count, number}} пользовательский домен',
+    limited_other: '{{count, number}} пользовательских доменов',
+    unlimited: 'Неограниченное количество пользовательских доменов',
+    not_eligible: 'Удалите свои пользовательские домены',
+  },
+  passkey_sign_in_enabled: {
+    name: 'Вход с passkey',
+    limited: 'Вход с passkey',
+    unlimited: 'Вход с passkey',
+    not_eligible: 'Вход с passkey не поддерживается',
   },
 };
 

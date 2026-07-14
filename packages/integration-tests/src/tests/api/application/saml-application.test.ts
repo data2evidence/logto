@@ -5,6 +5,7 @@ import {
   createApplication,
   deleteApplication,
   getApplications,
+  getApplication,
   updateApplication,
 } from '#src/api/application.js';
 import {
@@ -19,9 +20,6 @@ import {
   getSamlApplicationMetadata,
 } from '#src/api/saml-application.js';
 import { expectRejects } from '#src/helpers/index.js';
-import { devFeatureTest } from '#src/utils.js';
-
-const { it, describe } = devFeatureTest;
 
 describe('SAML application', () => {
   it('should create and delete a SAML application successfully', async () => {
@@ -30,19 +28,29 @@ describe('SAML application', () => {
       description: 'test',
     });
 
+    await expect(getApplication(createdSamlApplication.id)).resolves.toMatchObject(
+      expect.objectContaining({
+        oidcClientMetadata: {
+          redirectUris: [],
+          postLogoutRedirectUris: [],
+        },
+      })
+    );
+
     expect(createdSamlApplication.nameIdFormat).toBe(NameIdFormat.Persistent);
 
     // Check if the SAML application's OIDC metadata redirect URI is properly set.
     // We need to do this since we do not return OIDC related info when using SAML app APIs.
     const samlApplications = await getApplications([ApplicationType.SAML]);
+    expect(samlApplications.every(({ type }) => type === ApplicationType.SAML));
     const pickedSamlApplication = samlApplications.find(
       ({ id }) => id === createdSamlApplication.id
     );
     expect(pickedSamlApplication).toBeDefined();
-    expect(pickedSamlApplication!.oidcClientMetadata.redirectUris.length).toBe(1);
     expect(
-      pickedSamlApplication!.oidcClientMetadata.redirectUris[0]!.endsWith(
-        `api/saml-applications/${createdSamlApplication.id}/callback`
+      samlApplications.every(
+        ({ oidcClientMetadata: { redirectUris, postLogoutRedirectUris } }) =>
+          redirectUris.length === 0 && postLogoutRedirectUris.length === 0
       )
     ).toBe(true);
 
@@ -128,7 +136,7 @@ describe('SAML application', () => {
         acsUrl: null,
         entityId: null,
         attributeMapping: {
-          id: 'sub',
+          sub: 'sub',
           preferred_username: 'username',
           email: 'email_address',
         },
@@ -138,8 +146,14 @@ describe('SAML application', () => {
       name: 'Update with minimal attribute mapping',
       config: {
         attributeMapping: {
-          id: 'sub',
+          sub: 'sub',
         },
+      },
+    },
+    {
+      name: 'Update with empty attribute mapping',
+      config: {
+        attributeMapping: {},
       },
     },
   ])('should update SAML application - %#', async ({ name, config }) => {

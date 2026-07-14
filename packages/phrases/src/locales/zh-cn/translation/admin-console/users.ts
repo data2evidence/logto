@@ -1,7 +1,8 @@
 const users = {
   page_title: '用户管理',
   title: '用户管理',
-  subtitle: '管理你的用户，包括创建新用户，编辑用户资料，查看用户日志，以及重新设置密码和删除用户',
+  subtitle:
+    '管理你的用户，包括创建新用户，编辑用户资料，查看用户日志，以及重新设置密码和删除用户。',
   create: '添加用户',
   create_subtitle: '提供以下至少一项字段才能继续。',
   error_missing_identifier: '你必须提供至少一个注册标识来创建用户。',
@@ -21,6 +22,8 @@ const users = {
   placeholder_title: '用户管理',
   placeholder_description:
     '每个用户都有一个包含所有用户信息的个人资料。它由基本数据、社交身份和自定义数据组成。',
+  dev_tenant_data_retention_notice:
+    '在开发租户中，超过 90 天的用户账户会被自动删除。<a>了解更多</a>',
 };
 
 export default Object.freeze(users);

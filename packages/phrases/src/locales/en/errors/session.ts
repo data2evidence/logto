@@ -42,8 +42,30 @@ const session = {
     invalid_backup_code: 'Invalid backup code.',
     mfa_policy_not_user_controlled: 'MFA policy is not user controlled.',
     mfa_factor_not_enabled: 'MFA factor is not enabled.',
+    suggest_additional_mfa:
+      'For stronger protection, consider adding another MFA method. You can skip this step and continue.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Pending passkey sign-in info not found. Please re-initiate the sign-in flow.',
+    conflict_rp_id: 'Relying Party ID does not match. Please use the correct client to sign in.',
+    sso_users_not_allowed: 'Passkey sign-in option is not eligible for SSO users.',
   },
   sso_enabled: 'Single sign on is enabled for this given email. Please sign in with SSO.',
+  captcha_required: 'Captcha is required.',
+  captcha_failed: 'Captcha verification failed.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'Email address validation failed.',
+    invalid_email: 'Invalid email address.',
+    email_subaddressing_not_allowed: 'Email subaddressing is not allowed.',
+    email_not_allowed:
+      'The email address "{{email}}" is restricted. Please choose a different one.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Google One Tap cookie mismatch.',
+    invalid_id_token: 'Invalid Google ID Token.',
+    unverified_email: 'Unverified email.',
+  },
 };
 
 export default Object.freeze(session);

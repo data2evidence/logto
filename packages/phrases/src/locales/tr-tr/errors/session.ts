@@ -43,8 +43,30 @@ const session = {
     invalid_backup_code: 'Geçersiz yedek kod.',
     mfa_policy_not_user_controlled: 'MFA politikası kullanıcı tarafından kontrol edilmez.',
     mfa_factor_not_enabled: 'MFA faktörü etkin değil.',
+    suggest_additional_mfa:
+      'Daha güçlü koruma için başka bir MFA yöntemi eklemeyi düşünün. Bu adımı atlayıp devam edebilirsiniz.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Bekleyen passkey oturum açma bilgisi bulunamadı. Lütfen oturum açma akışını yeniden başlatın.',
+    conflict_rp_id:
+      'Relying Party ID eşleşmiyor. Lütfen oturum açmak için doğru istemciyi kullanın.',
+    sso_users_not_allowed: 'Passkey ile oturum açma seçeneği SSO kullanıcıları için kullanılamaz.',
   },
   sso_enabled: 'Bu e-posta için tek oturum açma etkin. Lütfen SSO ile oturum açın.',
+  captcha_required: 'Captcha gereklidir.',
+  captcha_failed: 'Captcha doğrulaması başarısız oldu.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'E-posta adresi doğrulaması başarısız oldu.',
+    invalid_email: 'Geçersiz e-posta adresi.',
+    email_subaddressing_not_allowed: 'E-posta alt adreslemesine izin verilmiyor.',
+    email_not_allowed: 'Kısıtlanmış e-posta adresi "{{email}}". Lütfen farklı bir tane seçiniz.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Google One Tap çerezleri uyuşmuyor.',
+    invalid_id_token: 'Geçersiz Google Kimliği Jetonu.',
+    unverified_email: 'Doğrulanmamış e-posta.',
+  },
 };
 
 export default Object.freeze(session);

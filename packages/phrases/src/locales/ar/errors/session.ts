@@ -36,9 +36,31 @@ const session = {
     invalid_backup_code: 'رمز النسخ الاحتياطي غير صالح.',
     mfa_policy_not_user_controlled: 'سياسة MFA ليست تحت سيطرة المستخدم.',
     mfa_factor_not_enabled: 'عامل MFA غير ممكّن.',
+    suggest_additional_mfa:
+      'للمزيد من الحماية، يُنصح بإضافة طريقة MFA أخرى. يمكنك تخطي هذه الخطوة والمتابعة.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'تعذّر العثور على معلومات تسجيل الدخول بمفتاح مرور قيد الانتظار. يرجى إعادة بدء تدفق تسجيل الدخول.',
+    conflict_rp_id:
+      'معرّف الطرف المعتمد (Relying Party) غير متطابق. يرجى استخدام العميل الصحيح لتسجيل الدخول.',
+    sso_users_not_allowed: 'خيار تسجيل الدخول بمفتاح المرور غير متاح لمستخدمي SSO.',
   },
   sso_enabled:
     'تم تمكين تسجيل الدخول الموحد لهذا البريد الإلكتروني المحدد. يرجى تسجيل الدخول باستخدام SSO.',
+  captcha_required: 'مطلوب التحقق من Captcha.',
+  captcha_failed: 'فشل التحقق من Captcha.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'فشل التحقق من عنوان البريد الإلكتروني.',
+    invalid_email: 'عنوان البريد الإلكتروني غير صالح.',
+    email_subaddressing_not_allowed: 'لا يُسمح بتوجيه البريد الإلكتروني الإضافي.',
+    email_not_allowed: 'عنوان البريد الإلكتروني "{{email}}" مقيد. يرجى اختيار عنوان آخر.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'عدم تطابق ملف تعريف الارتباط لخدمة Google One Tap.',
+    invalid_id_token: 'رمز معرف Google غير صالح.',
+    unverified_email: 'البريد الإلكتروني غير مُحقق.',
+  },
 };
 
 export default Object.freeze(session);

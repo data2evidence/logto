@@ -18,17 +18,33 @@ export const initClient = async (
   return client;
 };
 
-export const initExperienceClient = async (
-  interactionEvent: InteractionEvent = InteractionEvent.SignIn,
-  config?: Partial<LogtoConfig>,
-  redirectUri?: string,
-  options: Omit<SignInOptions, 'redirectUri'> = {},
-  api?: KyInstance
-) => {
+export const initExperienceClient = async ({
+  interactionEvent = InteractionEvent.SignIn,
+  config,
+  redirectUri,
+  options = {},
+  api,
+  captchaToken,
+  extraHeaders,
+}: {
+  interactionEvent?: InteractionEvent;
+  config?: Partial<LogtoConfig>;
+  redirectUri?: string;
+  options?: Omit<SignInOptions, 'redirectUri'>;
+  api?: KyInstance;
+  captchaToken?: string;
+  extraHeaders?: Record<string, string>;
+} = {}) => {
   const client = new ExperienceClient(config, api);
+
+  if (extraHeaders) {
+    // eslint-disable-next-line @silverhand/fp/no-mutation
+    client.extraHeaders = extraHeaders;
+  }
+
   await client.initSession(redirectUri, options);
   assert(client.interactionCookie, new Error('Session not found'));
-  await client.initInteraction({ interactionEvent });
+  await client.initInteraction({ interactionEvent, captchaToken });
 
   return client;
 };

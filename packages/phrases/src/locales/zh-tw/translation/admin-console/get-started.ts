@@ -6,6 +6,7 @@ const get_started = {
     title: '開發：花 5 分鐘集成您的應用程式',
     title_cloud: '開發：在幾分鐘內安全集成您的應用程式',
     subtitle_cloud: '或花 5 分鐘用我們預先構建的 SDK 和教程集成您的應用程式。',
+    try_mcp: '試試用 MCP 一個提示完成整合',
   },
   customize: {
     title: '自訂：提供出色的登錄體驗',
@@ -31,6 +32,33 @@ const get_started = {
       subtitle: '通過可擴展的角色授權，來控制不同用例的資源',
     },
     create_roles: '創建角色',
+  },
+  convert_to_production: {
+    card_title: '準備好上線了嗎？不要忘記發佈你的生產環境設置！',
+    title: '不要讓你的專案卡在開發模式',
+    subtitle:
+      '你正在使用一個開發租戶進行免費測試。要上線，請創建或轉換為生產租戶。需要定制方案嗎？<a>聯絡我們</a>',
+    convert_button: '轉換為生產租戶',
+  },
+  oss_cloud: {
+    try: {
+      title: '跳過維運工作，免費試用 Logto Cloud',
+      badge: '推薦',
+      description:
+        '取得一個無需維護的全託管 Logto，同時享有 MCP 驅動的快速整合、多租戶支援、團隊協作，以及所有進階功能。可免費開始，無需信用卡。',
+      action: '探索 Logto Cloud',
+    },
+    private_cloud: {
+      title: '需要合規支援或客製化部署？',
+      card_title: '私有雲',
+      description:
+        '取得一個專屬的 Logto 實例，具備完整的資料隔離、自訂網域與 SLA 保證。非常適合對資料駐留或合規有嚴格要求的企業。基礎設施由我們負責，你可以專注於產品本身。',
+    },
+    sidebar: {
+      title: '專注於建置，而不是代管。',
+      description: '讓 Logto Cloud 為你處理身分驗證基礎設施。',
+      action: '試用 Logto Cloud',
+    },
   },
   view_all: '查看全部 →',
 };

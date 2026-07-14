@@ -3,6 +3,7 @@ import InlineNotification from '@/ds-components/InlineNotification';
 import Steps from '@/mdx-components/Steps';
 import Step from '@/mdx-components/Step';
 import NpmLikeInstallation from '@/mdx-components/NpmLikeInstallation';
+import CustomDomainEndpointNotice from '@/mdx-components/CustomDomainEndpointNotice';
 
 import Checkpoint from '../../fragments/_checkpoint.md';
 import RedirectUrisWeb, { defaultRedirectUri, defaultPostSignOutUri } from '../../fragments/_redirect-uris-web.mdx';
@@ -23,7 +24,7 @@ import RedirectUrisWeb, { defaultRedirectUri, defaultPostSignOutUri } from '../.
 Import and use `LogtoProvider` to provide a Logto context to your app:
 
 <Code className="language-tsx" title="App.tsx">
-    {`import { LogtoProvider, LogtoConfig } from '@logto/react';
+    {`import { LogtoProvider, type LogtoConfig } from '@logto/react';
 
 const config: LogtoConfig = {
   endpoint: '${props.endpoint}',
@@ -36,6 +37,10 @@ const App = () => (
   </LogtoProvider>
 );`}
 </Code>
+
+<br/>
+
+<CustomDomainEndpointNotice />
 
 </Step>
 

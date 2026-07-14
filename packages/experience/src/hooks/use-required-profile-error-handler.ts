@@ -1,8 +1,8 @@
 import { InteractionEvent, MissingProfile } from '@logto/schemas';
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { validate } from 'superstruct';
 
+import useNavigateWithPreservedSearchParams from '@/hooks/use-navigate-with-preserved-search-params';
 import { UserFlow, SearchParameters, type ContinueFlowInteractionEvent } from '@/types';
 import { missingProfileErrorDataGuard } from '@/types/guard';
 import { queryStringify } from '@/utils';
@@ -26,7 +26,7 @@ const useRequiredProfileErrorHandler = ({
   linkSocial,
   interactionEvent = InteractionEvent.SignIn,
 }: Options = {}) => {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPreservedSearchParams();
   const { setToast } = useToast();
 
   const requiredProfileErrorHandler = useMemo<ErrorHandlers>(
@@ -42,8 +42,7 @@ const useRequiredProfileErrorHandler = ({
           : undefined;
 
         switch (missingProfile) {
-          case MissingProfile.password:
-          case MissingProfile.username: {
+          case MissingProfile.password: {
             navigate(
               {
                 pathname: `/${UserFlow.Continue}/${missingProfile}`,
@@ -52,6 +51,7 @@ const useRequiredProfileErrorHandler = ({
             );
             break;
           }
+          case MissingProfile.username:
           case MissingProfile.email:
           case MissingProfile.phone:
           case MissingProfile.emailOrPhone: {
@@ -59,6 +59,15 @@ const useRequiredProfileErrorHandler = ({
               {
                 pathname: `/${UserFlow.Continue}/${missingProfile}`,
                 search: linkSocialQueryString,
+              },
+              { replace, state: { interactionEvent } }
+            );
+            break;
+          }
+          case MissingProfile.extraProfile: {
+            navigate(
+              {
+                pathname: `/${UserFlow.Continue}/extra-profile`,
               },
               { replace, state: { interactionEvent } }
             );

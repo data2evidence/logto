@@ -7,6 +7,7 @@ create table sign_in_experiences (
   id varchar(21) not null,
   color jsonb /* @use Color */ not null,
   branding jsonb /* @use Branding */ not null,
+  hide_logto_branding boolean not null default false,
   language_info jsonb /* @use LanguageInfo */ not null,
   terms_of_use_url varchar(2048),
   privacy_policy_url varchar(2048),
@@ -20,11 +21,20 @@ create table sign_in_experiences (
   custom_css text,
   custom_content jsonb /* @use CustomContent */ not null default '{}'::jsonb,
   custom_ui_assets jsonb /* @use CustomUiAssets */,
+  custom_ui_csp jsonb /* @use CustomUiCsp */ not null default '{}'::jsonb,
   password_policy jsonb /* @use PartialPasswordPolicy */ not null default '{}'::jsonb,
   mfa jsonb /* @use Mfa */ not null default '{}'::jsonb,
+  adaptive_mfa jsonb /* @use AdaptiveMfa */ not null default '{}'::jsonb,
   single_sign_on_enabled boolean not null default false,
   support_email text,
   support_website_url text,
   unknown_session_redirect_url text,
+  captcha_policy jsonb /* @use CaptchaPolicy */ not null default '{}'::jsonb,
+  sentinel_policy jsonb /* @use SentinelPolicy */ not null default '{}'::jsonb,
+  email_blocklist_policy jsonb /* @use EmailBlocklistPolicy */ not null default '{}'::jsonb,
+  forgot_password_methods jsonb /* @use ForgotPasswordMethods */ default '[]'::jsonb,
+  passkey_sign_in jsonb /* @use PasskeySignIn */ not null default '{}'::jsonb,
+  /** Nullable by design: null keeps legacy full-catalog behavior and [] collects no custom profile fields. */
+  sign_up_profile_fields jsonb /* @use SignUpProfileFields */,
   primary key (tenant_id, id)
 );

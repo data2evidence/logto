@@ -73,7 +73,8 @@ export const parseFormConfig = (
 };
 
 export const convertResponseToForm = (connector: ConnectorResponse): ConnectorFormType => {
-  const { metadata, type, config, syncProfile, isStandard, formItems, target } = connector;
+  const { metadata, type, config, syncProfile, isStandard, formItems, target, enableTokenStorage } =
+    connector;
   const { name, logo, logoDark } = metadata;
   const formConfig = conditional(formItems && initFormData(formItems, config)) ?? {};
 
@@ -82,12 +83,13 @@ export const convertResponseToForm = (connector: ConnectorResponse): ConnectorFo
     logo: logo ?? '',
     logoDark: logoDark ?? '',
     target: conditional(
-      type === ConnectorType.Social && (isStandard ? target : metadata.target ?? target)
+      type === ConnectorType.Social && (isStandard ? target : (metadata.target ?? target))
     ),
     syncProfile: syncProfile ? SyncProfileMode.EachSignIn : SyncProfileMode.OnlyAtRegister,
     jsonConfig: JSON.stringify(config, null, 2),
     formConfig,
     rawConfig: config,
+    enableTokenStorage,
   };
 };
 
@@ -104,5 +106,20 @@ export const convertFactoryResponseToForm = (
     jsonConfig,
     formConfig,
     rawConfig: {},
+    enableTokenStorage: false,
   };
 };
+
+/**
+ * `scope` should be stored as a string with space-separated values.
+ *  In some pages like Social connector form and Enterprise SSO connector form,
+ *  we use Textarea to allow multi-line input, which allows users to input scopes in multiple lines.
+ *  To prevent the scopes from being stored with newlines,
+ *  we need to remove any newlines and trim the values before storing.
+ **/
+export const formatMultiLineScopeInput = (value: string) =>
+  value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' ');

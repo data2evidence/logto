@@ -46,9 +46,31 @@ const session = {
     invalid_backup_code: 'Ungültiger Backup-Code.',
     mfa_policy_not_user_controlled: 'MFA-Richtlinie wird nicht vom Benutzer gesteuert.',
     mfa_factor_not_enabled: 'MFA-Faktor ist nicht aktiviert.',
+    suggest_additional_mfa:
+      'Für besseren Schutz füge eine weitere MFA-Methode hinzu. Du kannst diesen Schritt überspringen und fortfahren.',
+  },
+  passkey_sign_in: {
+    pending_info_not_found:
+      'Ausstehende Passkey-Anmeldeinformationen nicht gefunden. Bitte starten Sie den Anmeldeablauf erneut.',
+    conflict_rp_id:
+      'Die Relying-Party-ID stimmt nicht überein. Bitte verwenden Sie den richtigen Client zum Anmelden.',
+    sso_users_not_allowed: 'Die Passkey-Anmeldeoption ist für SSO-Benutzer nicht verfügbar.',
   },
   sso_enabled:
     'Einmaliges Anmelden ist für diese gegebene E-Mail aktiviert. Bitte melden Sie sich mit SSO an.',
+  captcha_required: 'Captcha ist erforderlich.',
+  captcha_failed: 'Captcha-Verifizierung fehlgeschlagen.',
+  email_blocklist: {
+    disposable_email_validation_failed: 'E-Mail-Adressvalidierung fehlgeschlagen.',
+    invalid_email: 'Ungültige E-Mail-Adresse.',
+    email_subaddressing_not_allowed: 'E-Mail-Subadressierung ist nicht erlaubt.',
+    email_not_allowed: 'Die E-Mail-Adresse "{{email}}" ist eingeschränkt. Bitte wähle eine andere.',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Google One Tap Cookie-Störung.',
+    invalid_id_token: 'Ungültiges Google-ID-Token.',
+    unverified_email: 'Unbestätigte E-Mail.',
+  },
 };
 
 export default Object.freeze(session);

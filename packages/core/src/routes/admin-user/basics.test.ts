@@ -34,7 +34,7 @@ const mockedQueries = {
     findUserById: jest.fn(async (id: string) => mockUser),
     hasUser: jest.fn(async () => mockHasUser()),
     hasUserWithEmail: jest.fn(async () => mockHasUserWithEmail()),
-    hasUserWithPhone: jest.fn(async () => mockHasUserWithPhone()),
+    hasUserWithNormalizedPhone: jest.fn(async () => mockHasUserWithPhone()),
     updateUserById: jest.fn(
       async (_, data: Partial<CreateUser>): Promise<User> => ({
         ...mockUser,
@@ -113,6 +113,20 @@ describe('adminUserRoutes', () => {
     const response = await userRequest.get('/users/foo');
     expect(response.status).toEqual(200);
     expect(response.body).toEqual(mockUserResponse);
+  });
+
+  it('GET /users/:userId should not include passwordDigest/passwordAlgorithm by default', async () => {
+    const response = await userRequest.get('/users/foo');
+    expect(response.status).toEqual(200);
+    expect(response.body).not.toHaveProperty('passwordDigest');
+    expect(response.body).not.toHaveProperty('passwordAlgorithm');
+  });
+
+  it('GET /users/:userId with includePasswordHash=true should include passwordDigest and passwordAlgorithm', async () => {
+    const response = await userRequest.get('/users/foo?includePasswordHash=true');
+    expect(response.status).toEqual(200);
+    expect(response.body).toHaveProperty('passwordDigest', mockUser.passwordEncrypted);
+    expect(response.body).toHaveProperty('passwordAlgorithm', mockUser.passwordEncryptionMethod);
   });
 
   it('POST /users', async () => {

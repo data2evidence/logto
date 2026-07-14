@@ -35,8 +35,27 @@ const session = {
     invalid_backup_code: '無效的備用碼。',
     mfa_policy_not_user_controlled: 'MFA 政策不受使用者控制。',
     mfa_factor_not_enabled: 'MFA 因素未啟用。',
+    suggest_additional_mfa: '為更強的保護，建議新增另一種多重驗證方式。你可略過此步驟並繼續。',
+  },
+  passkey_sign_in: {
+    pending_info_not_found: '未找到待處理的 Passkey 登入資訊。請重新啟動登入流程。',
+    conflict_rp_id: 'Relying Party ID 不相符。請使用正確的用戶端登入。',
+    sso_users_not_allowed: 'SSO 用戶無法使用 Passkey 登入選項。',
   },
   sso_enabled: '該郵箱已開啟單點登錄，請使用 SSO 登錄。',
+  captcha_required: '需要 Captcha。',
+  captcha_failed: 'Captcha 驗證失敗。',
+  email_blocklist: {
+    disposable_email_validation_failed: '電子郵件地址驗證失敗。',
+    invalid_email: '無效的電子郵件地址。',
+    email_subaddressing_not_allowed: '不允許使用電子郵件子地址。',
+    email_not_allowed: '電子郵件地址 "{{email}}" 受限。請選擇其他地址。',
+  },
+  google_one_tap: {
+    cookie_mismatch: 'Google One Tap cookie 不匹配。',
+    invalid_id_token: '無效的 Google ID Token。',
+    unverified_email: '未驗證的電子郵件。',
+  },
 };
 
 export default Object.freeze(session);

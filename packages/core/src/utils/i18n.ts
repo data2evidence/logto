@@ -1,4 +1,9 @@
-import { isBuiltInLanguageTag } from '@logto/phrases-experience';
+import {
+  findSupportedLanguageTag,
+  matchExactLanguageTag,
+  matchSupportedLanguageTag,
+} from '@logto/language-kit';
+import { builtInLanguages } from '@logto/phrases-experience';
 import { type SignInExperience } from '@logto/schemas';
 import { conditionalArray } from '@silverhand/essentials';
 import type { i18n } from 'i18next';
@@ -8,6 +13,14 @@ import { type IRouterParamContext } from 'koa-router';
 
 import detectLanguage from '#src/i18n/detect-language.js';
 
+/**
+ * The global scoped i18next instance.
+ * We use this instance to maintain the global configuration and resources for i18next.
+ *
+ * @remarks
+ * This instance should not be used directly in the request lifecycle as it is shared across all requests.
+ * For different language settings in the request lifecycle, use `ctx.i18next` instead.
+ */
 // This may be fixed by a cjs require wrapper. TBD.
 // See https://github.com/microsoft/TypeScript/issues/49189
 // eslint-disable-next-line no-restricted-syntax
@@ -26,13 +39,44 @@ export const getExperienceLanguage = ({
   customLanguages,
   lng,
 }: GetExperienceLanguage) => {
-  const acceptableLanguages = conditionalArray<string | string[]>(
-    lng,
+  const acceptableLanguageCandidates = conditionalArray<string | string[]>(
+    lng?.split(/\s+/).filter(Boolean),
     autoDetect && detectLanguage(ctx),
     fallbackLanguage
   );
-  const language =
-    acceptableLanguages.find((tag) => isBuiltInLanguageTag(tag) || customLanguages.includes(tag)) ??
-    'en';
-  return language;
+  const acceptableLanguages = acceptableLanguageCandidates.flatMap<string>((language) =>
+    Array.isArray(language) ? language : [language]
+  );
+
+  for (const language of acceptableLanguages) {
+    const customExactLanguage = matchExactLanguageTag([language], customLanguages);
+
+    if (customExactLanguage) {
+      return customExactLanguage;
+    }
+
+    const builtInExactLanguage = matchExactLanguageTag([language], builtInLanguages);
+
+    if (builtInExactLanguage) {
+      return builtInExactLanguage;
+    }
+
+    const { match: builtInFallbackLanguage, matchType: builtInMatchType } =
+      matchSupportedLanguageTag([language], builtInLanguages);
+
+    if (builtInMatchType === 'base' && builtInFallbackLanguage) {
+      return builtInFallbackLanguage;
+    }
+
+    const { match: customFallbackLanguage, matchType: customMatchType } = matchSupportedLanguageTag(
+      [language],
+      customLanguages
+    );
+
+    if (customMatchType === 'base' && customFallbackLanguage) {
+      return customFallbackLanguage;
+    }
+  }
+
+  return findSupportedLanguageTag([], builtInLanguages);
 };

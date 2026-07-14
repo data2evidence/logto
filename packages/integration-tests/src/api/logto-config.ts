@@ -8,9 +8,22 @@ import {
   type JwtCustomizerConfigs,
   type JwtCustomizerTestRequestBody,
   type Json,
+  type IdTokenConfig,
+  type OidcSessionConfig,
 } from '@logto/schemas';
 
+import { waitFor } from '#src/utils.js';
+
 import { authedAdminApi } from './api.js';
+
+// OIDC config mutation APIs invalidate tenant cache asynchronously. These integration helpers wait
+// before returning so follow-up test requests do not race the cache refresh while the production API
+// behavior stays non-blocking.
+const tenantCacheInvalidationDelay = 2000;
+
+const waitForTenantCacheInvalidation = async () => {
+  await waitFor(tenantCacheInvalidationDelay);
+};
 
 export const getAdminConsoleConfig = async () =>
   authedAdminApi.get('configs/admin-console').json<AdminConsoleData>();
@@ -25,16 +38,28 @@ export const updateAdminConsoleConfig = async (payload: Partial<AdminConsoleData
 export const getOidcKeys = async (keyType: LogtoOidcConfigKeyType) =>
   authedAdminApi.get(`configs/oidc/${keyType}`).json<OidcConfigKeysResponse[]>();
 
-export const deleteOidcKey = async (keyType: LogtoOidcConfigKeyType, id: string) =>
-  authedAdminApi.delete(`configs/oidc/${keyType}/${id}`);
+export const deleteOidcKey = async (keyType: LogtoOidcConfigKeyType, id: string) => {
+  const response = await authedAdminApi.delete(`configs/oidc/${keyType}/${id}`);
+  await waitForTenantCacheInvalidation();
+  return response;
+};
 
 export const rotateOidcKeys = async (
   keyType: LogtoOidcConfigKeyType,
-  signingKeyAlgorithm: SupportedSigningKeyAlgorithm = SupportedSigningKeyAlgorithm.EC
-) =>
-  authedAdminApi
-    .post(`configs/oidc/${keyType}/rotate`, { json: { signingKeyAlgorithm } })
+  signingKeyAlgorithm: SupportedSigningKeyAlgorithm = SupportedSigningKeyAlgorithm.EC,
+  rotationGracePeriod?: number
+) => {
+  const oidcKeys = await authedAdminApi
+    .post(`configs/oidc/${keyType}/rotate`, {
+      json: {
+        signingKeyAlgorithm,
+        rotationGracePeriod,
+      },
+    })
     .json<OidcConfigKeysResponse[]>();
+  await waitForTenantCacheInvalidation();
+  return oidcKeys;
+};
 
 export const upsertJwtCustomizer = async (
   keyTypePath: 'access-token' | 'client-credentials',
@@ -69,3 +94,24 @@ export const testJwtCustomizer = async (payload: JwtCustomizerTestRequestBody) =
       json: payload,
     })
     .json<Json>();
+
+export const getIdTokenConfig = async () =>
+  authedAdminApi.get('configs/id-token').json<IdTokenConfig>();
+
+export const upsertIdTokenConfig = async (payload: IdTokenConfig) =>
+  authedAdminApi.put('configs/id-token', { json: payload }).json<IdTokenConfig>();
+
+export const getSessionConfig = async () =>
+  authedAdminApi.get('configs/oidc/session').json<
+    OidcSessionConfig & {
+      ttl: number;
+    }
+  >();
+
+export const updateSessionConfig = async (payload: Partial<OidcSessionConfig>) => {
+  const sessionConfig = await authedAdminApi
+    .patch('configs/oidc/session', { json: payload })
+    .json<OidcSessionConfig & { ttl: number }>();
+  await waitForTenantCacheInvalidation();
+  return sessionConfig;
+};

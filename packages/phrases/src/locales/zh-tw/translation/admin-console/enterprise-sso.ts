@@ -1,7 +1,7 @@
 const enterprise_sso = {
   page_title: '企業單一登入',
   title: '企業單一登入',
-  subtitle: '連接企業身份提供者，啟用 SP 啟動的單一登入。',
+  subtitle: '連接企業身份提供者並啟用單一登入。',
   create: '新增企業連接器',
   col_connector_name: '連接器名稱',
   col_type: '類型',
@@ -26,11 +26,19 @@ const enterprise_sso = {
       '在您的 {{name}} 身份提供者中使用 SAML 2.0 建立新的應用集成。然後將以下值粘貼到其中。',
     saml: {
       acs_url_field_name: '斷言消費服務 URL（回覆 URL）',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: '受眾 URI（SP 實體 ID）',
+      entity_id_field_name: '服務提供者（SP）實體 ID',
+      entity_id_field_tooltip:
+        'SP 實體 ID 可以是任何字符串格式，通常使用 URI 或 URL 形式作為標識符，但這並不是強制的。',
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: '重定向 URI（回撥 URL）',
+      redirect_uri_field_description:
+        'Redirect URI 是在 SSO 認證後使用者被重新導向的位置。請將此 URI 加入 IdP 的設定中。',
+      redirect_uri_field_custom_domain_description:
+        '如果你在 Logto 使用多個<a>自訂網域</a>，務必把所有對應的回呼 URI 加到 IdP，確保 SSO 在每個網域都能運作。\n\n預設的 Logto 網域 (*.logto.app) 一直有效；只有在你也希望支援該網域下的 SSO 時才需要包含它。',
     },
   },
   attribute_mapping: {
@@ -64,6 +72,7 @@ const enterprise_sso = {
       client_secret_field_name: '客戶端密鑰',
       issuer_field_name: '發行者',
       scope_field_name: '範圍',
+      scope_field_placeholder: '輸入範圍（用空格分隔）',
     },
   },
 };

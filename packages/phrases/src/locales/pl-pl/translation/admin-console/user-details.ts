@@ -70,6 +70,12 @@ const user_details = {
     deletion_confirmation:
       'Usuwasz istniejące <name/> w celu weryfikacji dwuetapowej. Czy na pewno chcesz kontynuować?',
   },
+  passkey: {
+    field_name: 'Klucze dostępu',
+    field_description_empty: 'Ten użytkownik nie włączył logowania za pomocą klucza dostępu.',
+    deletion_confirmation:
+      'Usuwasz istniejący <name/> do logowania za pomocą klucza dostępu. Czy na pewno chcesz kontynuować?',
+  },
   suspended: 'Zawieszony',
   suspend_user: 'Zawieś użytkownika',
   suspend_user_reminder:
@@ -108,7 +114,7 @@ const user_details = {
     title_short: 'token',
     empty: 'Użytkownik nie ma żadnych tokenów dostępu osobistego.',
     create: 'Utwórz nowy token',
-    tip: 'Tokeny dostępu osobistego (PAT) zapewniają użytkownikom bezpieczny sposób przyznawania tokenów dostępu bez użycia poświadczeń i interaktywnego logowania. Jest to przydatne dla CI/CD, skryptów lub aplikacji, które muszą programowo uzyskiwać dostęp do zasobów. <a>Dowiedz się więcej</a>',
+    tip: 'Tokeny dostępu osobistego (PAT) zapewniają użytkownikom bezpieczny sposób przyznawania tokenów dostępu bez użycia poświadczeń i interaktywnego logowania. Jest to przydatne dla CI/CD, skryptów lub aplikacji, które muszą programowo uzyskiwać dostęp do zasobów.',
     value: 'Wartość',
     created_at: 'Utworzono w dniu',
     expires_at: 'Wygasa w dniu',
@@ -130,6 +136,58 @@ const user_details = {
     edit_modal: {
       title: 'Edytuj token dostępu osobistego',
       edited: 'Token {{name}} został pomyślnie edytowany.',
+    },
+  },
+  sessions: {
+    title: 'Sesje',
+    description:
+      'Zarządzaj sesjami utrzymywanymi przez serwer autoryzacji Logto. Odwołanie sesji Logto tutaj uniemożliwia automatyczną zgodę na przyszłe żądania autoryzacji.',
+    field_name: 'Sesje',
+    multiple_signed_in: 'Ten użytkownik zalogował się na wielu urządzeniach lub w przeglądarkach.',
+    not_found:
+      'Nie znaleziono aktywnych sesji Logto. Użytkownik nie jest obecnie zalogowany na żadnym urządzeniu.',
+    name_column: 'Nazwa',
+    session_id_column: 'Identyfikator sesji',
+    location_column: 'Lokalizacja',
+    browser_on_os: '{{browser}} na {{os}}',
+    user: 'Użytkownik',
+    applications: 'Aplikacje',
+    signed_in_at: 'Ostatnie logowanie',
+    ip: 'IP',
+    browser_name: 'Nazwa przeglądarki',
+    os_name: 'Nazwa systemu operacyjnego',
+    device_model: 'Model urządzenia',
+    revoke_session: 'Unieważnij sesję',
+    revoke_session_confirmation:
+      'Jeśli usuniesz tę sesję, użytkownicy będą musieli ponownie się uwierzytelnić.',
+  },
+  third_party_apps: {
+    title: 'Aplikacje zewnętrzne',
+    description:
+      'Użyj Logto jako dostawcy tożsamości, aby autoryzować aplikacje zewnętrzne. Przeglądaj i zarządzaj aplikacjami, którym ten użytkownik przyznał dostęp.',
+    field_name: 'Autoryzowane aplikacje zewnętrzne',
+    multiple_authorized: 'Ten użytkownik autoryzował wiele aplikacji i usług zewnętrznych.',
+    not_authorized:
+      'Ten użytkownik nie autoryzował jeszcze żadnych aplikacji ani usług zewnętrznych.',
+    name_column: 'Nazwa',
+    app_id_column: 'ID aplikacji',
+    access_created_at_column: 'Dostęp utworzono',
+    revoke_access_title: 'Cofnąć dostęp?',
+    revoke_access_description:
+      'Ta operacja cofnie dostęp aplikacji do konta tego użytkownika na wszystkich urządzeniach. Użytkownik musi ponownie udzielić autoryzacji, aby przywrócić dostęp.',
+  },
+  connections: {
+    title: 'Połączenie',
+    description:
+      'Użytkownik łączy konta zewnętrzne w celu logowania społecznościowego, logowania jednokrotnego przedsiębiorstwa lub dostępu do zasobów.',
+    token_status_column: 'Status tokenu',
+    token_status: {
+      active: 'Aktywny',
+      expired: 'Wygasły',
+      inactive: 'Nieaktywny',
+      not_applicable: 'Nie dotyczy',
+      available: 'Dostępny',
+      not_available: 'Niedostępny',
     },
   },
 };

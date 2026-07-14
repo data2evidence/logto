@@ -9,12 +9,13 @@ const general = {
   search: 'Pesquisar',
   search_placeholder: 'Pesquisar',
   clear_result: 'Limpar resultados',
+  today: 'Hoje',
+  clear: 'Limpar',
   save: 'Guardar',
   save_changes: 'Guardar alterações',
   saved: 'Guardado',
   discard: 'Descartar',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: 'Descarregar',
   loading: 'A carregar...',
   redirecting: 'A redirecionar...',
   add: 'Adicionar',
@@ -29,11 +30,9 @@ const general = {
   reminder: 'Lembrete',
   edit: 'Editar',
   delete: 'Eliminar',
-  deleted: 'Deleted',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  deleted: 'Eliminado',
+  activate: 'Ativar',
+  deactivate: 'Desativar',
   more_options: 'MAIS OPÇÕES',
   close: 'Fechar',
   copy: 'Copiar',
@@ -52,7 +51,7 @@ const general = {
   continue: 'Continuar',
   page_info: '{{min, number}}-{{max, number}} de {{total, number}}',
   learn_more: 'Saber mais',
-  tab_error_one: '{{count, number}} erro',
+  tab_error: '{{count, number}} erro',
   tab_error_other: '{{count, number}} erros',
   skip_for_now: 'Saltar por agora',
   remove: 'Remover',
@@ -78,6 +77,8 @@ const general = {
   or: 'Ou',
   reset: 'Repor',
   generate: 'Gerar',
+  manage: 'Gerir',
+  live_preview: 'Pré-visualização ao vivo',
 };
 
 export default Object.freeze(general);

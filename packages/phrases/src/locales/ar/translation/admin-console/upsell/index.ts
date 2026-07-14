@@ -5,6 +5,7 @@ import paywall from './paywall.js';
 const upsell = {
   upgrade_plan: 'ترقية الخطة',
   compare_plans: 'مقارنة الخطط',
+  try_with_product_name: 'جرّب {{productName}} الآن',
   view_plans: 'عرض الخطط',
   create_tenant: {
     title: 'اختر خطة المستأجر الخاصة بك',
@@ -26,11 +27,9 @@ const upsell = {
     update_plan: 'تحديث الخطة',
   },
   token_exceeded_modal: {
-    /** UNTRANSLATED */
-    title: 'Token usage exceeded the limit. Upgrade your plan.',
-    /** UNTRANSLATED */
+    title: 'استخدام الرموز تجاوز الحد المسموح. قم بترقية خطتك.',
     notification:
-      'You have exceeded your <planName/> token usage limit. Users will not be able to access the Logto service properly. Please upgrade your plan to premium promptly to avoid any inconvenience.',
+      'لقد تجاوزت الحد المسموح لاستخدام الرموز لـ <planName/>. لن يتمكن المستخدمون من الوصول إلى خدمة Logto بشكل صحيح. يرجى ترقية خطتك إلى النسخة المميزة بسرعة لتجنب أي إزعاج.',
   },
   payment_overdue_modal: {
     title: 'تأخر في دفع الفاتورة',
@@ -50,6 +49,24 @@ const upsell = {
   paywall,
   featured_plan_content,
   add_on,
+  convert_to_production_modal: {
+    title: 'أنت على وشك تغيير المستأجر التطويري إلى مستأجر إنتاجي',
+    description:
+      'جاهز للبث المباشر؟ تحويل هذا المستأجر التطويري إلى مستأجر إنتاجي يفتح لك جميع الوظائف',
+    benefits: {
+      stable_environment: 'للمستخدمين النهائيين: بيئة مستقرة للاستخدام الفعلي.',
+      keep_pro_features:
+        'الحفاظ على ميزات Pro: أنت على وشك الاشتراك في خطة Pro. <a>عرض ميزات Pro.</a>',
+      no_dev_restrictions:
+        'لا توجد قيود تطوير: إزالة حدود النظام الخاصة بالكيانات والموارد وشعار تسجيل الدخول.',
+    },
+    cards: {
+      dev_description: 'لأغراض الاختبار',
+      prod_description: 'إنتاج حقيقي',
+      convert_label: 'تحويل',
+    },
+    button: 'تحويل إلى مستأجر إنتاجي',
+  },
 };
 
 export default Object.freeze(upsell);

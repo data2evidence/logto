@@ -1,8 +1,7 @@
 const enterprise_sso = {
   page_title: 'SSO aziendale',
   title: 'SSO aziendale',
-  subtitle:
-    "Collega il provider di identità aziendale e abilita l'accesso unico inizializzato dal fornitore di servizi.",
+  subtitle: 'Collega il provider di identità aziendale e abilita il Single Sign-On.',
   create: 'Aggiungi connettore aziendale',
   col_connector_name: 'Nome connettore',
   col_type: 'Tipo',
@@ -27,11 +26,19 @@ const enterprise_sso = {
       "Crea una nuova integrazione dell'applicazione tramite SAML 2.0 nel tuo provider di identità {{name}}. Quindi incolla il valore seguente.",
     saml: {
       acs_url_field_name: 'URL del servizio consumer di asserzioni (URL di risposta)',
-      /** UNTRANSLATED */
-      audience_uri_field_name: 'Audience URI (SP Entity ID)',
+      audience_uri_field_name: 'URI del pubblico (ID entità SP)',
+      entity_id_field_name: 'ID entità del fornitore di servizi (SP)',
+      entity_id_field_tooltip:
+        "L'ID entità SP può essere in qualsiasi formato di stringa, solitamente utilizzando una forma URI o una forma URL come identificatore, ma non è obbligatorio.",
+      acs_url_field_placeholder: 'https://your-domain.com/api/saml/callback',
+      entity_id_field_placeholder: 'urn:your-domain.com:sp:saml:{serviceProviderId}',
     },
     oidc: {
       redirect_uri_field_name: 'URI di reindirizzamento (URL di callback)',
+      redirect_uri_field_description:
+        "L'URI di reindirizzamento è dove gli utenti vengono reindirizzati dopo l'autenticazione SSO. Aggiungi questa URI alla configurazione del tuo IdP.",
+      redirect_uri_field_custom_domain_description:
+        "Se utilizzi più <a>domini personalizzati</a> in Logto, assicurati di aggiungere tutte le rispettive URI di callback al tuo IdP per far funzionare l'SSO su ogni dominio.\n\nIl dominio predefinito di Logto (*.logto.app) è sempre valido: includilo solo se desideri supportare l'SSO anche su quel dominio.",
     },
   },
   attribute_mapping: {
@@ -67,6 +74,7 @@ const enterprise_sso = {
       client_secret_field_name: 'Segreto del client',
       issuer_field_name: 'Emittente',
       scope_field_name: 'Ambito',
+      scope_field_placeholder: 'Inserisci gli scopi (separati da uno spazio)',
     },
   },
 };

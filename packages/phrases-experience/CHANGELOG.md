@@ -1,5 +1,138 @@
 # Change Log
 
+## 1.13.3
+
+### Patch Changes
+
+- Updated dependencies [e4eaa5aef5]
+  - @logto/core-kit@2.10.0
+
+## 1.13.2
+
+### Patch Changes
+
+- 32c40b1ad: clarify Account Center 2-step verification toggle label
+- 6b9944d01f: correct Chinese translation of Passkey in MFA experience phrases
+
+## 1.13.1
+
+### Patch Changes
+
+- Updated dependencies [93523a1ae0]
+  - @logto/core-kit@2.9.0
+
+## 1.13.0
+
+### Minor Changes
+
+- 7cee48bd97: support OAuth 2.0 Device Authorization Grant (device flow)
+
+  Device flow lets users sign in on input-limited devices such as smart TVs, CLI tools, IoT gadgets, and gaming consoles by completing authentication on a separate device like a phone or laptop.
+
+  How it works:
+
+  1. The device displays a short user code and a verification URL.
+  2. The user opens the URL on another device, enters the code, and signs in.
+  3. Once approved, the original device receives tokens and completes authentication.
+
+  To create a device flow application in Console:
+
+  - Select "Input-limited app / CLI" under the Native framework list, or
+  - Create an app without framework, then choose "Device flow" as the authorization flow, or
+  - Create a third-party Native app, then choose "Device flow" as the authorization flow.
+
+  The application settings page shows a device-flow-specific guide and a built-in demo you can try immediately.
+
+- 5ab931e7ac: add Czech language support to sign-in experience
+
+### Patch Changes
+
+- Updated dependencies [74c993a91e]
+- Updated dependencies [5ab931e7ac]
+  - @logto/core-kit@2.8.0
+  - @logto/language-kit@1.3.0
+
+## 1.12.2
+
+### Patch Changes
+
+- Updated dependencies [57b0008ee8]
+  - @logto/core-kit@2.7.1
+
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [ce65b07964]
+  - @logto/core-kit@2.7.0
+
+## 1.12.0
+
+### Minor Changes
+
+- 1fb8593659: add email/phone MFA via verification codes
+
+  Summary
+
+  - Add two new MFA factors: Email verification code and SMS (phone) verification code.
+  - Support binding these factors during registration or first sign-in when MFA is required.
+  - Support verifying these factors on subsequent sign-ins with dedicated MFA verification pages.
+  - Update Console to configure these factors and surface guidance/conflict warnings.
+  - Support customizing forgot password methods in Sign-in Experience (related).
+
+  To learn more about this feature, please refer to the documentation: https://docs.logto.io/end-user-flows/mfa
+
+### Patch Changes
+
+- 147f257503: fix a bug that prevents terms agreement dialog from working properly when using magic link authentication
+
+## 1.11.0
+
+### Minor Changes
+
+- 8ae82d585e: add Thai translations to Logto Console and sign-in experience
+
+## 1.10.1
+
+### Patch Changes
+
+- Updated dependencies [4cc321dbb]
+  - @logto/core-kit@2.6.1
+
+## 1.10.0
+
+### Minor Changes
+
+- 2961d355d: bump node version to ^22.14.0
+- 0a76f3389: add captcha bot protection
+
+  You can now enable CAPTCHA bot protection for your sign-in experience with providers like Google reCAPTCHA enterprise and Cloudflare Turnstile.
+
+  To enable CAPTCHA bot protection, you need to:
+
+  1. Go to Console > Security > CAPTCHA > Bot protection.
+  2. Select the CAPTCHA provider you want to use.
+  3. Configure the CAPTCHA provider.
+  4. Save the settings.
+  5. Enable CAPTCHA in the Security page.
+
+  Then take a preview of your sign-in experience to see the CAPTCHA in action.
+
+### Patch Changes
+
+- Updated dependencies [2961d355d]
+  - @logto/language-kit@1.2.0
+  - @logto/core-kit@2.6.0
+
+## 1.9.1
+
+### Patch Changes
+
+- e11e57de8: bump dependencies for security update
+- Updated dependencies [e11e57de8]
+  - @logto/language-kit@1.1.1
+  - @logto/core-kit@2.5.4
+
 ## 1.9.0
 
 ### Minor Changes

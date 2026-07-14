@@ -11,21 +11,21 @@ import {
   OrganizationInvitationStatus,
   SignInMode,
   TenantRole,
+  userMfaDataKey,
   userOnboardingDataKey,
   type User,
   type UserOnboardingData,
 } from '@logto/schemas';
 import { generateStandardId } from '@logto/shared';
-import { conditional, conditionalArray, trySafe } from '@silverhand/essentials';
+import { condArray, conditional, conditionalArray, trySafe } from '@silverhand/essentials';
 
 import { EnvSet } from '#src/env-set/index.js';
+import { truncateMembershipDelta } from '#src/libraries/hook/utils.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
-import { getConsoleLogFromContext } from '#src/utils/console.js';
 import { buildAppInsightsTelemetry } from '#src/utils/request.js';
 import { getTenantId } from '#src/utils/tenant.js';
 
 import { type InteractionProfile, type WithHooksAndLogsContext } from '../../types.js';
-import { postAffiliateLogs } from '../helpers.js';
 import { toUserSocialIdentityData } from '../utils.js';
 
 type OrganizationProvisionPayload =
@@ -36,6 +36,10 @@ type OrganizationProvisionPayload =
   | {
       userId: string;
       ssoConnectorId: string;
+    }
+  | {
+      userId: string;
+      organizationIds: string[];
     };
 
 export class ProvisionLibrary {
@@ -54,11 +58,20 @@ export class ProvisionLibrary {
     const {
       libraries: {
         users: { generateUserId, insertUser },
+        socials: { upsertSocialTokenSetSecret },
+        ssoConnectors: { upsertEnterpriseSsoTokenSetSecret },
       },
-      queries: { userSsoIdentities: userSsoIdentitiesQueries },
     } = this.tenantContext;
 
-    const { socialIdentity, enterpriseSsoIdentity, syncedEnterpriseSsoIdentity, ...rest } = profile;
+    const {
+      socialIdentity,
+      enterpriseSsoIdentity,
+      syncedEnterpriseSsoIdentity,
+      jitOrganizationIds,
+      socialConnectorTokenSetSecret,
+      enterpriseSsoConnectorTokenSetSecret,
+      ...rest
+    } = profile;
 
     const { isCreatingFirstAdminUser, initialUserRoles, customData } =
       await this.getUserProvisionContext(profile);
@@ -69,26 +82,42 @@ export class ProvisionLibrary {
         ...rest,
         ...conditional(socialIdentity && { identities: toUserSocialIdentityData(socialIdentity) }),
         ...conditional(customData && { customData }),
+        logtoConfig: {
+          [userMfaDataKey]: { enabled: false },
+        },
       },
-      initialUserRoles
+      { roleNames: initialUserRoles, isInteractive: true }
     );
 
     if (enterpriseSsoIdentity) {
-      await userSsoIdentitiesQueries.insert({
-        id: generateStandardId(),
-        userId: user.id,
-        ...enterpriseSsoIdentity,
-      });
+      await this.addSsoIdentityToUser(user.id, enterpriseSsoIdentity);
     }
 
     if (isCreatingFirstAdminUser) {
       await this.provisionForFirstAdminUser(user);
     }
 
+    if (socialConnectorTokenSetSecret) {
+      // Upsert token set secret should not break the normal social authentication and link flow
+      await trySafe(
+        async () => upsertSocialTokenSetSecret(user.id, socialConnectorTokenSetSecret),
+        (error) => {
+          void appInsights.trackException(error, buildAppInsightsTelemetry(this.ctx));
+        }
+      );
+    }
+
+    if (enterpriseSsoConnectorTokenSetSecret) {
+      await upsertEnterpriseSsoTokenSetSecret(
+        user.id,
+        enterpriseSsoConnectorTokenSetSecret,
+        this.ctx
+      );
+    }
+
     await this.provisionNewUserJitOrganizations(user.id, profile);
 
     this.ctx.appendDataHookContext('User.Created', { user });
-    // TODO: log
 
     this.triggerAnalyticReports(user);
 
@@ -110,6 +139,27 @@ export class ProvisionLibrary {
     });
 
     await this.provisionNewUserJitOrganizations(userId, { enterpriseSsoIdentity });
+  }
+
+  /**
+   * Add the user to the specified organizations. This function is called when an existing
+   * user is invited to organization(s) by admin through one-time token (e.g. Magic link).
+   */
+  async provisionJitOrganization(payload: OrganizationProvisionPayload) {
+    const {
+      libraries: { users: usersLibraries },
+    } = this.tenantContext;
+
+    const provisionedOrganizations = await usersLibraries.provisionOrganizations(payload);
+
+    for (const { organizationId } of provisionedOrganizations) {
+      this.ctx.appendDataHookContext('Organization.Membership.Updated', {
+        organizationId,
+        ...truncateMembershipDelta({ addedUserIds: [payload.userId] }),
+      });
+    }
+
+    return provisionedOrganizations;
   }
 
   /**
@@ -203,19 +253,32 @@ export class ProvisionLibrary {
    */
   private async provisionNewUserJitOrganizations(
     userId: string,
-    { primaryEmail, enterpriseSsoIdentity }: InteractionProfile
+    { primaryEmail, enterpriseSsoIdentity, jitOrganizationIds }: InteractionProfile
   ) {
+    const extraJitOrganizations = condArray(
+      jitOrganizationIds &&
+        (await this.provisionJitOrganization({
+          userId,
+          organizationIds: jitOrganizationIds,
+        }))
+    );
     if (enterpriseSsoIdentity) {
-      return this.provisionJitOrganization({
-        userId,
-        ssoConnectorId: enterpriseSsoIdentity.ssoConnectorId,
-      });
+      return [
+        ...extraJitOrganizations,
+        ...(await this.provisionJitOrganization({
+          userId,
+          ssoConnectorId: enterpriseSsoIdentity.ssoConnectorId,
+        })),
+      ];
     }
     if (primaryEmail) {
-      return this.provisionJitOrganization({
-        userId,
-        email: primaryEmail,
-      });
+      return [
+        ...extraJitOrganizations,
+        ...(await this.provisionJitOrganization({
+          userId,
+          email: primaryEmail,
+        })),
+      ];
     }
   }
 
@@ -247,22 +310,6 @@ export class ProvisionLibrary {
     });
   }
 
-  private async provisionJitOrganization(payload: OrganizationProvisionPayload) {
-    const {
-      libraries: { users: usersLibraries },
-    } = this.tenantContext;
-
-    const provisionedOrganizations = await usersLibraries.provisionOrganizations(payload);
-
-    for (const { organizationId } of provisionedOrganizations) {
-      this.ctx.appendDataHookContext('Organization.Membership.Updated', {
-        organizationId,
-      });
-    }
-
-    return provisionedOrganizations;
-  }
-
   private readonly getInitialUserRoles = (
     isInAdminTenant: boolean,
     isCreatingFirstAdminUser: boolean,
@@ -276,13 +323,6 @@ export class ProvisionLibrary {
   private readonly triggerAnalyticReports = ({ id }: User) => {
     appInsights.client?.trackEvent({
       name: getEventName(Component.Core, CoreEvent.Register),
-    });
-
-    const { cloudConnection, id: tenantId } = this.tenantContext;
-
-    void trySafe(postAffiliateLogs(this.ctx, cloudConnection, id, tenantId), (error) => {
-      getConsoleLogFromContext(this.ctx).warn('Failed to post affiliate logs', error);
-      void appInsights.trackException(error, buildAppInsightsTelemetry(this.ctx));
     });
   };
 }

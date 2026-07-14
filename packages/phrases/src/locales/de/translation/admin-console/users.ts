@@ -2,7 +2,7 @@ const users = {
   page_title: 'Benutzerverwaltung',
   title: 'Benutzerverwaltung',
   subtitle:
-    'Verwalten von Benutzeridentitäten, einschließlich des Anlegens von Benutzern, Bearbeiten von Benutzerinformationen, Anzeigen von Benutzer-Logs, Zurücksetzen von Passwörtern und Löschen von Benutzern',
+    'Verwalten von Benutzeridentitäten, einschließlich des Anlegens von Benutzern, Bearbeiten von Benutzerinformationen, Anzeigen von Benutzer-Logs, Zurücksetzen von Passwörtern und Löschen von Benutzern.',
   create: 'Benutzer hinzufügen',
   create_subtitle: 'Um fortzufahren, geben Sie bitte mindestens eines der folgenden Felder an.',
   error_missing_identifier:
@@ -23,6 +23,8 @@ const users = {
   placeholder_title: 'Benutzerverwaltung',
   placeholder_description:
     'Jeder Benutzer hat ein Profil mit allen Benutzerinformationen. Es besteht aus grundlegenden Daten, sozialen Identitäten und benutzerdefinierten Daten.',
+  dev_tenant_data_retention_notice:
+    'In Entwicklungs-Tenants werden Benutzerkonten, die älter als 90 Tage sind, automatisch gelöscht. <a>Mehr erfahren</a>',
 };
 
 export default Object.freeze(users);

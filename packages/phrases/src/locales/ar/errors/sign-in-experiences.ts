@@ -17,6 +17,25 @@ const sign_in_experiences = {
   at_least_one_authentication_factor: 'يجب عليك تحديد عامل مصادقة واحد على الأقل.',
   backup_code_cannot_be_enabled_alone: 'لا يمكن تمكين رمز النسخ الاحتياطي بمفرده.',
   duplicated_mfa_factors: 'عوامل MFA مكررة.',
+  email_verification_code_cannot_be_used_for_mfa:
+    'لا يمكن استخدام رمز التحقق من البريد الإلكتروني للمصادقة متعددة العوامل عندما يتم تمكين التحقق من البريد الإلكتروني لتسجيل الدخول.',
+  phone_verification_code_cannot_be_used_for_mfa:
+    'لا يمكن استخدام رمز التحقق عبر الرسائل القصيرة للمصادقة متعددة العوامل عندما يتم تمكين التحقق عبر الرسائل القصيرة لتسجيل الدخول.',
+  email_verification_code_cannot_be_used_for_sign_in:
+    'لا يمكن استخدام رمز التحقق من البريد الإلكتروني لتسجيل الدخول عندما يتم تمكينه للمصادقة متعددة العوامل.',
+  phone_verification_code_cannot_be_used_for_sign_in:
+    'لا يمكن استخدام رمز التحقق عبر الرسائل القصيرة لتسجيل الدخول عندما يتم تمكينه للمصادقة متعددة العوامل.',
+  adaptive_mfa_requires_mfa: 'يجب تمكين MFA قبل تمكين Adaptive MFA.',
+  adaptive_mfa_requires_non_skippable_policy:
+    'يجب أن تتطلب Adaptive MFA سياسة مطالبة غير قابلة للتخطي لـ MFA. استخدم PromptOnlyAtSignInMandatory أو PromptAtSignInAndSignUpMandatory.',
+  non_adaptive_mfa_requires_skippable_policy:
+    'عندما يتم تعطيل Adaptive MFA، يجب أن تكون سياسة مطالبة MFA قابلة للتخطي. لا تستخدم PromptOnlyAtSignInMandatory أو PromptAtSignInAndSignUpMandatory.',
+  duplicated_sign_up_identifiers: 'تم اكتشاف معرفات تسجيل مكررة.',
+  missing_sign_up_identifiers: 'لا يمكن أن يكون معرف التسجيل الأساسي فارغًا.',
+  invalid_custom_email_blocklist_format:
+    'عناصر قائمة البريد الإلكتروني المحظورة المخصصة غير صالحة: {{items, list(type:conjunction)}}. يجب أن يكون كل عنصر عنوان بريد إلكتروني أو نطاق بريد إلكتروني صالحًا، مثلاً، foo@example.com أو @example.com.',
+  forgot_password_method_requires_connector:
+    'طريقة استرداد كلمة المرور تتطلب تكوين موصل {{method}} ملائم.',
 };
 
 export default Object.freeze(sign_in_experiences);

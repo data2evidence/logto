@@ -28,7 +28,7 @@ describe('application APIs', () => {
 
   it('should throw error when creating an OIDC third party application with invalid type', async () => {
     await expectRejects(
-      createApplication('test-create-app', ApplicationType.Native, {
+      createApplication('test-create-app', ApplicationType.MachineToMachine, {
         isThirdParty: true,
       }),
       { code: 'application.invalid_third_party_application_type', status: 400 }
@@ -53,6 +53,34 @@ describe('application APIs', () => {
 
     expect(application.name).toBe(applicationName);
     expect(application.type).toBe(ApplicationType.Traditional);
+    expect(application.isThirdParty).toBe(true);
+
+    await deleteApplication(application.id);
+  });
+
+  it('should create OIDC third party SPA application successfully', async () => {
+    const applicationName = 'test-third-party-spa';
+
+    const application = await createApplication(applicationName, ApplicationType.SPA, {
+      isThirdParty: true,
+    });
+
+    expect(application.name).toBe(applicationName);
+    expect(application.type).toBe(ApplicationType.SPA);
+    expect(application.isThirdParty).toBe(true);
+
+    await deleteApplication(application.id);
+  });
+
+  it('should create OIDC third party Native application successfully', async () => {
+    const applicationName = 'test-third-party-native';
+
+    const application = await createApplication(applicationName, ApplicationType.Native, {
+      isThirdParty: true,
+    });
+
+    expect(application.name).toBe(applicationName);
+    expect(application.type).toBe(ApplicationType.Native);
     expect(application.isThirdParty).toBe(true);
 
     await deleteApplication(application.id);
@@ -301,5 +329,145 @@ describe('application APIs', () => {
 
     const response = await getApplication(application.id).catch((error: unknown) => error);
     expect(response instanceof HTTPError && response.response.status === 404).toBe(true);
+  });
+
+  it('should create native application with device flow successfully', async () => {
+    const application = await createApplication('test-native-device-flow', ApplicationType.Native, {
+      customClientMetadata: { isDeviceFlow: true },
+    });
+
+    expect(application.customClientMetadata.isDeviceFlow).toBe(true);
+    expect(application.type).toBe(ApplicationType.Native);
+
+    await deleteApplication(application.id);
+  });
+
+  it('should create native application with default authorization code flow', async () => {
+    const application = await createApplication('test-native-default-flow', ApplicationType.Native);
+
+    expect(application.customClientMetadata.isDeviceFlow).toBeUndefined();
+
+    await deleteApplication(application.id);
+  });
+
+  it('should throw 422 when creating non-native application with device flow', async () => {
+    await expectRejects(
+      createApplication('test-spa-device-flow', ApplicationType.SPA, {
+        customClientMetadata: { isDeviceFlow: true },
+      }),
+      { code: 'application.device_flow_native_only', status: 422 }
+    );
+
+    await expectRejects(
+      createApplication('test-traditional-device-flow', ApplicationType.Traditional, {
+        customClientMetadata: { isDeviceFlow: true },
+      }),
+      { code: 'application.device_flow_native_only', status: 422 }
+    );
+  });
+
+  it('should throw 422 when changing isDeviceFlow via patch', async () => {
+    const application = await createApplication('test-patch-device-flow', ApplicationType.Native, {
+      customClientMetadata: { isDeviceFlow: true },
+    });
+
+    await expectRejects(
+      updateApplication(application.id, {
+        customClientMetadata: { isDeviceFlow: false },
+      }),
+      { code: 'application.device_flow_not_changeable', status: 422 }
+    );
+
+    await deleteApplication(application.id);
+  });
+
+  it('should allow patching other fields while keeping isDeviceFlow unchanged', async () => {
+    const application = await createApplication(
+      'test-patch-keep-device-flow',
+      ApplicationType.Native,
+      {
+        customClientMetadata: { isDeviceFlow: true },
+      }
+    );
+
+    const updated = await updateApplication(application.id, {
+      customClientMetadata: { isDeviceFlow: true, idTokenTtl: 3600 },
+    });
+
+    expect(updated.customClientMetadata.isDeviceFlow).toBe(true);
+    expect(updated.customClientMetadata.idTokenTtl).toBe(3600);
+
+    await deleteApplication(application.id);
+  });
+
+  it('should throw 422 when patching customClientMetadata without isDeviceFlow on a device flow app', async () => {
+    const application = await createApplication(
+      'test-patch-omit-device-flow',
+      ApplicationType.Native,
+      {
+        customClientMetadata: { isDeviceFlow: true },
+      }
+    );
+
+    /**
+     * Omitting isDeviceFlow from customClientMetadata effectively sets it to false (JSONB replace),
+     * which is a change from true -> false.
+     */
+    await expectRejects(
+      updateApplication(application.id, {
+        customClientMetadata: { idTokenTtl: 3600 },
+      }),
+      { code: 'application.device_flow_not_changeable', status: 422 }
+    );
+
+    await deleteApplication(application.id);
+  });
+
+  it('should allow patching customClientMetadata on a non-device-flow app without isDeviceFlow', async () => {
+    const application = await createApplication('test-patch-normal-app', ApplicationType.Native);
+
+    // Both are false/undefined — no device flow change
+    const updated = await updateApplication(application.id, {
+      customClientMetadata: { idTokenTtl: 3600 },
+    });
+
+    expect(updated.customClientMetadata.idTokenTtl).toBe(3600);
+
+    await deleteApplication(application.id);
+  });
+
+  it('should allow patching customClientMetadata on an explicitly non-device-flow app without isDeviceFlow', async () => {
+    const application = await createApplication(
+      'test-patch-explicit-false',
+      ApplicationType.Native,
+      {
+        customClientMetadata: { isDeviceFlow: false },
+      }
+    );
+
+    // Existing isDeviceFlow is false, omitting it from patch is also false — no device flow change
+    const updated = await updateApplication(application.id, {
+      customClientMetadata: { idTokenTtl: 3600 },
+    });
+
+    expect(updated.customClientMetadata.idTokenTtl).toBe(3600);
+
+    await deleteApplication(application.id);
+  });
+
+  it('should allow patching isDeviceFlow to false when original value is undefined', async () => {
+    const application = await createApplication(
+      'test-patch-undefined-to-false',
+      ApplicationType.Native
+    );
+
+    // Original isDeviceFlow is undefined, patching to false — both are falsy, no device flow change
+    const updated = await updateApplication(application.id, {
+      customClientMetadata: { isDeviceFlow: false },
+    });
+
+    expect(updated.customClientMetadata.isDeviceFlow).toBe(false);
+
+    await deleteApplication(application.id);
   });
 });

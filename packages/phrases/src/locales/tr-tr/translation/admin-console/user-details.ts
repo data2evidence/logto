@@ -72,6 +72,12 @@ const user_details = {
     deletion_confirmation:
       'Varolan 2 aşamalı doğrulama için <name/> kaldırıyorsunuz. Devam etmek istediğinizden emin misiniz?',
   },
+  passkey: {
+    field_name: "Passkey'ler",
+    field_description_empty: 'Bu kullanıcı passkey girişini etkinleştirmedi.',
+    deletion_confirmation:
+      'Passkey girişi için mevcut <name/> kaldırıyorsunuz. Devam etmek istediğinizden emin misiniz?',
+  },
   suspended: 'Askıya alınmış',
   suspend_user: 'Kullanıcıyı Askıya Al',
   suspend_user_reminder:
@@ -110,7 +116,7 @@ const user_details = {
     title_short: 'belirteç',
     empty: 'Kullanıcının herhangi bir kişisel erişim belirteci yok.',
     create: 'Yeni belirteç oluştur',
-    tip: 'Kişisel erişim belirteçleri (PATs), kullanıcıların kimlik bilgilerini veya interaktif oturum açmayı kullanmadan erişim belirteçleri vermesini sağlamak için güvenli bir yol sunar. Bu, kaynaklara programatik erişim gerektiren CI/CD, betikler veya uygulamalar için kullanışlıdır. <a>Daha fazla bilgi edinin</a>',
+    tip: 'Kişisel erişim belirteçleri (PATs), kullanıcıların kimlik bilgilerini veya interaktif oturum açmayı kullanmadan erişim belirteçleri vermesini sağlamak için güvenli bir yol sunar. Bu, kaynaklara programatik erişim gerektiren CI/CD, betikler veya uygulamalar için kullanışlıdır.',
     value: 'Değer',
     created_at: 'Oluşturulma tarihi',
     expires_at: 'Son kullanma tarihi',
@@ -132,6 +138,59 @@ const user_details = {
     edit_modal: {
       title: 'Kişisel erişim belirtecini düzenle',
       edited: 'Belirteç {{name}} başarıyla düzenlendi.',
+    },
+  },
+  sessions: {
+    title: 'Oturumlar',
+    description:
+      'Logto Yetkilendirme Sunucusu tarafından sürdürülen oturumları yönetin. Burada bir Logto oturumunu iptal etmek, gelecekteki yetkilendirme isteklerinde otomatik onayı engeller.',
+    field_name: 'Oturumlar',
+    multiple_signed_in: 'Bu kullanıcı birden fazla cihaz veya tarayıcıdan oturum açtı.',
+    not_found:
+      'Aktif bir Logto oturumu bulunamadı. Kullanıcı şu anda herhangi bir cihazda oturum açmamıştır.',
+    name_column: 'İsim',
+    session_id_column: 'Oturum Kimliği',
+    location_column: 'Konum',
+    browser_on_os: '{{os}} üzerinde {{browser}}',
+    user: 'Kullanıcı',
+    applications: 'Uygulamalar',
+    signed_in_at: 'Son oturum açma',
+    ip: 'IP',
+    browser_name: 'Tarayıcı adı',
+    os_name: 'İşletim sistemi adı',
+    device_model: 'Cihaz modeli',
+    revoke_session: 'Oturumu iptal et',
+    revoke_session_confirmation:
+      'Bu oturumu kaldırırsanız, kullanıcıların yeniden kimlik doğrulaması gerekir.',
+  },
+  third_party_apps: {
+    title: 'Üçüncü taraf uygulamalar',
+    description:
+      "Üçüncü taraf uygulamaları yetkilendirmek için Logto'yu kimlik sağlayıcınız olarak kullanın. Bu kullanıcının erişim verdiği uygulamaları görüntüleyin ve yönetin.",
+    field_name: 'Yetkili üçüncü taraf uygulamalar',
+    multiple_authorized:
+      'Bu kullanıcı birden fazla üçüncü taraf uygulama ve hizmeti yetkilendirdi.',
+    not_authorized:
+      'Bu kullanıcı henüz herhangi bir üçüncü taraf uygulama veya hizmeti yetkilendirmedi.',
+    name_column: 'Ad',
+    app_id_column: 'Uygulama Kimliği',
+    access_created_at_column: 'Erişim oluşturulma zamanı',
+    revoke_access_title: 'Erişim iptal edilsin mi?',
+    revoke_access_description:
+      'Bu işlem uygulamanın bu kullanıcının hesabına tüm cihazlardaki erişimini iptal eder. Erişimi geri yüklemek için kullanıcı yeniden yetkilendirme yapmalıdır.',
+  },
+  connections: {
+    title: 'Bağlantı',
+    description:
+      'Kullanıcı, sosyal giriş, kurumsal SSO veya kaynak erişimi için üçüncü taraf hesapları bağlar.',
+    token_status_column: 'Belirteç durumu',
+    token_status: {
+      active: 'Aktif',
+      expired: 'Süresi dolmuş',
+      inactive: 'Pasif',
+      not_applicable: 'Uygulanamaz',
+      available: 'Mevcut',
+      not_available: 'Mevcut değil',
     },
   },
 };

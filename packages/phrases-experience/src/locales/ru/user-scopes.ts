@@ -1,23 +1,16 @@
 const user_scopes = {
   descriptions: {
+    custom_data: 'Ваши пользовательские данные',
+    email: 'Ваш адрес электронной почты',
+    phone: 'Ваш номер телефона',
+    profile: 'Ваше имя, имя пользователя, аватар и другая информация профиля',
+    roles: 'Ваши роли',
+    identities: 'Ваши связанные социальные идентификаторы',
+    'urn:logto:scope:organizations': 'Информация о ваших организациях',
+    'urn:logto:scope:organization_roles': 'Ваши организационные роли',
+    address: 'Ваш адрес',
     /** UNTRANSLATED */
-    custom_data: 'Your custom data',
-    /** UNTRANSLATED */
-    email: 'Your email address',
-    /** UNTRANSLATED */
-    phone: 'Your phone number',
-    /** UNTRANSLATED */
-    profile: 'Your name, username, avatar, and other profile info',
-    /** UNTRANSLATED */
-    roles: 'Your roles',
-    /** UNTRANSLATED */
-    identities: 'Your linked social identities',
-    /** UNTRANSLATED */
-    'urn:logto:scope:organizations': 'Your organizations info',
-    /** UNTRANSLATED */
-    'urn:logto:scope:organization_roles': 'Your organization roles',
-    /** UNTRANSLATED */
-    address: 'Your address',
+    'urn:logto:scope:sessions': 'Your active sessions',
   },
 };
 

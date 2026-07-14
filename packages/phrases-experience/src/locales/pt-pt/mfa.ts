@@ -2,19 +2,37 @@ const mfa = {
   totp: 'Senha única do aplicativo autenticador',
   webauthn: 'Senha de dispositivo',
   backup_code: 'Código de backup',
+  email_verification_code: 'Código de verificação por e-mail',
+  phone_verification_code: 'Código de verificação por SMS',
   link_totp_description: 'Por exemplo, Google Authenticator, etc.',
   link_webauthn_description: 'Vincule o seu dispositivo ou hardware USB',
   link_backup_code_description: 'Gere um código de backup',
+  link_email_verification_code_description: 'Vincule o seu endereço de e-mail',
+  link_email_2fa_description: 'Vincule o seu endereço de e-mail para verificação em 2 passos',
+  link_phone_verification_code_description: 'Vincule o seu número de telefone',
+  link_phone_2fa_description: 'Vincule o seu número de telefone para verificação em 2 passos',
   verify_totp_description: 'Introduza o código único na aplicação',
   verify_webauthn_description: 'Verifique o seu dispositivo ou hardware USB',
   verify_backup_code_description: 'Cole o código de backup que guardou',
+  verify_email_verification_code_description: 'Introduza o código enviado para o seu e-mail',
+  verify_phone_verification_code_description: 'Introduza o código enviado para o seu telefone',
+  send_to_email: 'Enviar para {{identifier}}',
+  send_to_phone: 'Enviar para {{identifier}}',
+  onboarding: 'Ativar verificação em duas etapas',
+  onboarding_description:
+    'Proteja a sua conta com a verificação em duas etapas. Escolha um ou mais métodos: Passkey, aplicação de autenticação (OTP), código de verificação por SMS ou códigos de cópia de segurança.',
+  enable_mfa: 'Ativar verificação em duas etapas',
   add_mfa_factors: 'Adicionar verificação em duas etapas',
   add_mfa_description:
     'A verificação em duas etapas está ativada. Selecione o seu segundo método de verificação para iniciar sessão de forma segura.',
+  add_another_mfa_factor: 'Adicionar outra verificação em 2 passos',
+  add_another_mfa_description:
+    'Selecione outra forma de verificar a sua identidade ao iniciar sessão.',
   verify_mfa_factors: 'Verificação em duas etapas',
   verify_mfa_description:
     'A verificação em duas etapas foi ativada para esta conta. Por favor, selecione a segunda forma de verificar a sua identidade.',
   add_authenticator_app: 'Adicionar aplicativo autenticador',
+  replace_authenticator_app: 'Substituir aplicativo autenticador',
   step: 'Passo {{step, number}}: {{content}}',
   scan_qr_code: 'Digitalize este código QR',
   scan_qr_code_description:
@@ -29,11 +47,19 @@ const mfa = {
     'Introduza o código de verificação de 6 dígitos gerado pela aplicação autenticadora.',
   enter_one_time_code_description:
     'A verificação em duas etapas foi ativada para esta conta. Por favor, insira o código de utilização única mostrado na sua aplicação autenticadora vinculada.',
+  enter_email_verification_code: 'Introduzir código de verificação por e‑mail',
+  enter_email_verification_code_description:
+    'A autenticação em dois passos está ativada para esta conta. Introduza o código de verificação enviado para {{identifier}}.',
+  enter_phone_verification_code: 'Introduzir código de verificação por SMS',
+  enter_phone_verification_code_description:
+    'A autenticação em dois passos está ativada para esta conta. Introduza o código de verificação por SMS enviado para {{identifier}}.',
   link_another_mfa_factor: 'Mudar para outro método',
   save_backup_code: 'Guarde o seu código de backup',
   save_backup_code_description:
     'Pode usar um destes códigos de backup para aceder à sua conta se tiver problemas durante a verificação em duas etapas de outras formas. Cada código só pode ser utilizado uma vez.',
   backup_code_hint: 'Certifique-se de os copiar e guardar num local seguro.',
+  new_backup_codes_generated:
+    'Novos códigos de backup substituíram os seus códigos antigos. Guarde-os num local seguro o mais rapidamente possível.',
   enter_a_backup_code: 'Introduza um código de backup',
   enter_backup_code_description:
     'Introduza o código de backup que guardou quando a verificação em duas etapas foi ativada inicialmente.',

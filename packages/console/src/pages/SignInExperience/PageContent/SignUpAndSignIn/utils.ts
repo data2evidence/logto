@@ -1,62 +1,74 @@
-import { type ConnectorType, SignInIdentifier } from '@logto/schemas';
+import {
+  AlternativeSignUpIdentifier,
+  ConnectorType,
+  ForgotPasswordMethod,
+  SignInIdentifier,
+  MfaFactor,
+  type SignUpIdentifier as SignUpIdentifierMethod,
+} from '@logto/schemas';
 
-import type { SignUpForm } from '../../types';
-import { SignUpIdentifier } from '../../types';
-import { signUpIdentifiersMapping } from '../constants';
+export const createSignInMethod = (identifier: SignInIdentifier, mfaFactors: MfaFactor[] = []) => {
+  // Check if the identifier is already used in MFA factors
+  const isVerificationCodeDisabled =
+    identifier === SignInIdentifier.Username ||
+    (identifier === SignInIdentifier.Email &&
+      mfaFactors.includes(MfaFactor.EmailVerificationCode)) ||
+    (identifier === SignInIdentifier.Phone && mfaFactors.includes(MfaFactor.PhoneVerificationCode));
 
-import { identifierRequiredConnectorMapping } from './constants';
-
-export const getSignInMethodPasswordCheckState = (
-  signInIdentifier: SignInIdentifier,
-  signUpConfig: SignUpForm,
-  currentCheckState: boolean
-) => {
-  if (signInIdentifier === SignInIdentifier.Username) {
-    return currentCheckState;
-  }
-
-  const { password: isSignUpPasswordRequired } = signUpConfig;
-
-  return isSignUpPasswordRequired || currentCheckState;
+  return {
+    identifier,
+    password: true,
+    verificationCode: !isVerificationCodeDisabled,
+    isPasswordPrimary: true,
+  };
 };
 
-export const getSignInMethodVerificationCodeCheckState = (
-  signInIdentifier: SignInIdentifier,
-  signUpConfig: SignUpForm,
-  currentCheckState: boolean
-) => {
-  if (signInIdentifier === SignInIdentifier.Username) {
-    return currentCheckState;
+export const getSignUpIdentifiersRequiredConnectors = (
+  signUpIdentifiers: SignUpIdentifierMethod[]
+): ConnectorType[] => {
+  const requiredConnectors = new Set<ConnectorType>();
+
+  for (const signUpIdentifier of signUpIdentifiers) {
+    switch (signUpIdentifier) {
+      case SignInIdentifier.Email: {
+        requiredConnectors.add(ConnectorType.Email);
+        continue;
+      }
+      case SignInIdentifier.Phone: {
+        requiredConnectors.add(ConnectorType.Sms);
+        continue;
+      }
+      case AlternativeSignUpIdentifier.EmailOrPhone: {
+        requiredConnectors.add(ConnectorType.Email);
+        requiredConnectors.add(ConnectorType.Sms);
+        continue;
+      }
+      default: {
+        continue;
+      }
+    }
   }
 
-  const { identifier: signUpIdentifier, password: isSignUpPasswordRequired } = signUpConfig;
+  return Array.from(requiredConnectors);
+};
 
-  if (SignUpIdentifier.None !== signUpIdentifier && !isSignUpPasswordRequired) {
-    return true;
+export const getForgotPasswordMethodsRequiredConnectors = (
+  forgotPasswordMethods: ForgotPasswordMethod[]
+): ConnectorType[] => {
+  const requiredConnectors = new Set<ConnectorType>();
+
+  for (const method of forgotPasswordMethods) {
+    switch (method) {
+      case ForgotPasswordMethod.EmailVerificationCode: {
+        requiredConnectors.add(ConnectorType.Email);
+        continue;
+      }
+      case ForgotPasswordMethod.PhoneVerificationCode: {
+        requiredConnectors.add(ConnectorType.Sms);
+        continue;
+      }
+    }
   }
 
-  return currentCheckState;
+  return Array.from(requiredConnectors);
 };
-
-export const createSignInMethod = (identifier: SignInIdentifier) => ({
-  identifier,
-  password: true,
-  verificationCode: identifier !== SignInIdentifier.Username,
-  isPasswordPrimary: true,
-});
-
-export const isVerificationRequiredSignUpIdentifiers = (signUpIdentifier: SignUpIdentifier) => {
-  const identifiers = signUpIdentifiersMapping[signUpIdentifier];
-
-  return (
-    identifiers.includes(SignInIdentifier.Email) || identifiers.includes(SignInIdentifier.Phone)
-  );
-};
-
-export const getSignUpRequiredConnectorTypes = (
-  signUpIdentifier: SignUpIdentifier
-): ConnectorType[] =>
-  signUpIdentifiersMapping[signUpIdentifier]
-    .map((identifier) => identifierRequiredConnectorMapping[identifier])
-    // eslint-disable-next-line unicorn/prefer-native-coercion-functions
-    .filter((connectorType): connectorType is ConnectorType => Boolean(connectorType));

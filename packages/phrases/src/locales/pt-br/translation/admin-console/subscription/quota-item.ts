@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'Traga sua IU',
     not_eligible: 'Remova seus ativos de IU personalizados',
   },
+  collect_user_profile_enabled: {
+    name: 'Coletar perfil do usuário',
+    limited: 'Coletar perfil do usuário',
+    unlimited: 'Coletar perfil do usuário',
+    not_eligible: 'Remova seus campos de coleta de perfil do usuário',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'SSO iniciado por IDP',
+    limited: 'SSO iniciado por IDP',
+    unlimited: 'SSO iniciado por IDP',
+    not_eligible: 'SSO iniciado por IDP não permitido',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'Aplicações SAML',
+    limited: '{{count, number}} aplicação SAML',
+    limited_other: '{{count, number}} aplicações SAML',
+    unlimited: 'Aplicações SAML ilimitadas',
+    not_eligible: 'Remova suas aplicações SAML',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'Remova seu CAPTCHA',
+  },
+  security_features_enabled: {
+    name: 'Segurança avançada',
+    limited: 'Segurança avançada',
+    unlimited: 'Segurança avançada',
+    not_eligible: 'Remova suas configurações avançadas de segurança',
+  },
+  custom_domains_limit: {
+    name: 'Domínios personalizados',
+    limited: '{{count, number}} domínio personalizado',
+    limited_other: '{{count, number}} domínios personalizados',
+    unlimited: 'Domínios personalizados ilimitados',
+    not_eligible: 'Remova seus domínios personalizados',
+  },
+  passkey_sign_in_enabled: {
+    name: 'Login com passkey',
+    limited: 'Login com passkey',
+    unlimited: 'Login com passkey',
+    not_eligible: 'Sem suporte a login com passkey',
   },
 };
 

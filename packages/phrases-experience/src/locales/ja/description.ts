@@ -10,17 +10,17 @@ const description = {
   sign_in: 'サインイン',
   privacy_policy: 'プライバシーポリシー',
   create_account: 'アカウントを作成する',
+  switch_account: 'アカウントを切り替える',
   or: 'または',
   and: '及び',
   enter_passcode: '確認コードが{{address}} {{target}}に送信されました',
   passcode_sent: '確認コードを再送します',
   resend_after_seconds: 'まだ届いていませんか？ <span>{{seconds}}</span> 秒後に再送',
   resend_passcode: 'まだ届いていませんか？ <a>認証コードを再送</a>',
-  create_account_id_exists:
-    '{{type}} {{value}}でアカウントが既に存在しています。ログインしますか？',
+  create_account_id_exists: 'アカウント {{value}} が既に存在しています。ログインを続けます。',
   link_account_id_exists: '{{type}} {{value}}でアカウントが既に存在しています。リンクしますか？',
   sign_in_id_does_not_exist:
-    '{{type}} {{value}}のアカウントは存在しません。新しいアカウントを作成しますか？',
+    '{{value}} のアカウントが見つかりません。新しいアカウントを作成しますか？',
   sign_in_id_does_not_exist_alert: '{{type}} {{value}}のアカウントは存在しません。',
   create_account_id_exists_alert:
     '{{type}} {{value}}は他のアカウントにリンクされています。他の{{type}}を試してください。',
@@ -59,14 +59,26 @@ const description = {
     '以下にアカウントの詳細を入力して、セキュリティを高めてください。',
   create_your_account: 'アカウントを作成する',
   sign_in_to_your_account: 'アカウントにサインインする',
+  device_activation: 'デバイスの有効化',
+  device_activation_description:
+    'デバイスに表示されているコードを入力してください。コードが一致していることを確認し、このデバイスへのサインインを続けてください。',
+  device_activation_error_description: 'デバイスに表示されているコードを入力してください。',
+  device_activation_success: 'デバイスが接続されました！',
+  device_activation_success_description: 'デバイスに戻って続行してください。',
   no_region_code_found: '地域コードが見つかりません',
   verify_email: 'Eメールを確認する',
   verify_phone: '電話番号を確認する',
   password_requirements: 'パスワード {{items, list}}。',
   password_requirement: {
     length_one: '最低 {{count}} 文字',
+    length_two: '最低 {{count}} 文字',
+    length_few: '最低 {{count}} 文字',
+    length_many: '最低 {{count}} 文字',
     length_other: '最低 {{count}} 文字',
     character_types_one: '大文字、小文字、数字、記号のうち {{count}} 種類を含む必要があります',
+    character_types_two: '大文字、小文字、数字、記号のうち {{count}} 種類を含む必要があります',
+    character_types_few: '大文字、小文字、数字、記号のうち {{count}} 種類を含む必要があります',
+    character_types_many: '大文字、小文字、数字、記号のうち {{count}} 種類を含む必要があります',
     character_types_other: '大文字、小文字、数字、記号のうち {{count}} 種類を含む必要があります',
   },
   use: '使用する',
@@ -74,30 +86,18 @@ const description = {
   single_sign_on_connectors_list:
     'あなたの企業は、メールアカウント{{email}}に対してシングルサインオンを有効にしました。以下のSSOプロバイダーを使用してサインインを続けることができます。',
   single_sign_on_enabled: 'このアカウントではシングル サインオンが有効になっています',
-  /** UNTRANSLATED */
-  authorize_title: 'Authorize {{name}}',
-  /** UNTRANSLATED */
-  request_permission: '{{name}} is requesting access to:',
-  /** UNTRANSLATED */
-  grant_organization_access: 'Grant the organization access:',
-  /** UNTRANSLATED */
-  authorize_personal_data_usage: 'Authorize the use of your personal data:',
-  /** UNTRANSLATED */
-  authorize_organization_access: 'Authorize access to the specific organization:',
-  /** UNTRANSLATED */
-  user_scopes: 'Personal user data',
-  /** UNTRANSLATED */
-  organization_scopes: 'Organization access',
-  /** UNTRANSLATED */
-  authorize_agreement: `By authorizing the access, you agree to the {{name}}'s <link></link>.`,
-  /** UNTRANSLATED */
-  authorize_agreement_with_redirect: `By authorizing the access, you agree to the {{name}}'s <link></link>, and will be redirected to {{uri}}.`,
-  /** UNTRANSLATED */
-  not_you: 'Not you?',
-  /** UNTRANSLATED */
-  user_id: 'User ID: {{id}}',
-  /** UNTRANSLATED */
-  redirect_to: 'You will be redirected to {{name}}.',
+  authorize_title: '{{name}} を承認する',
+  request_permission: '{{name}} が以下へのアクセスを要求しています：',
+  grant_organization_access: '組織へのアクセスを許可する：',
+  authorize_personal_data_usage: '個人データの使用を承認する：',
+  authorize_organization_access: '特定の組織へのアクセスを承認する：',
+  user_scopes: '個人ユーザーデータ',
+  organization_scopes: '組織へのアクセス',
+  authorize_agreement: `アクセスを承認することで、{{name}} の<link></link>に同意したことになります。`,
+  authorize_agreement_with_redirect: `アクセスを承認することで、{{name}} の<link></link>に同意し、{{uri}} にリダイレクトされます。`,
+  not_you: 'あなたではありませんか？',
+  user_id: 'ユーザー ID: {{id}}',
+  redirect_to: '{{name}} にリダイレクトされます。',
   auto_agreement: '続行することで、<link></link>に同意したことになります。',
   identifier_sign_in_description: '{{types, list(type: disjunction;)}}を入力してサインインします。',
   all_sign_in_options: 'すべてのサインインオプション',
@@ -107,6 +107,21 @@ const description = {
   back_to_sign_in: 'サインインに戻る',
   support_email: 'サポートメール: <link></link>',
   support_website: 'サポートウェブサイト: <link></link>',
+  switch_account_title: '現在 {{account}} としてサインインしています',
+  switch_account_description:
+    '続行するには、現在のアカウントからサインアウトし、新しいアカウントに自動的に切り替わります。',
+  about_yourself: 'あなたについて教えてください',
+  verify_identity: '本人確認を行う',
+  choose_verification_method: 'サインイン方法を選択してください',
+  verification_method: {
+    passkey: 'パスキー',
+    passkey_description: 'デバイスまたはUSBハードウェアで確認',
+    password: 'パスワード',
+    password_description: 'パスワードを入力',
+    email_verification_code: 'メール認証コード',
+    phone_verification_code: '電話認証コード',
+    verification_code_description: '{{target}}に送信',
+  },
 };
 
 export default Object.freeze(description);

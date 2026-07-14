@@ -98,7 +98,7 @@ const quota_item = {
     limited: '{{count, number}} machine to machine role',
     limited_other: '{{count, number}} machine to machine roles',
     unlimited: 'Unbegrenzte Machine to machine roles',
-    not_eligible: 'Remove your machine to machine roles',
+    not_eligible: 'Entferne deine machine to machine roles',
   },
   scopes_per_role_limit: {
     name: 'Berechtigungen pro Rolle',
@@ -138,7 +138,7 @@ const quota_item = {
     name: 'Zwei-Faktor-Authentifizierung',
     limited: 'Zwei-Faktor-Authentifizierung',
     unlimited: 'Zwei-Faktor-Authentifizierung',
-    not_eligible: 'Entfernen Sie Ihre Zwei-Faktor-Authentifizierung',
+    not_eligible: 'Entferne deine Zwei-Faktor-Authentifizierung',
   },
   sso_enabled: {
     name: 'Enterprise SSO',
@@ -151,13 +151,13 @@ const quota_item = {
     limited: '{{count, number}} Mandantenmitglied',
     limited_other: '{{count, number}} Mandantenmitglieder',
     unlimited: 'Unbegrenzte Mandantenmitglieder',
-    not_eligible: 'Remove your tenant members',
+    not_eligible: 'Entferne deine Mandantenmitglieder',
   },
   custom_jwt_enabled: {
     name: 'Benutzerdefiniertes JWT',
     limited: 'Benutzerdefiniertes JWT',
     unlimited: 'Benutzerdefiniertes JWT',
-    not_eligible: 'Remove your JWT claims customizer',
+    not_eligible: 'Entferne deinen JWT-Anspruchsanpasser',
   },
   impersonation_enabled: {
     name: 'Impersonation',
@@ -171,27 +171,49 @@ const quota_item = {
     unlimited: 'Bring your UI',
     not_eligible: 'Entferne deine benutzerdefinierten UI-Assets',
   },
+  collect_user_profile_enabled: {
+    name: 'Benutzerprofil sammeln',
+    limited: 'Benutzerprofil sammeln',
+    unlimited: 'Benutzerprofil sammeln',
+    not_eligible: 'Entferne deine Benutzerprofil-Sammlungsfelder',
+  },
   idp_initiated_sso_enabled: {
-    /** UNTRANSLATED */
-    name: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    limited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    unlimited: 'IDP-initiated SSO',
-    /** UNTRANSLATED */
-    not_eligible: 'IDP-initiated SSO not allowed',
+    name: 'IDP-initiiertes SSO',
+    limited: 'IDP-initiiertes SSO',
+    unlimited: 'IDP-initiiertes SSO',
+    not_eligible: 'IDP-initiiertes SSO nicht erlaubt',
   },
   saml_applications_limit: {
-    /** UNTRANSLATED */
-    name: 'SAML applications',
-    /** UNTRANSLATED */
-    limited: '{{count, number}} SAML application',
-    /** UNTRANSLATED */
-    limited_other: '{{count, number}} SAML applications',
-    /** UNTRANSLATED */
-    unlimited: 'Unlimited SAML applications',
-    /** UNTRANSLATED */
-    not_eligible: 'Remove your SAML applications',
+    name: 'SAML-Anwendungen',
+    limited: '{{count, number}} SAML-Anwendung',
+    limited_other: '{{count, number}} SAML-Anwendungen',
+    unlimited: 'Unbegrenzte SAML-Anwendungen',
+    not_eligible: 'Entferne deine SAML-Anwendungen',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'Entferne dein CAPTCHA',
+  },
+  security_features_enabled: {
+    name: 'Erweiterte Sicherheitsfunktionen',
+    limited: 'Erweiterte Sicherheitsfunktionen',
+    unlimited: 'Erweiterte Sicherheitsfunktionen',
+    not_eligible: 'Entferne deine erweiterten Sicherheitseinstellungen',
+  },
+  custom_domains_limit: {
+    name: 'Benutzerdefinierte Domains',
+    limited: '{{count, number}} benutzerdefinierte Domain',
+    limited_other: '{{count, number}} benutzerdefinierte Domains',
+    unlimited: 'Unbegrenzte benutzerdefinierte Domains',
+    not_eligible: 'Entferne deine benutzerdefinierten Domains',
+  },
+  passkey_sign_in_enabled: {
+    name: 'Passkey-Anmeldung',
+    limited: 'Passkey-Anmeldung',
+    unlimited: 'Passkey-Anmeldung',
+    not_eligible: 'Keine Unterstützung für Passkey-Anmeldung',
   },
 };
 

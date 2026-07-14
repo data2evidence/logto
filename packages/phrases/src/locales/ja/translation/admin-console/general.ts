@@ -9,12 +9,13 @@ const general = {
   search: '検索',
   search_placeholder: '検索',
   clear_result: '検索結果をクリアする',
+  today: '今日',
+  clear: 'クリア',
   save: '保存',
   save_changes: '変更を保存する',
   saved: '保存しました',
   discard: '破棄する',
-  /** UNTRANSLATED */
-  download: 'Download',
+  download: 'ダウンロード',
   loading: '読み込み中...',
   redirecting: 'リダイレクト中...',
   add: '追加',
@@ -30,10 +31,8 @@ const general = {
   edit: '編集',
   delete: '削除',
   deleted: '削除済',
-  /** UNTRANSLATED */
-  activate: 'Activate',
-  /** UNTRANSLATED */
-  deactivate: 'Deactivate',
+  activate: '有効化する',
+  deactivate: '無効化する',
   more_options: 'その他のオプション',
   close: '閉じる',
   copy: 'コピーする',
@@ -52,7 +51,7 @@ const general = {
   continue: '続ける',
   page_info: '{{total}}件中{{min}}件〜{{max}}件を表示',
   learn_more: '詳しく見る',
-  tab_error_one: '{{count, number}} 件のエラー',
+  tab_error: '{{count, number}} 件のエラー',
   tab_error_other: '{{count}} 件のエラーがあります',
   skip_for_now: '今回はスキップする',
   remove: '削除する',
@@ -78,6 +77,8 @@ const general = {
   or: 'または',
   reset: 'リセット',
   generate: '生成する',
+  manage: '管理',
+  live_preview: 'ライブプレビュー',
 };
 
 export default Object.freeze(general);

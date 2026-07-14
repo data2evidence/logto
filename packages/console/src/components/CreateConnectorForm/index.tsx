@@ -4,12 +4,23 @@ import {
   type ConnectorResponse,
 } from '@logto/schemas';
 import { useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import Modal from 'react-modal';
 import useSWR from 'swr';
 
+import ExternalLink from '@/assets/icons/external-link.svg?react';
+import LogtoEmailLogoDark from '@/assets/icons/logto-email-service-dark.svg?url';
+import LogtoEmailLogo from '@/assets/icons/logto-email-service.svg?url';
+import ConnectorLogo from '@/components/ConnectorLogo';
+import { isCloud } from '@/consts/env';
+import { pricingLink } from '@/consts/external-links';
+import Button from '@/ds-components/Button';
+import DangerousRaw from '@/ds-components/DangerousRaw';
 import DynamicT from '@/ds-components/DynamicT';
 import ModalLayout from '@/ds-components/ModalLayout';
+import TextLink from '@/ds-components/TextLink';
 import type { RequestError } from '@/hooks/use-api';
+import useDocumentationUrl from '@/hooks/use-documentation-url';
 import modalStyles from '@/scss/modal.module.scss';
 
 import { getConnectorGroups } from '../../pages/Connectors/utils';
@@ -19,13 +30,51 @@ import Footer from './Footer';
 import PlatformSelector from './PlatformSelector';
 import Skeleton from './Skeleton';
 import styles from './index.module.scss';
-import { compareConnectors, getConnectorRadioGroupSize, getModalTitle } from './utils';
+import {
+  compareConnectors,
+  getEmailConnectorUpsellCopyKeys,
+  getConnectorRadioGroupSize,
+  getModalTitle,
+  shouldShowEmailConnectorUpsellBanner,
+} from './utils';
 
 type Props = {
   readonly isOpen: boolean;
   readonly type?: ConnectorType;
   readonly onClose?: (connectorId?: string) => void;
 };
+
+function EmailConnectorUpsellBanner() {
+  const { t } = useTranslation(undefined, {
+    keyPrefix: 'admin_console',
+  });
+  const copyKeys = getEmailConnectorUpsellCopyKeys();
+
+  return (
+    <div className={styles.upsellBanner}>
+      <div className={styles.upsellInfo}>
+        <ConnectorLogo data={{ logo: LogtoEmailLogo, logoDark: LogtoEmailLogoDark }} />
+        <div className={styles.upsellContent}>
+          <div className={styles.upsellTitle}>
+            <DynamicT forKey={copyKeys.title} />
+          </div>
+          <div className={styles.upsellDescription}>
+            <DynamicT forKey={copyKeys.description} />
+          </div>
+        </div>
+      </div>
+      <Button
+        className={styles.upsellButton}
+        type="outline"
+        title={<DangerousRaw>{t(copyKeys.action, { productName: 'Logto Cloud' })}</DangerousRaw>}
+        trailingIcon={<ExternalLink />}
+        onClick={() => {
+          window.open(pricingLink, '_blank', 'noopener,noreferrer');
+        }}
+      />
+    </div>
+  );
+}
 
 function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
   const { data: existingConnectors, error: connectorsError } = useSWR<
@@ -40,6 +89,10 @@ function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
   const [activeGroupId, setActiveGroupId] = useState<string>();
   const [activeFactoryId, setActiveFactoryId] = useState<string>();
   const isCreatingSocialConnector = type === ConnectorType.Social;
+  const { getDocumentationUrl } = useDocumentationUrl();
+  const { t } = useTranslation(undefined, {
+    keyPrefix: 'admin_console',
+  });
 
   const groups = useMemo(() => {
     if (!factories || !existingConnectors) {
@@ -52,10 +105,6 @@ function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
         // Hide the entrance of adding SAML social connectors, users should go to Enterprise SSO if they want to use SAML.
         // Should not remove the SAML factory from GET /connector-factories API, since that could break the existing SAML connectors.
         .filter(({ id }) => id !== 'saml')
-        // Hide the entrance of adding HTTP Email connector
-        .filter(({ id }) => id !== 'http-email')
-        // Hide the entrance of adding Vonage SMS connector
-        .filter(({ id }) => id !== 'vonage-sms')
     );
 
     return allGroups
@@ -72,6 +121,11 @@ function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
       .slice()
       .sort(compareConnectors);
   }, [factories, type, existingConnectors]);
+
+  const shouldShowEmailConnectorUpsellBannerValue = shouldShowEmailConnectorUpsellBanner({
+    type,
+    isCloud,
+  });
 
   const activeGroup = useMemo(
     () => groups.find(({ id }) => id === activeGroupId),
@@ -121,6 +175,23 @@ function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
     >
       <ModalLayout
         title={cardTitle}
+        subtitle={
+          <div className={styles.label}>
+            <Trans
+              components={{
+                a: (
+                  <TextLink
+                    href={getDocumentationUrl('/integrations')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                ),
+              }}
+            >
+              {t('connectors.create_form.third_party_connectors')}
+            </Trans>
+          </div>
+        }
         footer={
           existingConnectors && (
             <Footer
@@ -137,6 +208,8 @@ function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
       >
         {isLoading && <Skeleton />}
         {factoriesError?.message ?? connectorsError?.message}
+        {shouldShowEmailConnectorUpsellBannerValue && <EmailConnectorUpsellBanner />}
+
         <ConnectorRadioGroup
           name="group"
           groups={defaultGroups}
@@ -153,8 +226,8 @@ function CreateConnectorForm({ onClose, isOpen: isFormOpen, type }: Props) {
         )}
         {standardGroups.length > 0 && (
           <>
-            <div className={styles.standardLabel}>
-              <DynamicT forKey="connectors.standard_connectors" />
+            <div className={styles.label}>
+              <DynamicT forKey="connectors.create_form.standard_connectors" />
             </div>
             <ConnectorRadioGroup
               name="group"

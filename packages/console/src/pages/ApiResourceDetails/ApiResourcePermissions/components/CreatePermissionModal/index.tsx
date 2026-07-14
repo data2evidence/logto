@@ -8,6 +8,7 @@ import ReactModal from 'react-modal';
 import ContactUsPhraseLink from '@/components/ContactUsPhraseLink';
 import QuotaGuardFooter from '@/components/QuotaGuardFooter';
 import SkuName from '@/components/SkuName';
+import { manageRolePermissions } from '@/consts';
 import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import Button from '@/ds-components/Button';
 import FormField from '@/ds-components/FormField';
@@ -19,18 +20,16 @@ import { trySubmitSafe } from '@/utils/form';
 
 type Props = {
   readonly resourceId: string;
-  /** @deprecated get usage from cloud API after migrating to new pricing model */
-  readonly totalResourceCount: number;
   readonly onClose: (scope?: Scope) => void;
 };
 
 type CreatePermissionFormData = Pick<CreateScope, 'name' | 'description'>;
 
-function CreatePermissionModal({ resourceId, totalResourceCount, onClose }: Props) {
+function CreatePermissionModal({ resourceId, onClose }: Props) {
   const {
     currentSubscriptionQuota,
     currentSubscriptionResourceScopeUsage,
-    currentSubscription: { planId, isEnterprisePlan },
+    currentSubscription: { planId },
     hasReachedSubscriptionQuotaLimit,
   } = useContext(SubscriptionDataContext);
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
@@ -75,10 +74,7 @@ function CreatePermissionModal({ resourceId, totalResourceCount, onClose }: Prop
       <ModalLayout
         title="api_resource_details.permission.create_title"
         subtitle="api_resource_details.permission.create_subtitle"
-        learnMoreLink={{
-          href: 'https://docs.logto.io/docs/recipes/rbac/manage-permissions-and-roles#manage-role-permissions',
-          targetBlank: 'noopener',
-        }}
+        learnMoreLink={{ href: manageRolePermissions }}
         footer={
           isScopesPerResourceReachLimit ? (
             <QuotaGuardFooter>

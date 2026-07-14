@@ -2,9 +2,6 @@ import { SsoProviderName, SsoProviderType } from '@logto/schemas';
 import { conditional } from '@silverhand/essentials';
 import camelcaseKeys from 'camelcase-keys';
 import { decodeJwt } from 'jose';
-import { z } from 'zod';
-
-import assertThat from '#src/utils/assert-that.js';
 
 import OidcConnector from '../OidcConnector/index.js';
 import { fetchToken, getIdTokenClaims, getUserInfo } from '../OidcConnector/utils.js';
@@ -15,19 +12,13 @@ import {
   SsoConnectorError,
   SsoConnectorErrorCodes,
 } from '../types/error.js';
-import { basicOidcConnectorConfigGuard } from '../types/oidc.js';
+import { basicOidcConnectorConfigGuard, type OidcTokenResponse } from '../types/oidc.js';
 import { type ExtendedSocialUserInfo } from '../types/saml.js';
 import { type SingleSignOnConnectorSession } from '../types/session.js';
 
-export const azureOidcConnectorConfigGuard = basicOidcConnectorConfigGuard.extend({
-  trustUnverifiedEmail: z.boolean().optional(),
-});
-
 export class AzureOidcSsoConnector extends OidcConnector implements SingleSignOn {
-  private readonly trustUnverifiedEmail: boolean;
-
   constructor(readonly data: SingleSignOnConnectorData) {
-    const parseConfigResult = azureOidcConnectorConfigGuard.safeParse(data.config);
+    const parseConfigResult = basicOidcConnectorConfigGuard.safeParse(data.config);
 
     if (!parseConfigResult.success) {
       throw new SsoConnectorError(SsoConnectorErrorCodes.InvalidConfig, {
@@ -37,11 +28,7 @@ export class AzureOidcSsoConnector extends OidcConnector implements SingleSignOn
       });
     }
 
-    const { trustUnverifiedEmail, ...oidcConfig } = parseConfigResult.data;
-
-    super(oidcConfig);
-
-    this.trustUnverifiedEmail = trustUnverifiedEmail ?? false;
+    super(parseConfigResult.data);
   }
 
   async getConfig() {
@@ -59,7 +46,7 @@ export class AzureOidcSsoConnector extends OidcConnector implements SingleSignOn
    * @param connectorSession The connector session data from the oidc provider session storage
    * @returns The user info from the OIDC provider
    *
-   * @remarks folked from OidcSsoConnector. Override the getUserInfo method's sync user info logic.
+   * @remarks forked from OidcSsoConnector. Override the getUserInfo method's sync user info logic.
    * The email_verified and phone_verified are returned from Azure AD's userinfo endpoint.
    * @see https://learn.microsoft.com/en-us/answers/questions/812672/microsoft-openid-connect-getting-verified-email
    * It is unsafe to trust the unverified email and phone number in Logto's context. As we are using the verified email and phone number to identify the user.
@@ -69,19 +56,13 @@ export class AzureOidcSsoConnector extends OidcConnector implements SingleSignOn
   override async getUserInfo(
     connectorSession: SingleSignOnConnectorSession,
     data: unknown
-  ): Promise<ExtendedSocialUserInfo> {
+  ): Promise<{ userInfo: ExtendedSocialUserInfo; tokenResponse?: OidcTokenResponse }> {
     const oidcConfig = await this.getOidcConfig();
     const { nonce, redirectUri } = connectorSession;
 
     // Fetch token from the OIDC provider using authorization code
-    const { idToken, accessToken } = await fetchToken(oidcConfig, data, redirectUri);
-
-    assertThat(
-      accessToken,
-      new SsoConnectorError(SsoConnectorErrorCodes.AuthorizationFailed, {
-        message: 'The access token is missing from the response.',
-      })
-    );
+    const tokenResponse = await fetchToken(oidcConfig, data, redirectUri);
+    const { accessToken, idToken } = camelcaseKeys(tokenResponse);
 
     // Need to decode the id token to get the tenant id
     const decodeToken = decodeJwt(idToken);
@@ -94,26 +75,46 @@ export class AzureOidcSsoConnector extends OidcConnector implements SingleSignOn
         ? { issuer: oidcConfig.issuer.replace('{tenantid}', decodeToken.tid) }
         : {};
 
-    // Verify the id token and get the user id
-    const { sub: id } = await getIdTokenClaims(idToken, oidcConfig, nonce, jwtVerifyOptions);
-
+    // Verify the id token and get the claims
+    const idTokenClaims = await getIdTokenClaims(idToken, oidcConfig, nonce, jwtVerifyOptions);
     // Fetch user info from the userinfo endpoint
-    const { sub, name, picture, email, email_verified, phone, phone_verified, ...rest } =
-      await getUserInfo(accessToken, oidcConfig.userinfoEndpoint);
+    const userInfoClaims =
+      oidcConfig.userinfoEndpoint && accessToken
+        ? await getUserInfo(accessToken, oidcConfig.userinfoEndpoint)
+        : undefined;
 
-    return {
+    // Merge the claims from id token and userinfo endpoint as in Azure AD, some claims are only available in the userinfo endpoint
+    const mergedClaims = {
+      ...idTokenClaims,
+      // Userinfo claims should have higher priority
+      ...userInfoClaims,
+    };
+
+    const {
+      sub: id,
+      name,
+      picture,
+      email,
+      email_verified,
+      phone,
+      phone_verified,
+      ...rest
+    } = mergedClaims;
+
+    const userInfo = {
       id,
       ...conditional(name && { name }),
       ...conditional(picture && { avatar: picture }),
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      ...conditional(email && (email_verified || this.trustUnverifiedEmail) && { email }),
+      ...conditional(email && (email_verified ?? oidcConfig.trustUnverifiedEmail) && { email }),
       ...conditional(phone && phone_verified && { phone }),
       ...camelcaseKeys(rest),
       ...conditional(
-        email && !email_verified && !this.trustUnverifiedEmail && { unverifiedEmail: email }
+        email && !email_verified && !oidcConfig.trustUnverifiedEmail && { unverifiedEmail: email }
       ),
       ...conditional(phone && !phone_verified && { unverifiedPhone: phone }),
     };
+
+    return { userInfo, tokenResponse };
   }
 }
 
@@ -147,6 +148,6 @@ export const azureOidcSsoConnectorFactory: SingleSignOnFactory<SsoProviderName.A
   name: {
     en: 'Microsoft Entra ID (OIDC)',
   },
-  configGuard: azureOidcConnectorConfigGuard,
+  configGuard: basicOidcConnectorConfigGuard,
   constructor: AzureOidcSsoConnector,
 };

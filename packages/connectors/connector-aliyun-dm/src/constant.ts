@@ -1,7 +1,43 @@
 import type { ConnectorMetadata } from '@logto/connector-kit';
 import { ConnectorConfigFormItemType } from '@logto/connector-kit';
 
-export const endpoint = 'https://dm.aliyuncs.com/';
+export const defaultRegionId = 'cn-hangzhou';
+
+export const regionIds = [
+  'cn-hangzhou',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'eu-central-1',
+  'us-east-1',
+] as const;
+
+export type RegionId = (typeof regionIds)[number];
+
+export const regionConfigs: Record<RegionId, { title: string; endpoint: string }> = Object.freeze({
+  'cn-hangzhou': {
+    title: 'China (Hangzhou)',
+    endpoint: 'https://dm.aliyuncs.com/',
+  },
+  'ap-southeast-1': {
+    title: 'Singapore',
+    endpoint: 'https://dm.ap-southeast-1.aliyuncs.com/',
+  },
+  'ap-southeast-2': {
+    title: 'United States (formerly Sydney)',
+    endpoint: 'https://dm.ap-southeast-2.aliyuncs.com/',
+  },
+  'eu-central-1': {
+    title: 'Germany (Frankfurt)',
+    endpoint: 'https://dm.eu-central-1.aliyuncs.com/',
+  },
+  'us-east-1': {
+    title: 'US (Virginia)',
+    endpoint: 'https://dm.us-east-1.aliyuncs.com/',
+  },
+});
+
+export const getEndpoint = (regionId: RegionId = defaultRegionId) =>
+  regionConfigs[regionId].endpoint;
 
 export const staticConfigs = {
   Format: 'json',
@@ -45,6 +81,18 @@ export const defaultMetadata: ConnectorMetadata = {
       placeholder: '<access-key-secret>',
     },
     {
+      key: 'regionId',
+      label: 'Region',
+      type: ConnectorConfigFormItemType.Select,
+      required: false,
+      defaultValue: defaultRegionId,
+      selectItems: regionIds.map((value) => ({
+        value,
+        title: regionConfigs[value].title,
+      })),
+      description: 'Select the Direct Mail region where the sender address is configured.',
+    },
+    {
       key: 'accountName',
       label: 'Account Name',
       type: ConnectorConfigFormItemType.Text,
@@ -83,10 +131,40 @@ export const defaultMetadata: ConnectorMetadata = {
             'Your Logto password change verification code is {{code}}. The code will remain active for 10 minutes.',
         },
         {
+          usageType: 'OrganizationInvitation',
+          subject: '<organization-invitation-template-subject>',
+          content:
+            'Your Logto organization invitation code is {{code}}. The code will remain active for 10 minutes.',
+        },
+        {
           usageType: 'Generic',
           subject: '<generic-template-subject>',
           content:
             'Your Logto verification code is {{code}}. The code will remain active for 10 minutes.',
+        },
+        {
+          usageType: 'UserPermissionValidation',
+          subject: '<user-permission-validation-template-subject>',
+          content:
+            'Your Logto permission validation code is {{code}}. The code will remain active for 10 minutes.',
+        },
+        {
+          usageType: 'BindNewIdentifier',
+          subject: '<bind-new-identifier-template-subject>',
+          content:
+            'Your Logto new identifier binding code is {{code}}. The code will remain active for 10 minutes.',
+        },
+        {
+          usageType: 'MfaVerification',
+          subject: '<mfa-verification-template-subject>',
+          content:
+            'Your Logto MFA verification code is {{code}}. The code will remain active for 10 minutes.',
+        },
+        {
+          usageType: 'BindMfa',
+          subject: '<bind-mfa-template-subject>',
+          content:
+            'Your Logto 2-step verification setup code is {{code}}. The code will remain active for 10 minutes.',
         },
       ],
     },

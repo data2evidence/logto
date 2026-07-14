@@ -1,21 +1,22 @@
 import { SignInIdentifier } from '@logto/schemas';
+import { cond } from '@silverhand/essentials';
 import classNames from 'classnames';
 import { useCallback, useContext, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import UserInteractionContext from '@/Providers/UserInteractionContextProvider/UserInteractionContext';
-import Button from '@/components/Button';
-import ErrorMessage from '@/components/ErrorMessage';
 import { PasswordInputField } from '@/components/InputFields';
-import type { IdentifierInputValue } from '@/components/InputFields/SmartInputField';
+import SwitchToVerificationMethodsLink from '@/components/SwitchToVerificationMethodsLink';
+import CaptchaBox from '@/containers/CaptchaBox';
 import ForgotPasswordLink from '@/containers/ForgotPasswordLink';
 import usePasswordSignIn from '@/hooks/use-password-sign-in';
 import { useForgotPasswordSettings } from '@/hooks/use-sie';
+import Button from '@/shared/components/Button';
+import ErrorMessage from '@/shared/components/ErrorMessage';
+import type { IdentifierInputValue } from '@/shared/components/InputFields/SmartInputField';
 
 import styles from '../index.module.scss';
-
-import VerificationCodeLink from './VerificationCodeLink';
 
 type Props = {
   readonly className?: string;
@@ -69,7 +70,7 @@ const PasswordForm = ({
     async (event?: React.FormEvent<HTMLFormElement>) => {
       clearErrorMessage();
 
-      void handleSubmit(async ({ identifier: { type, value }, password }) => {
+      await handleSubmit(async ({ identifier: { type, value }, password }) => {
         if (!type) {
           return;
         }
@@ -114,11 +115,15 @@ const PasswordForm = ({
         <ForgotPasswordLink className={styles.link} identifier={identifier} value={value} />
       )}
 
+      <CaptchaBox />
       <Button title="action.continue" name="submit" htmlType="submit" isLoading={isSubmitting} />
 
-      {identifier !== SignInIdentifier.Username && isVerificationCodeEnabled && (
-        <VerificationCodeLink className={styles.switch} identifier={identifier} value={value} />
-      )}
+      <SwitchToVerificationMethodsLink
+        hasVerificationCode={identifier !== SignInIdentifier.Username && isVerificationCodeEnabled}
+        className={styles.switch}
+        identifier={cond(identifier !== SignInIdentifier.Username && identifier)}
+        value={value}
+      />
 
       <input hidden type="submit" />
     </form>

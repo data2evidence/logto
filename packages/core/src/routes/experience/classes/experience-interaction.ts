@@ -1,57 +1,51 @@
 /* eslint-disable max-lines */
-import { type ToZodObject } from '@logto/connector-kit';
-import { InteractionEvent, VerificationType, type User } from '@logto/schemas';
-import { conditional } from '@silverhand/essentials';
-import { z } from 'zod';
+import { appInsights } from '@logto/app-insights/node';
+import {
+  InteractionEvent,
+  InteractionHookEvent,
+  MfaFactor,
+  VerificationType,
+  type User,
+} from '@logto/schemas';
+import { maskEmail, maskPhone } from '@logto/shared';
+import { conditional, trySafe } from '@silverhand/essentials';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import { type LogEntry } from '#src/middleware/koa-audit-log.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
+import { buildAppInsightsTelemetry } from '#src/utils/request.js';
 
 import {
-  interactionProfileGuard,
+  interactionStorageGuard,
+  type InteractionStorage,
   type Interaction,
   type InteractionContext,
-  type InteractionProfile,
   type WithHooksAndLogsContext,
+  type SanitizedInteractionStorageData,
 } from '../types.js';
 
 import {
   getNewUserProfileFromVerificationRecord,
   identifyUserByVerificationRecord,
   mergeUserMfaVerifications,
+  parseMfaPropertiesToUserConfig,
 } from './helpers.js';
+import { AdaptiveMfaValidator } from './libraries/adaptive-mfa-validator/index.js';
+import { type AdaptiveMfaResult } from './libraries/adaptive-mfa-validator/types.js';
+import { CaptchaValidator } from './libraries/captcha-validator.js';
 import { MfaValidator } from './libraries/mfa-validator.js';
 import { ProvisionLibrary } from './libraries/provision-library.js';
 import { SignInExperienceValidator } from './libraries/sign-in-experience-validator.js';
-import { Mfa, mfaDataGuard, userMfaDataKey, type MfaData } from './mfa.js';
+import { Mfa } from './mfa.js';
 import { Profile } from './profile.js';
 import { toUserSocialIdentityData } from './utils.js';
 import {
   buildVerificationRecord,
-  verificationRecordDataGuard,
   type VerificationRecord,
-  type VerificationRecordData,
   type VerificationRecordMap,
 } from './verifications/index.js';
 import { VerificationRecordsMap } from './verifications/verification-records-map.js';
-
-type InteractionStorage = {
-  interactionEvent: InteractionEvent;
-  userId?: string;
-  profile?: InteractionProfile;
-  mfa?: MfaData;
-  verificationRecords?: VerificationRecordData[];
-};
-
-const interactionStorageGuard = z.object({
-  interactionEvent: z.nativeEnum(InteractionEvent),
-  userId: z.string().optional(),
-  profile: interactionProfileGuard.optional(),
-  mfa: mfaDataGuard.optional(),
-  verificationRecords: verificationRecordDataGuard.array().optional(),
-}) satisfies ToZodObject<InteractionStorage>;
 
 /**
  * Interaction is a short-lived session session that is initiated when a user starts an interaction flow with the Logto platform.
@@ -72,6 +66,14 @@ export default class ExperienceInteraction {
   /** The userId of the user for the current interaction. Only available once the user is identified. */
   private userId?: string;
   private userCache?: User;
+  private readonly adaptiveMfaValidator: AdaptiveMfaValidator;
+
+  /** The captcha verification status for the current interaction. */
+  private readonly captcha = {
+    verified: false,
+    skipped: false,
+  };
+
   /** The interaction event for the current interaction. */
   #interactionEvent: InteractionEvent;
 
@@ -102,7 +104,16 @@ export default class ExperienceInteraction {
       getIdentifiedUser: async () => this.getIdentifiedUser(),
       getVerificationRecordByTypeAndId: (type, verificationId) =>
         this.getVerificationRecordByTypeAndId(type, verificationId),
+      getVerificationRecordById: (verificationId) => this.getVerificationRecordById(verificationId),
+      getCurrentProfile: () => this.profile.data,
     };
+
+    this.adaptiveMfaValidator = new AdaptiveMfaValidator({
+      ctx,
+      queries,
+      interactionContext,
+      signInExperienceValidator: this.signInExperienceValidator,
+    });
 
     if (typeof interactionData === 'string') {
       this.#interactionEvent = interactionData;
@@ -125,12 +136,17 @@ export default class ExperienceInteraction {
       mfa = {},
       userId,
       interactionEvent,
+      captcha = {
+        verified: false,
+        skipped: false,
+      },
     } = result.data;
 
     this.#interactionEvent = interactionEvent;
     this.userId = userId;
     this.profile = new Profile(libraries, queries, profile, interactionContext);
     this.mfa = new Mfa(libraries, queries, mfa, interactionContext);
+    this.captcha = captcha;
 
     for (const record of verificationRecords) {
       const instance = buildVerificationRecord(libraries, queries, record);
@@ -156,7 +172,10 @@ export default class ExperienceInteraction {
    * @throws RequestError with 400 if the interaction event is not `ForgotPassword` and the current interaction event is `ForgotPassword`
    */
   public async setInteractionEvent(interactionEvent: InteractionEvent) {
-    await this.signInExperienceValidator.guardInteractionEvent(interactionEvent);
+    await this.signInExperienceValidator.guardInteractionEvent(
+      interactionEvent,
+      this.verificationRecords.get(VerificationType.OneTimeToken)?.isVerified
+    );
 
     // `ForgotPassword` interaction event can not interchanged with other events
     assertThat(
@@ -198,13 +217,8 @@ export default class ExperienceInteraction {
     const verificationRecord = this.getVerificationRecordById(verificationId);
 
     log?.append({
-      verification: verificationRecord?.toJson(),
+      verification: verificationRecord.toJson(),
     });
-
-    assertThat(
-      verificationRecord,
-      new RequestError({ code: 'session.verification_session_not_found', status: 404 })
-    );
 
     await this.signInExperienceValidator.guardIdentificationMethod(
       this.interactionEvent,
@@ -261,32 +275,38 @@ export default class ExperienceInteraction {
       new RequestError({ code: 'session.invalid_interaction_type', status: 400 })
     );
 
-    await this.signInExperienceValidator.guardInteractionEvent(InteractionEvent.Register);
-
     if (verificationId) {
       const verificationRecord = this.getVerificationRecordById(verificationId);
-
-      assertThat(
-        verificationRecord,
-        new RequestError({ code: 'session.verification_session_not_found', status: 404 })
-      );
+      const verificationData = verificationRecord.toJson();
 
       log?.append({
-        verification: verificationRecord.toJson(),
+        verification: verificationData,
       });
 
-      await this.signInExperienceValidator.guardSsoOnlyEmailIdentifier(verificationRecord);
+      if (verificationRecord.type !== VerificationType.EnterpriseSso) {
+        await this.signInExperienceValidator.guardSsoOnlyEmailIdentifier(verificationRecord);
+      }
+      await this.signInExperienceValidator.guardEmailBlocklist(verificationRecord);
+
       const identifierProfile = await getNewUserProfileFromVerificationRecord(verificationRecord);
 
       await this.profile.setProfileWithValidation(identifierProfile);
-
       // Save the updated profile data to the interaction storage
       await this.save();
     }
 
-    await this.profile.assertUserMandatoryProfileFulfilled();
+    await this.signInExperienceValidator.guardInteractionEvent(
+      InteractionEvent.Register,
+      this.verificationRecords.get(VerificationType.OneTimeToken)?.isVerified
+    );
+    await this.guardCaptcha();
+    await this.profile.assertUserMandatoryProfileFulfilled({
+      hasVerifiedSocialIdentity: this.hasVerifiedSocialIdentity,
+      hasVerifiedSsoIdentity: this.hasVerifiedSsoIdentity,
+    });
 
     const user = await this.provisionLibrary.createUser(this.profile.data);
+    log?.append({ user });
 
     this.userId = user.id;
     this.userCache = user;
@@ -302,7 +322,10 @@ export default class ExperienceInteraction {
   }
 
   /**
+   * Get the verification record by the verification id with type assertion.
+   *
    * @throws {RequestError} with 404 if the verification record is not found
+   *  or the verification type does not match.
    */
   public getVerificationRecordByTypeAndId<K extends keyof VerificationRecordMap>(
     type: K,
@@ -324,27 +347,97 @@ export default class ExperienceInteraction {
    *
    * @remarks
    * - EnterpriseSso verified interaction does not require MFA verification.
+   * - Users signing in with passkey does not require MFA verification.
    *
    * @throws {RequestError} with 404 if the if the user is not identified or not found
    * @throws {RequestError} with 403 if the mfa verification is required but not verified
    */
-  public async guardMfaVerificationStatus() {
-    if (this.hasVerifiedSsoIdentity) {
+
+  public async guardMfaVerificationStatus(log?: LogEntry) {
+    if (this.hasVerifiedSsoIdentity || this.hasVerifiedSignInPasskey) {
       return;
     }
 
     const user = await this.getIdentifiedUser();
     const mfaSettings = await this.signInExperienceValidator.getMfaSettings();
-    const mfaValidator = new MfaValidator(mfaSettings, user);
-    const isVerified = mfaValidator.isMfaVerified(this.verificationRecordsArray);
+    const adaptiveMfaResult = await this.adaptiveMfaValidator.getResult(log);
+
+    const mfaValidator = new MfaValidator(mfaSettings, user, adaptiveMfaResult);
+
+    if (!mfaValidator.isMfaRequired) {
+      return;
+    }
+
+    const isMfaVerified = mfaValidator.isMfaVerified(this.verificationRecordsArray);
+
+    if (isMfaVerified) {
+      return;
+    }
+
+    this.assignAdaptiveMfaHookResult(user.id, adaptiveMfaResult);
+
+    const { primaryEmail, primaryPhone } = user;
+    const maskedIdentifiers: Record<string, string> = {
+      ...(mfaValidator.availableUserMfaVerificationTypes.includes(
+        MfaFactor.EmailVerificationCode
+      ) && primaryEmail
+        ? { [MfaFactor.EmailVerificationCode]: maskEmail(primaryEmail) }
+        : {}),
+      ...(mfaValidator.availableUserMfaVerificationTypes.includes(
+        MfaFactor.PhoneVerificationCode
+      ) && primaryPhone
+        ? { [MfaFactor.PhoneVerificationCode]: maskPhone(primaryPhone) }
+        : {}),
+    };
 
     assertThat(
-      isVerified,
+      isMfaVerified,
       new RequestError(
         { code: 'session.mfa.require_mfa_verification', status: 403 },
-        { availableFactors: mfaValidator.availableUserMfaVerificationTypes }
+        {
+          availableFactors: mfaValidator.availableUserMfaVerificationTypes,
+          maskedIdentifiers,
+        }
       )
     );
+  }
+
+  /**
+   * Guard current interaction is identified and the identified user exists.
+   *
+   * @throws {RequestError} with 404 if the user is not identified or not found
+   */
+  public async guardIdentifiedUser() {
+    await this.getIdentifiedUser();
+  }
+
+  /**
+   * Verify the captcha token using current tenant's captcha provider.
+   *
+   * @param token The captcha token to verify.
+   *
+   * @throws {RequestError} with 422 if the captcha verification fails
+   */
+  public async verifyCaptcha(token: string) {
+    const log = this.ctx.createLog('Interaction.Create.Captcha');
+    const captchaProvider = await this.tenant.queries.captchaProviders.findCaptchaProvider();
+
+    assertThat(captchaProvider, new RequestError({ code: 'session.captcha_failed', status: 422 }));
+
+    const captchaValidator = new CaptchaValidator(captchaProvider, log);
+    const isVerified = await captchaValidator.verifyCaptcha(token);
+
+    assertThat(isVerified, new RequestError({ code: 'session.captcha_failed', status: 422 }));
+
+    this.captcha.verified = true;
+  }
+
+  /**
+   * Skip the captcha verification for the current interaction,
+   * for social, sso, etc.
+   */
+  public skipCaptcha() {
+    this.captcha.skipped = true;
   }
 
   /** Save the current interaction result. */
@@ -377,10 +470,16 @@ export default class ExperienceInteraction {
    * @throws {RequestError} with 422 if the required profile fields are missing
    **/
   // eslint-disable-next-line complexity
-  public async submit() {
+  public async submit(log?: LogEntry) {
     const {
       queries: { users: userQueries, userSsoIdentities: userSsoIdentityQueries },
+      libraries: {
+        socials: { upsertSocialTokenSetSecret },
+        ssoConnectors: { upsertEnterpriseSsoTokenSetSecret },
+      },
     } = this.tenant;
+
+    await this.guardCaptcha();
 
     // Identified
     const user = await this.getIdentifiedUser();
@@ -401,34 +500,50 @@ export default class ExperienceInteraction {
 
       await this.cleanUp();
 
-      this.ctx.assignInteractionHookResult({ userId: user.id });
+      this.ctx.assignReleaseOnSuccessInteractionHookResult({ userId: user.id });
       this.ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
 
       return;
     }
 
-    // Verified
-    await this.guardMfaVerificationStatus();
+    // Verified, only SignIn requires MFA verification, for register, it does not make sense to verify MFA
+    if (this.#interactionEvent === InteractionEvent.SignIn) {
+      await this.guardMfaVerificationStatus(log);
+    }
 
     // Revalidate the new profile data if any
     await this.profile.validateAvailability();
 
     // Profile fulfilled
+    await this.profile.assertUserMandatoryProfileFulfilled({
+      hasVerifiedSocialIdentity: this.hasVerifiedSocialIdentity,
+      hasVerifiedSsoIdentity: this.hasVerifiedSsoIdentity,
+    });
+
     if (!this.hasVerifiedSsoIdentity) {
-      await this.profile.assertUserMandatoryProfileFulfilled();
+      // Check if passkey sign-in is enabled in the sign-in experience, if yes, check if user has `WebAuthn`
+      // type of MFA verification record in `users.mfaVerifications`. Suggest user to add a passkey if not.
+      await this.mfa.assertPasskeySignInFulfilled();
     }
 
     // Revalidate the new MFA data if any
     await this.mfa.checkAvailability();
 
-    // MFA fulfilled
     if (!this.hasVerifiedSsoIdentity) {
-      await this.mfa.assertUserMandatoryMfaFulfilled();
+      await this.mfa.assertMfaFulfilled();
     }
 
-    const { socialIdentity, enterpriseSsoIdentity, syncedEnterpriseSsoIdentity, ...rest } =
-      this.profile.data;
-    const { mfaSkipped, mfaVerifications } = this.mfa.toUserMfaVerifications();
+    const {
+      socialIdentity,
+      enterpriseSsoIdentity,
+      syncedEnterpriseSsoIdentity,
+      jitOrganizationIds,
+      socialConnectorTokenSetSecret,
+      enterpriseSsoConnectorTokenSetSecret,
+      ...rest
+    } = this.profile.data;
+    const userMfaVerifications = this.mfa.toUserMfaVerifications();
+    const { mfaVerifications } = userMfaVerifications;
 
     // Update user profile
     const updatedUser = await userQueries.updateUserById(user.id, {
@@ -446,16 +561,13 @@ export default class ExperienceInteraction {
           mfaVerifications: mergeUserMfaVerifications(user.mfaVerifications, mfaVerifications),
         }
       ),
-      ...conditional(
-        mfaSkipped && {
-          logtoConfig: {
-            ...user.logtoConfig,
-            [userMfaDataKey]: {
-              skipped: true,
-            },
-          },
-        }
-      ),
+      logtoConfig: {
+        ...parseMfaPropertiesToUserConfig(
+          user.logtoConfig,
+          userMfaVerifications,
+          this.#interactionEvent
+        ),
+      },
       lastSignInAt: Date.now(),
     });
 
@@ -473,24 +585,72 @@ export default class ExperienceInteraction {
       await this.provisionLibrary.addSsoIdentityToUser(user.id, enterpriseSsoIdentity);
     }
 
+    // Sync social token set secret
+    if (socialConnectorTokenSetSecret) {
+      // Upsert token set secret should not break the normal social authentication and link flow
+      await trySafe(
+        async () => upsertSocialTokenSetSecret(user.id, socialConnectorTokenSetSecret),
+        (error) => {
+          void appInsights.trackException(error, buildAppInsightsTelemetry(this.ctx));
+        }
+      );
+    }
+
+    // Sync enterprise sso token set secret
+    if (enterpriseSsoConnectorTokenSetSecret) {
+      await upsertEnterpriseSsoTokenSetSecret(
+        user.id,
+        enterpriseSsoConnectorTokenSetSecret,
+        this.ctx
+      );
+    }
+
+    // Provision organizations for one-time token that carries organization IDs in the context.
+    if (jitOrganizationIds) {
+      await this.provisionLibrary.provisionJitOrganization({
+        userId: user.id,
+        organizationIds: jitOrganizationIds,
+      });
+    }
+
     const { provider } = this.tenant;
 
     const redirectTo = await provider.interactionResult(this.ctx.req, this.ctx.res, {
       login: { accountId: user.id },
+      // Persist the interaction status to the OIDC session after interaction submission
+      ...this.toJson(),
     });
+
+    // The geo context is only recorded when the `submit()` function succeeds.
+    // The recorded geo context will affect the evaluation results of the adaptive MFA afterwards.
+    void trySafe(
+      async () => this.adaptiveMfaValidator.recordSignInGeoContext(user, this.#interactionEvent),
+      (error) => {
+        void appInsights.trackException(error, buildAppInsightsTelemetry(this.ctx));
+      }
+    );
 
     this.ctx.body = { redirectTo };
 
-    this.ctx.assignInteractionHookResult({ userId: user.id });
+    this.ctx.assignReleaseOnSuccessInteractionHookResult({ userId: user.id });
 
     if (Object.keys(this.profile.data).length > 0 || mfaVerifications.length > 0) {
       this.ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
     }
   }
 
+  async guardCaptcha() {
+    if (this.captcha.verified || this.captcha.skipped) {
+      return;
+    }
+
+    await this.signInExperienceValidator.guardCaptcha();
+  }
+
   /** Convert the current interaction to JSON, so that it can be stored as the OIDC provider interaction result */
   public toJson(): InteractionStorage {
-    const { interactionEvent, userId } = this;
+    const { interactionEvent, userId, captcha } = this;
+    const signInContext = this.adaptiveMfaValidator.getSignInContext();
 
     return {
       interactionEvent,
@@ -498,7 +658,30 @@ export default class ExperienceInteraction {
       profile: this.profile.data,
       mfa: this.mfa.data,
       verificationRecords: this.verificationRecordsArray.map((record) => record.toJson()),
+      captcha,
+      ...conditional(signInContext && { signInContext }),
     };
+  }
+
+  public toSanitizedJson(): SanitizedInteractionStorageData {
+    return {
+      ...this.toJson(),
+      profile: this.profile.sanitizedData,
+      mfa: this.mfa.sanitizedData,
+      verificationRecords: this.verificationRecordsArray.map((record) => record.toSanitizedJson()),
+    };
+  }
+
+  private assignAdaptiveMfaHookResult(userId: string, adaptiveMfaResult?: AdaptiveMfaResult) {
+    if (!adaptiveMfaResult?.requiresMfa) {
+      return;
+    }
+
+    this.ctx.assignReleaseAnywayInteractionHookResult({
+      event: InteractionHookEvent.PostSignInAdaptiveMfaTriggered,
+      payload: { adaptiveMfaResult },
+      userId,
+    });
   }
 
   private get verificationRecordsArray() {
@@ -533,14 +716,36 @@ export default class ExperienceInteraction {
     return this.userCache;
   }
 
+  /**
+   * @throws {RequestError} with 404 if the verification record is not found
+   */
   private getVerificationRecordById(verificationId: string) {
-    return this.verificationRecordsArray.find((record) => record.id === verificationId);
+    const verificationRecord = this.verificationRecordsArray.find(
+      (record) => record.id === verificationId
+    );
+
+    assertThat(
+      verificationRecord,
+      new RequestError({ code: 'session.verification_session_not_found', status: 404 })
+    );
+
+    return verificationRecord;
   }
 
   private get hasVerifiedSsoIdentity() {
     const ssoVerificationRecord = this.verificationRecords.get(VerificationType.EnterpriseSso);
 
     return Boolean(ssoVerificationRecord?.isVerified);
+  }
+
+  private get hasVerifiedSocialIdentity() {
+    const socialVerificationRecord = this.verificationRecords.get(VerificationType.Social);
+    return Boolean(socialVerificationRecord?.isVerified);
+  }
+
+  private get hasVerifiedSignInPasskey() {
+    const webAuthnVerificationRecord = this.verificationRecords.get(VerificationType.SignInPasskey);
+    return Boolean(webAuthnVerificationRecord?.isVerified);
   }
 
   /**

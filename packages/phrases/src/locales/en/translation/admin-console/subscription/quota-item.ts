@@ -171,6 +171,12 @@ const quota_item = {
     unlimited: 'Bring your UI',
     not_eligible: 'Remove your custom UI assets',
   },
+  collect_user_profile_enabled: {
+    name: 'Collect user profile',
+    limited: 'Collect user profile',
+    unlimited: 'Collect user profile',
+    not_eligible: 'Remove your user profile collection fields',
+  },
   idp_initiated_sso_enabled: {
     name: 'IDP-initiated SSO',
     limited: 'IDP-initiated SSO',
@@ -183,6 +189,31 @@ const quota_item = {
     limited_other: '{{count, number}} SAML applications',
     unlimited: 'Unlimited SAML applications',
     not_eligible: 'Remove your SAML applications',
+  },
+  captcha_enabled: {
+    name: 'CAPTCHA',
+    limited: 'CAPTCHA',
+    unlimited: 'CAPTCHA',
+    not_eligible: 'Remove your CAPTCHA',
+  },
+  security_features_enabled: {
+    name: 'Advanced security',
+    limited: 'Advanced security',
+    unlimited: 'Advanced security',
+    not_eligible: 'Remove your advanced security settings',
+  },
+  custom_domains_limit: {
+    name: 'Custom domains',
+    limited: '{{count, number}} custom domain',
+    limited_other: '{{count, number}} custom domains',
+    unlimited: 'Unlimited custom domains',
+    not_eligible: 'Remove your custom domains',
+  },
+  passkey_sign_in_enabled: {
+    name: 'Passkey sign-in',
+    limited: 'Passkey sign-in',
+    unlimited: 'Passkey sign-in',
+    not_eligible: 'No passkey sign-in support',
   },
 };
 
