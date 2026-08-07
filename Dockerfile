@@ -50,7 +50,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 
 # Note: D2E connectors build and link
 RUN set -eux; \
-  for c in connector-alp-azuread connector-alp-entra-external-id; do \
+  for c in connector-alp-azuread connector-alp-entra-external-id connector-physionet-oidc; do \
   cp -r "/etc/d2e/services/alp-logto/$c" "/etc/logto/packages/connectors/$c"; \
   cd "/etc/logto/packages/connectors/$c"; \
   npm i && npm run build; \
