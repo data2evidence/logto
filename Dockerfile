@@ -20,6 +20,7 @@ COPY . .
 RUN git clone --branch ${D2E_VERSION} https://github.com/OHDSI/Data2Evidence.git /etc/d2e
 RUN cp /etc/d2e/services/alp-logto/to-replace/SignIn/Main.tsx /etc/logto/packages/experience/src/pages/SignIn/Main.tsx
 RUN cp /etc/d2e/services/alp-logto/to-replace/core/src/libraries/jwt-customizer.ts /etc/logto/packages/core/src/libraries/jwt-customizer.ts
+RUN cp /etc/d2e/services/alp-logto/to-replace/core/d2e-grants.mjs /etc/logto/packages/core/d2e-grants.mjs
 
 ### Install dependencies and build ###
 # Reuse the pnpm store between BuildKit runs to reduce duplicate downloads/writes.
@@ -49,7 +50,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 
 # Note: D2E connectors build and link
 RUN set -eux; \
-  for c in connector-alp-azuread connector-alp-entra-external-id; do \
+  for c in connector-alp-azuread connector-alp-entra-external-id connector-physionet-oidc; do \
   cp -r "/etc/d2e/services/alp-logto/$c" "/etc/logto/packages/connectors/$c"; \
   cd "/etc/logto/packages/connectors/$c"; \
   npm i && npm run build; \
